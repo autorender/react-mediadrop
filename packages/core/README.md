@@ -39,8 +39,10 @@ mediadrop.subscribe((state) => console.log(state.files));
 | `isAcceptedType(candidate, accept)` / `normalizeAccept(accept)` | The `accept` token matching logic, exposed for building custom UI (e.g. previewing whether a type would pass before the user picks a file). |
 | `createFileItem(file)` / `createId()` | Lower-level helpers `createMediaDrop` uses to build a `MediaDropFile`. |
 | `createUploadQueue(options, store)` | The queue/concurrency/retry engine `createMediaDrop` wires up internally. Only useful directly if you're building a new binding. |
-| `withRetry(attempt, options, signal)` | The one retry/backoff engine used by the upload queue — not duplicated per transport. |
-| Types: `MediaDropFile`, `MediaDropState`, `MediaDropRestrictions`, `MediaDropValidator`, `MediaDropError`, `MediaDropErrorCode`, `DragState`, `UploadTransport`, `MediaDropUploadOptions` | Shared shapes, re-exported by both bindings — you rarely need to import them from here directly. |
+| `withRetry(attempt, options, signal)` | The one retry/backoff engine in mediadrop — used by the upload queue, and by `@mediadrop/s3`/`@mediadrop/tus` for part/chunk-level retry. Supports `shouldRetry` (skip retrying errors that will never succeed) and `jitter` (randomize backoff to avoid many clients retrying in lockstep). Nobody hand-rolls a second retry loop. |
+| `memoryUploadSessionStore()` / `browserUploadSessionStore(options?)` | Metadata persistence for resumable transports (`@mediadrop/s3`'s multipart, `@mediadrop/tus`) — upload IDs, offsets, completed parts, never file bytes. The browser one is `localStorage`-backed and SSR-safe (a no-op without `window`); the memory one is in-process only. |
+| `createFileFingerprint(file)` | A fast, synchronous, metadata-based (not content-hashed) "looks like the same file" key, used by resumable transports to match a freshly-selected file against a persisted session. |
+| Types: `MediaDropFile`, `MediaDropState`, `MediaDropRestrictions`, `MediaDropValidator`, `MediaDropError`, `MediaDropErrorCode`, `DragState`, `UploadTransport`, `MediaDropUploadOptions`, `MediaDropUploadSessionStore` | Shared shapes, re-exported by both bindings — you rarely need to import them from here directly. |
 
 See [`skills/mediadrop/references/core-concepts.md`](../../skills/mediadrop/references/core-concepts.md)
 for the file model, store, and drag-state semantics in detail, and
@@ -52,9 +54,12 @@ full restrictions/validator contract.
 `createMediaDrop` validates files and tracks their state either way. Pass
 `transport` and it *also* orchestrates uploading them — a queue,
 concurrency limit, shared retry/backoff, and cancel — through whatever
-transport you give it (e.g. [`@mediadrop/xhr-upload`](../xhr-upload/README.md)).
-Without `transport`, nothing sends anything over the network, same as
-before. See [`skills/mediadrop/references/upload.md`](../../skills/mediadrop/references/upload.md)
+transport you give it: [`@mediadrop/xhr-upload`](../xhr-upload/README.md)
+for a generic endpoint, [`@mediadrop/s3`](../s3/README.md) for S3
+presigned/multipart, or [`@mediadrop/tus`](../tus/README.md) for a
+tus-compatible server. Without `transport`, nothing sends anything over
+the network, same as before. See
+[`skills/mediadrop/references/upload.md`](../../skills/mediadrop/references/upload.md)
 for the full contract, and [`scope.md`](../../skills/mediadrop/references/scope.md)
-for exactly what's still not implemented (resumability, S3 multipart,
-pause/resume, and more).
+for exactly what's still not implemented (pause/resume, remote-provider
+import, OAuth, and more).

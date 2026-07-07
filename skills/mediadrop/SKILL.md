@@ -1,22 +1,26 @@
 ---
 name: mediadrop
-description: Integrate mediadrop (Phase 1 + Phase 2) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel) for React or plain JS. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on @mediadrop/core, @mediadrop/vanilla, @mediadrop/react, or @mediadrop/xhr-upload.
+description: Integrate mediadrop (Phase 1 + Phase 2 + Phase 3) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel, S3, tus) for React or plain JS. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on @mediadrop/core, @mediadrop/vanilla, @mediadrop/react, @mediadrop/xhr-upload, @mediadrop/s3, or @mediadrop/tus.
 ---
 
-# mediadrop — Phase 1 (file intake) + Phase 2 (upload)
+# mediadrop — Phase 1 (file intake) + Phase 2 (upload) + Phase 3 (S3/tus)
 
 mediadrop is a lightweight, headless-first, transport-agnostic file uploader.
 **Phase 1** covers file selection, drag/drop, validation, a vanilla JS
 binding, and a React hook. **Phase 2** adds a real upload path on top: a
 pluggable transport contract, a queue with concurrency/retry/cancel, and
-a reference `@mediadrop/xhr-upload` transport. Upload is **opt-in** — pass
-`transport` to get it; without it, nothing about Phase 1's behavior
-changes at all.
+a reference `@mediadrop/xhr-upload` transport. **Phase 3** adds advanced
+transports on the *same* contract — `@mediadrop/s3` (presigned + multipart,
+with resumable metadata) and `@mediadrop/tus` (a small tus client) — plus
+the shared utilities (`withRetry`'s `shouldRetry`/`jitter`, session stores,
+file fingerprinting) that make resumability possible without duplicating
+retry logic per transport. Upload is **opt-in** — pass `transport` to get
+it; without it, nothing about Phase 1's behavior changes at all.
 
 Read [references/scope.md](references/scope.md) first if you are unsure
 whether a feature exists yet — it is the authoritative "what's real" list.
 [references/upload.md](references/upload.md) is the authoritative doc for
-everything upload-related.
+everything upload-related, including S3/tus.
 
 ## Which package to use
 
@@ -24,16 +28,22 @@ everything upload-related.
 |---|---|
 | React app | `@mediadrop/react` (`useMediaDrop`) |
 | Plain JS / any other framework | `@mediadrop/vanilla` (`createMediaDrop`) |
-| Need to actually upload | add `@mediadrop/xhr-upload` (`createXhrUploadTransport`), pass its result as `transport` |
+| Upload to a generic REST-ish endpoint | `@mediadrop/xhr-upload` (`createXhrUploadTransport`) |
+| Upload to S3 (presigned single request) | `@mediadrop/s3` (`s3Upload`) |
+| Upload large files to S3 (multipart, resumable) | `@mediadrop/s3` (`s3MultipartUpload`) |
+| Upload to a tus-compatible server | `@mediadrop/tus` (`tusUpload`) — **requires an actual tus server**, don't reach for this against a plain REST endpoint |
 | Building an adapter, or need the raw engine | `@mediadrop/core` (advanced) |
 
+Whichever transport you pick, pass its result as `transport` to
+`createMediaDrop`/`useMediaDrop` — that's the entire integration surface.
 Do not import `@mediadrop/core` directly in application code unless you are
 building a framework adapter or need APIs the React/vanilla bindings don't
-expose (e.g. `createStore`, `createDropzoneController`, `withRetry` in
-isolation). Both `@mediadrop/react` and `@mediadrop/vanilla` re-export the
+expose (e.g. `createStore`, `createDropzoneController`, `withRetry`,
+`createFileFingerprint`, `memoryUploadSessionStore`/`browserUploadSessionStore`
+in isolation). Both `@mediadrop/react` and `@mediadrop/vanilla` re-export the
 shared types (`MediaDropFile`, `MediaDropRestrictions`, `MediaDropError`,
-`DragState`, `UploadTransport`, etc.), so importing from core for types is
-rarely necessary either.
+`DragState`, `UploadTransport`, `MediaDropUploadSessionStore`, etc.), so
+importing from core for types is rarely necessary either.
 
 ## Core mental model
 
@@ -65,20 +75,42 @@ model, store, and drag-state semantics in detail.
 
 - **Do not write upload code that bypasses `transport`/the queue** — no
   hand-rolled `fetch` call stapled onto `onChange`, no ad hoc retry loop
-  elsewhere. If the user wants upload behavior, wire a transport (
-  `@mediadrop/xhr-upload` or your own) through `transport` and call
-  `uploadFile`/`uploadAll` — that's the one real upload path.
-- **Do not claim** resumability/chunking/tus support, S3's
-  multipart-upload protocol, pause/resume, persistence across a page
-  reload, remote-provider import (Google Drive/Dropbox-style pickers),
-  OAuth, or a prebuilt dashboard/progress widget exists. None of that is
-  built — see [references/upload.md](references/upload.md)'s "not
-  implemented" list before assuming otherwise.
+  elsewhere. If the user wants upload behavior, wire a transport
+  (`@mediadrop/xhr-upload`/`@mediadrop/s3`/`@mediadrop/tus`, or your own)
+  through `transport` and call `uploadFile`/`uploadAll` — that's the one
+  real upload path.
+- **Do not put an AWS SDK, or any AWS secret/credential, in frontend
+  code.** `@mediadrop/s3` never signs anything itself — signing
+  (`getUploadUrl`/`createMultipartUpload`/`getPartUploadUrl`/etc.) is
+  always a callback you wire to *your own backend*. If a task implies the
+  browser needs AWS credentials, that's a sign the backend contract is
+  missing, not something to work around by importing the AWS SDK
+  client-side.
+- **Do not use `s3MultipartUpload` unless the backend actually implements
+  all four callbacks** (`createMultipartUpload`/`getPartUploadUrl`/
+  `completeMultipartUpload`/`abortMultipartUpload`) — don't stub one out
+  and call the integration done. Same for `tusUpload`: it needs a real
+  tus-compatible server, not a generic REST endpoint pretending to be one.
+- **Do not claim** full resumability without the file-reselect caveat,
+  S3's multipart protocol where you meant a single presigned request,
+  the full tus extension suite (checksum, creation-with-upload,
+  expiration, concatenation, deferred-length, termination —
+  `@mediadrop/tus` implements none of these), pause/resume, persistence
+  of file *bytes* across a page reload, remote-provider import
+  (Google Drive/Dropbox-style pickers), OAuth, or a prebuilt
+  dashboard/progress widget. None of that is built — see
+  [references/upload.md](references/upload.md)'s "not implemented" list
+  before assuming otherwise. "Resumable" in this codebase always means
+  *metadata* persistence (upload IDs, offsets, completed parts) plus the
+  user reselecting the same file — never magic byte-level persistence.
 - **Retry/concurrency logic lives in one place**: `@mediadrop/core`'s
-  upload queue. Don't add retry/backoff inside a transport (including a
-  custom one you write) or inside a React/vanilla binding — that
-  duplicates logic that already exists and is exactly the anti-pattern
-  `upload.md` documents avoiding.
+  `withRetry` (file-level, via the upload queue) and the same `withRetry`
+  called again for part/chunk-level retry inside `@mediadrop/s3`/
+  `@mediadrop/tus`. Don't add a second retry/backoff implementation
+  inside a transport (including a custom one you write) or inside a
+  React/vanilla binding — that duplicates logic that already exists and
+  is exactly the anti-pattern `upload.md` documents avoiding (the same
+  mistake Uppy's xhr-upload/tus/aws-s3 plugins each made independently).
 - Use `restrictions` (`accept`, `maxFiles`, `minSize`, `maxSize`) for
   declarative rules; use `validator` for anything project-specific
   (checksum, filename policy, business rules). Don't hand-roll validation

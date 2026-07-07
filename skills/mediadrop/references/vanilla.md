@@ -66,7 +66,12 @@ additionally returns `uploadFile`/`uploadAll`/`cancelUpload`/
 convenience wrapper around `subscribe`. Call `subscribe` directly if you
 need to unsubscribe independently from `destroy()`.
 
-## Upload (Phase 2, opt-in)
+## Upload (Phase 2 + Phase 3, opt-in)
+
+`transport` accepts `@mediadrop/xhr-upload`, `@mediadrop/s3`,
+`@mediadrop/tus`, or your own — this binding has no S3/tus-specific
+wrapper and never will. Example below uses `@mediadrop/xhr-upload`; swap
+in `s3Upload`/`s3MultipartUpload`/`tusUpload` the same way.
 
 ```ts
 import { createMediaDrop } from "@mediadrop/vanilla";

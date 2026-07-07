@@ -61,12 +61,19 @@ const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
 const { files, uploadAll } = useMediaDrop({ transport, concurrency: 3 });
 ```
 
+`transport` accepts **any** `UploadTransport` — `@mediadrop/xhr-upload`,
+[`@mediadrop/s3`](../s3/README.md) (presigned/multipart),
+[`@mediadrop/tus`](../tus/README.md), or your own. There is no
+`useMediaDropS3`/`useMediaDropTus` and there won't be — this hook stays a
+thin pass-through to whatever transport you plug in, the same one prop
+either way.
+
 See [`skills/mediadrop/references/react.md`](../../skills/mediadrop/references/react.md)
 for the full API, handler composition rules, click/keyboard details, and
 SSR notes, and [`upload.md`](../../skills/mediadrop/references/upload.md)
 for the full queue/retry/cancel contract — this hook adds no logic of its
 own beyond forwarding to `@mediadrop/core`'s queue.
 
-**Resumability, S3 multipart, pause/resume, and remote-provider import are
-still not implemented** — see
+**Pause/resume, remote-provider import, and OAuth are still not
+implemented** — see
 [`skills/mediadrop/references/scope.md`](../../skills/mediadrop/references/scope.md).

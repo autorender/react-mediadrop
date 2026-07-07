@@ -46,10 +46,15 @@ const uploader = createMediaDrop({
 uploader.uploadAll();
 ```
 
+`transport` accepts **any** `UploadTransport` — `@mediadrop/xhr-upload`,
+[`@mediadrop/s3`](../s3/README.md), [`@mediadrop/tus`](../tus/README.md),
+or your own. There is no S3/tus-specific wrapper and there won't be —
+this binding stays a thin pass-through, the same one option either way.
+
 See [`skills/mediadrop/references/upload.md`](../../skills/mediadrop/references/upload.md)
 for the full queue/retry/cancel contract — this binding adds no logic of
 its own beyond forwarding to `@mediadrop/core`'s queue.
 
-**Resumability, S3 multipart, pause/resume, and remote-provider import are
-still not implemented** — see
+**Pause/resume, remote-provider import, and OAuth are still not
+implemented** — see
 [`skills/mediadrop/references/scope.md`](../../skills/mediadrop/references/scope.md).

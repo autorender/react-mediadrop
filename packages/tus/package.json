@@ -1,8 +1,8 @@
 {
-	"name": "@mediadrop/core",
+	"name": "@mediadrop/tus",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Framework-free file intake, validation, drag/drop, and upload-queue/retry/session primitives for mediadrop.",
+	"description": "A small, dependency-free tus (resumable upload protocol) client adapter for @mediadrop/core. Core protocol flow only — see the README for unsupported extensions.",
 	"license": "MIT",
 	"type": "module",
 	"main": "./dist/index.mjs",
@@ -23,10 +23,20 @@
 		"size": "node ../../scripts/check-bundle-size.mjs"
 	},
 	"sizeLimit": {
-		"dist/index.mjs": "8 KB"
+		"dist/index.mjs": "3 KB"
+	},
+	"peerDependencies": {
+		"@mediadrop/core": "workspace:*"
+	},
+	"peerDependenciesMeta": {
+		"@mediadrop/core": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
+		"@mediadrop/core": "workspace:*",
 		"@mediadrop/tsconfig": "workspace:*",
+		"jsdom": "^29.1.1",
 		"typescript": "catalog:",
 		"vitest": "^4.1.9",
 		"tsdown": "^0.22.3"

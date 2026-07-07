@@ -321,7 +321,49 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@types/node@24.13.2)(jsdom@29.1.1)(vite@8.1.3(@types/node@24.13.2))
 
+  packages/s3:
+    devDependencies:
+      '@mediadrop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mediadrop/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+      tsdown:
+        specifier: ^0.22.3
+        version: 0.22.3(typescript@5.9.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@24.13.2)(jsdom@29.1.1)(vite@8.1.3(@types/node@24.13.2))
+
   packages/tsconfig: {}
+
+  packages/tus:
+    devDependencies:
+      '@mediadrop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mediadrop/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+      tsdown:
+        specifier: ^0.22.3
+        version: 0.22.3(typescript@5.9.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@24.13.2)(jsdom@29.1.1)(vite@8.1.3(@types/node@24.13.2))
 
   packages/vanilla:
     dependencies:

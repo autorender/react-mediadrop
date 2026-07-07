@@ -87,3 +87,100 @@ test("an already-aborted signal fails on the very first attempt's retry check", 
 	).rejects.toThrow("fail");
 	expect(attempt).toHaveBeenCalledTimes(1);
 });
+
+test("shouldRetry: false fails fast without burning through the retry budget", async () => {
+	class NonRetryableError extends Error {}
+	const attempt = vi
+		.fn()
+		.mockRejectedValue(new NonRetryableError("bad request"));
+	const shouldRetry = vi.fn(
+		(error: unknown) => !(error instanceof NonRetryableError),
+	);
+
+	await expect(
+		withRetry(
+			attempt,
+			{ retries: 5, retryDelays: [0], shouldRetry },
+			new AbortController().signal,
+		),
+	).rejects.toThrow("bad request");
+
+	expect(attempt).toHaveBeenCalledTimes(1);
+	expect(shouldRetry).toHaveBeenCalledWith(expect.any(NonRetryableError), 1);
+});
+
+test("shouldRetry: true keeps retrying exactly like the default", async () => {
+	const attempt = vi
+		.fn()
+		.mockRejectedValueOnce(new Error("transient"))
+		.mockResolvedValueOnce("ok");
+
+	const result = await withRetry(
+		attempt,
+		{ retries: 2, retryDelays: [0], shouldRetry: () => true },
+		new AbortController().signal,
+	);
+
+	expect(result).toBe("ok");
+	expect(attempt).toHaveBeenCalledTimes(2);
+});
+
+test("jitter randomizes the backoff delay within the configured fraction", async () => {
+	const originalRandom = Math.random;
+	try {
+		const observedDelays: number[] = [];
+		const originalSetTimeout = globalThis.setTimeout;
+		// @ts-expect-error narrowing setTimeout's overloads isn't worth it for a test spy
+		globalThis.setTimeout = (fn: () => void, ms?: number) => {
+			observedDelays.push(ms ?? 0);
+			return originalSetTimeout(fn, 0);
+		};
+
+		Math.random = () => 1; // maximum jitter every time, for a deterministic assertion
+		const attempt = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("fail"))
+			.mockResolvedValueOnce("ok");
+
+		await withRetry(
+			attempt,
+			{ retries: 1, retryDelays: [1000], jitter: 0.5 },
+			new AbortController().signal,
+		);
+
+		// base 1000, jitter 0.5 => spread 500, Math.random()=1 => 1000 - 500 + 1*500*2 = 1500
+		expect(observedDelays).toEqual([1500]);
+		globalThis.setTimeout = originalSetTimeout;
+	} finally {
+		Math.random = originalRandom;
+	}
+});
+
+test("jitter: 0 (default) uses the exact retryDelays value, unaffected by Math.random", async () => {
+	const originalRandom = Math.random;
+	Math.random = () => 1;
+	try {
+		const observedDelays: number[] = [];
+		const originalSetTimeout = globalThis.setTimeout;
+		// @ts-expect-error narrowing setTimeout's overloads isn't worth it for a test spy
+		globalThis.setTimeout = (fn: () => void, ms?: number) => {
+			observedDelays.push(ms ?? 0);
+			return originalSetTimeout(fn, 0);
+		};
+
+		const attempt = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("fail"))
+			.mockResolvedValueOnce("ok");
+		await withRetry(
+			attempt,
+			{ retries: 1, retryDelays: [1000] },
+			new AbortController().signal,
+		);
+
+		expect(observedDelays).toEqual([1000]);
+		globalThis.setTimeout = originalSetTimeout;
+	} finally {
+		Math.random = originalRandom;
+	}
+});

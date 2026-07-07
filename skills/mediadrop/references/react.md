@@ -184,11 +184,14 @@ export function UploadBox() {
 `files`/`acceptedFiles`/`rejectedFiles` already carry the upload state —
 there's no separate upload-specific list. Read `item.uploadStatus`/
 `item.progress`/`item.uploadError`/`item.uploadResult` directly off each
-`MediaDropFile`. See [upload.md](upload.md) for the full queue/retry/cancel
-contract and the transport interface, including what it deliberately does
-not do (no resumability, no S3 multipart, no retry duplicated inside the
-transport or this hook — the queue in `@mediadrop/core` owns all of that;
-this hook is a thin pass-through, not a second implementation).
+`MediaDropFile`. `transport` accepts `@mediadrop/xhr-upload`,
+`@mediadrop/s3`, `@mediadrop/tus`, or your own — this hook has no
+S3/tus-specific API and never will (see "Bad" examples in `SKILL.md`).
+See [upload.md](upload.md) for the full queue/retry/cancel contract and
+the transport interface: no transport implements its own retry loop (S3
+multipart and tus both call `@mediadrop/core`'s shared `withRetry`
+instead), and this hook adds no logic beyond forwarding to that queue —
+not a second implementation of any of it.
 
 Whether a given `useMediaDrop()` call has upload methods is decided once,
 the same way `restrictions`/`validator` are baked in once — from whether

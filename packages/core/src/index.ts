@@ -2,6 +2,7 @@ export type { DropResult, DropzoneController } from "./dropzone.js";
 export { createDropzoneController } from "./dropzone.js";
 export { createError } from "./errors.js";
 export { createFileItem } from "./file.js";
+export { createFileFingerprint } from "./fingerprint.js";
 export { createId } from "./id.js";
 export type {
 	MediaDropInstance,
@@ -16,6 +17,14 @@ export {
 } from "./restrictions.js";
 export type { RetryOptions } from "./retry.js";
 export { withRetry } from "./retry.js";
+export type {
+	BrowserUploadSessionStoreOptions,
+	MediaDropUploadSessionStore,
+} from "./session-store.js";
+export {
+	browserUploadSessionStore,
+	memoryUploadSessionStore,
+} from "./session-store.js";
 export type { Listener, Selector, Store, Unsubscribe } from "./store.js";
 export { createStore } from "./store.js";
 export type {

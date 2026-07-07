@@ -1,0 +1,427 @@
+// @vitest-environment jsdom
+import { memoryUploadSessionStore } from "@mediadrop/core";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { S3_MIN_PART_SIZE, s3MultipartUpload } from "./multipart.js";
+import { installMockXhr, MockXhr, makeFile } from "./test-utils.js";
+
+let uninstall: () => void;
+beforeEach(() => {
+	uninstall = installMockXhr();
+});
+afterEach(() => {
+	uninstall();
+});
+
+/** Waits until at least `count` XHRs have been opened (handles the async `getPartUploadUrl` hop before each one). */
+async function waitForXhrCount(count: number): Promise<void> {
+	await vi.waitFor(() => {
+		expect(MockXhr.instances.length).toBeGreaterThanOrEqual(count);
+	});
+}
+
+/** Responds to every currently-open, not-yet-responded XHR with a successful part upload. */
+function respondAllOpenParts(): void {
+	for (let i = 0; i < MockXhr.instances.length; i++) {
+		const xhr = MockXhr.instances[i];
+		if (xhr && xhr.status === 0) {
+			xhr.respond(200, "", { ETag: `"etag-${i}"` });
+		}
+	}
+}
+
+/** Drives every part of a `partConcurrency`-limited upload to completion, `concurrency` at a time. */
+async function driveAllParts(
+	totalParts: number,
+	concurrency: number,
+): Promise<void> {
+	let done = 0;
+	while (done < totalParts) {
+		const batch = Math.min(concurrency, totalParts - done);
+		await waitForXhrCount(done + batch);
+		respondAllOpenParts();
+		done += batch;
+	}
+}
+
+test("splits a file into parts respecting the minimum part size, except the last part", async () => {
+	const fileSize = S3_MIN_PART_SIZE * 2 + 100; // 2 full parts + a small remainder
+	const partUrls: number[] = [];
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => {
+			partUrls.push(partNumber);
+			return { url: `https://s3.example/part/${partNumber}` };
+		},
+		completeMultipartUpload: async () => ({ location: "done", key: "k1" }),
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+	});
+
+	const promise = transport.upload(makeFile("a.png", "image/png", fileSize), {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+
+	await driveAllParts(3, 1);
+
+	await promise;
+	expect(partUrls).toEqual([1, 2, 3]);
+});
+
+test("uploads parts with the given concurrency, not more at once", async () => {
+	const fileSize = S3_MIN_PART_SIZE * 4;
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 2,
+	});
+
+	const promise = transport.upload(makeFile("a.png", "image/png", fileSize), {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+
+	await waitForXhrCount(2);
+	// 4 parts, concurrency 2 -> exactly 2 XHRs open, not more, while those are pending.
+	expect(MockXhr.instances).toHaveLength(2);
+
+	respondAllOpenParts();
+	await waitForXhrCount(4);
+	expect(MockXhr.instances).toHaveLength(4);
+
+	respondAllOpenParts();
+	await promise;
+});
+
+test("aggregates progress across completed and in-flight parts without double-counting", async () => {
+	const partSize = S3_MIN_PART_SIZE;
+	const fileSize = partSize * 2;
+	const onProgress = vi.fn();
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize,
+		partConcurrency: 2,
+	});
+
+	const promise = transport.upload(makeFile("a.png", "image/png", fileSize), {
+		onProgress,
+		signal: new AbortController().signal,
+	});
+	await waitForXhrCount(2);
+
+	// Part 1 halfway, part 2 not started yet.
+	MockXhr.instances[0]?.progress(partSize / 2, partSize);
+	expect(onProgress).toHaveBeenLastCalledWith({
+		loaded: partSize / 2,
+		total: fileSize,
+	});
+
+	// Part 1 completes...
+	MockXhr.instances[0]?.respond(200, "", { ETag: '"e1"' });
+	await vi.waitFor(() => {
+		expect(onProgress).toHaveBeenLastCalledWith({
+			loaded: partSize,
+			total: fileSize,
+		});
+	});
+	// ...and part 2 is now halfway. Total loaded must be part1(full) + part2(half),
+	// not part1(half, stale) + part2(half).
+	MockXhr.instances[1]?.progress(partSize / 2, partSize);
+	expect(onProgress).toHaveBeenLastCalledWith({
+		loaded: partSize + partSize / 2,
+		total: fileSize,
+	});
+
+	MockXhr.instances[1]?.respond(200, "", { ETag: '"e2"' });
+	await promise;
+});
+
+test("collects ETags and completes with sorted, complete part numbers", async () => {
+	const completeArgs: unknown[] = [];
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: async (context) => {
+			completeArgs.push(context.parts);
+			return { location: "done", key: "k1" };
+		},
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 3,
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 3),
+		{ onProgress: vi.fn(), signal: new AbortController().signal },
+	);
+	await driveAllParts(3, 3);
+
+	const result = await promise;
+	expect(completeArgs[0]).toEqual([
+		{ partNumber: 1, etag: '"etag-0"', size: S3_MIN_PART_SIZE },
+		{ partNumber: 2, etag: '"etag-1"', size: S3_MIN_PART_SIZE },
+		{ partNumber: 3, etag: '"etag-2"', size: S3_MIN_PART_SIZE },
+	]);
+	expect(result.response).toMatchObject({
+		key: "k1",
+		location: "done",
+		uploadId: "u1",
+	});
+});
+
+test("aborts the multipart upload on cancel and never completes it", async () => {
+	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
+	const completeMultipartUpload = vi.fn();
+	const controller = new AbortController();
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload,
+		abortMultipartUpload,
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 2,
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 3),
+		{ onProgress: vi.fn(), signal: controller.signal },
+	);
+	await waitForXhrCount(2);
+
+	controller.abort();
+	await expect(promise).rejects.toThrow();
+
+	await vi.waitFor(() => {
+		expect(abortMultipartUpload).toHaveBeenCalledWith({
+			file: expect.anything(),
+			key: "k1",
+			uploadId: "u1",
+		});
+	});
+	expect(completeMultipartUpload).not.toHaveBeenCalled();
+});
+
+test("retries a failed part using the shared retry engine, not a second retry loop", async () => {
+	let getPartUrlCalls = 0;
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => {
+			getPartUrlCalls++;
+			return { url: `https://s3.example/part/${partNumber}` };
+		},
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+		partRetries: 2,
+		partRetryDelays: [0, 0],
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+		{
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		},
+	);
+	await waitForXhrCount(1);
+	// First attempt fails...
+	MockXhr.instances[0]?.respond(500);
+	// ...retry succeeds.
+	await waitForXhrCount(2);
+	MockXhr.instances[1]?.respond(200, "", { ETag: '"etag-retry"' });
+
+	await promise;
+	expect(getPartUrlCalls).toBe(2);
+});
+
+test("persists session metadata as parts complete, and resumes by skipping them", async () => {
+	const sessionStore = memoryUploadSessionStore();
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 2);
+	const createMultipartUpload = vi
+		.fn()
+		.mockResolvedValue({ uploadId: "u1", key: "k1" });
+	const partUrlCalls: number[] = [];
+
+	const makeTransport = () =>
+		s3MultipartUpload({
+			createMultipartUpload,
+			getPartUploadUrl: async ({ partNumber }) => {
+				partUrlCalls.push(partNumber);
+				return { url: `https://s3.example/part/${partNumber}` };
+			},
+			completeMultipartUpload: async () => ({ location: "done" }),
+			partSize: S3_MIN_PART_SIZE,
+			partConcurrency: 1,
+			sessionStore,
+		});
+
+	// First attempt: upload part 1, then abandon before part 2 finishes (simulates
+	// a reload, not a deliberate cancel — the promise just never settles).
+	const firstTransport = makeTransport();
+	const firstAttempt = firstTransport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await waitForXhrCount(1);
+	MockXhr.instances[0]?.respond(200, "", { ETag: '"etag-part1"' });
+	await waitForXhrCount(2); // part 2 requested and in flight
+	void firstAttempt.catch(() => {});
+
+	expect(createMultipartUpload).toHaveBeenCalledTimes(1);
+	expect(partUrlCalls).toEqual([1, 2]);
+
+	// Second attempt with a fresh transport instance (simulating a new page load,
+	// same file reselected) must resume: skip part 1, re-request only part 2.
+	partUrlCalls.length = 0;
+	const secondTransport = makeTransport();
+	const secondAttempt = secondTransport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await vi.waitFor(() => {
+		expect(partUrlCalls).toEqual([2]);
+	});
+	expect(createMultipartUpload).toHaveBeenCalledTimes(1); // not called again — resumed instead
+
+	const inFlight = MockXhr.instances.filter((xhr) => xhr.status === 0);
+	inFlight[inFlight.length - 1]?.respond(200, "", { ETag: '"etag-part2"' });
+
+	const result = await secondAttempt;
+	expect(result.response).toMatchObject({ uploadId: "u1" });
+});
+
+test("removes the session after a successful completion", async () => {
+	const sessionStore = memoryUploadSessionStore();
+	const setSpy = vi.spyOn(sessionStore, "set");
+	const removeSpy = vi.spyOn(sessionStore, "remove");
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize: S3_MIN_PART_SIZE,
+		sessionStore,
+	});
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await driveAllParts(1, 1);
+	await promise;
+
+	expect(setSpy).toHaveBeenCalled();
+	expect(removeSpy).toHaveBeenCalledTimes(1);
+
+	const { createFileFingerprint } = await import("@mediadrop/core");
+	const fp = createFileFingerprint(file.file);
+	expect(await sessionStore.get(`s3-multipart:${fp}`)).toBeNull();
+});
+
+test("falls back to trusting local session metadata when listUploadedParts fails", async () => {
+	const sessionStore = memoryUploadSessionStore();
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
+
+	// Pre-seed a session as if part 1 already completed.
+	const { createFileFingerprint } = await import("@mediadrop/core");
+	const fp = createFileFingerprint(file.file);
+	await sessionStore.set(`s3-multipart:${fp}`, {
+		type: "s3-multipart",
+		fingerprint: fp,
+		uploadId: "u1",
+		key: "k1",
+		partSize: S3_MIN_PART_SIZE,
+		completedParts: [
+			{ partNumber: 1, etag: '"seeded"', size: S3_MIN_PART_SIZE },
+		],
+		createdAt: 1,
+		updatedAt: 1,
+	});
+
+	const getPartUploadUrl = vi.fn();
+	const completeMultipartUpload = vi
+		.fn()
+		.mockResolvedValue({ location: "done" });
+	const transport = s3MultipartUpload({
+		createMultipartUpload: vi.fn(),
+		getPartUploadUrl,
+		completeMultipartUpload,
+		listUploadedParts: async () => {
+			throw new Error("S3 is unreachable");
+		},
+		partSize: S3_MIN_PART_SIZE,
+		sessionStore,
+	});
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await promise;
+
+	// Only 1 part total (file fits in one part) and it was already "completed"
+	// per local metadata, so no part URL should ever be requested.
+	expect(getPartUploadUrl).not.toHaveBeenCalled();
+	expect(completeMultipartUpload).toHaveBeenCalledWith(
+		expect.objectContaining({
+			parts: [{ partNumber: 1, etag: '"seeded"', size: S3_MIN_PART_SIZE }],
+		}),
+	);
+});
+
+test("a cancel that lands while completeMultipartUpload is in flight still rejects, not resolves", async () => {
+	// Regression test: the queue (@mediadrop/core's upload-queue.ts) only ever
+	// reports uploadStatus: "canceled" from a *rejected* transport promise —
+	// a resolved one is always reported "done", regardless of the abort
+	// signal. Without an explicit post-completion abort check, a cancel
+	// requested in the narrow window while completeMultipartUpload is still
+	// pending would be silently ignored: the object gets created in S3 *and*
+	// the file is reported "done" as if nothing happened.
+	let resolveComplete!: (value: { location: string }) => void;
+	const completeMultipartUpload = vi.fn(
+		() =>
+			new Promise<{ location: string }>((resolve) => {
+				resolveComplete = resolve;
+			}),
+	);
+	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
+	const controller = new AbortController();
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload,
+		abortMultipartUpload,
+		partSize: S3_MIN_PART_SIZE,
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+		{
+			onProgress: vi.fn(),
+			signal: controller.signal,
+		},
+	);
+	await driveAllParts(1, 1);
+	await vi.waitFor(() => expect(completeMultipartUpload).toHaveBeenCalled());
+
+	// Cancel while completeMultipartUpload is still pending, then let it resolve.
+	controller.abort();
+	resolveComplete({ location: "done" });
+
+	await expect(promise).rejects.toThrow();
+});
