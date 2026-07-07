@@ -1,8 +1,8 @@
 {
-	"name": "@mediadrop/core",
+	"name": "@mediadrop/vanilla",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Framework-free file intake, validation, and drag/drop primitives for mediadrop.",
+	"description": "Thin plain-JS DOM binding over @mediadrop/core — drag/drop + file input wiring.",
 	"license": "MIT",
 	"type": "module",
 	"main": "./dist/index.mjs",
@@ -23,10 +23,14 @@
 		"size": "node ../../scripts/check-bundle-size.mjs"
 	},
 	"sizeLimit": {
-		"dist/index.mjs": "7 KB"
+		"dist/index.mjs": "2 KB"
+	},
+	"dependencies": {
+		"@mediadrop/core": "workspace:*"
 	},
 	"devDependencies": {
 		"@mediadrop/tsconfig": "workspace:*",
+		"jsdom": "^29.1.1",
 		"typescript": "catalog:",
 		"vitest": "^4.1.9",
 		"tsdown": "^0.22.3"

@@ -19,6 +19,7 @@
 		"lint": "biome check .",
 		"format": "biome format --write .",
 		"typecheck": "turbo run typecheck",
+		"size": "turbo run size",
 		"changeset": "changeset"
 	},
 	"devDependencies": {
