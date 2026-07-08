@@ -1,12 +1,50 @@
 import type { UploadTransport } from "@mediadrop/core";
 import { browserUploadSessionStore } from "@mediadrop/core";
 import { useMediaDrop } from "@mediadrop/react";
+import type {
+	S3MultipartCompleteResult,
+	S3MultipartCreateResult,
+	S3MultipartPartUrlResult,
+	S3PresignedUpload,
+} from "@mediadrop/s3";
 import { s3MultipartUpload, s3Upload } from "@mediadrop/s3";
 import { tusUpload } from "@mediadrop/tus";
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
 import { useMemo, useState } from "react";
 
 const MAX_SIZE = 5 * 1024 * 1024;
+
+// A real backend — see ../../test-server (local-only, git-ignored, not
+// part of the workspace). Run it separately (`npm start` in test-server/)
+// alongside this app; the S3 tabs need AWS_* configured in its .env, xhr
+// and tus work out of the box.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+	const res = await fetch(`${API_BASE}${path}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	if (!res.ok) {
+		const detail = await res.text();
+		throw new Error(`${path} failed with ${res.status}: ${detail}`);
+	}
+	return res.json();
+}
+
+/** For endpoints (like abort) that respond 204 with no body. */
+async function post(path: string, body: unknown): Promise<void> {
+	const res = await fetch(`${API_BASE}${path}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	if (!res.ok) {
+		const detail = await res.text();
+		throw new Error(`${path} failed with ${res.status}: ${detail}`);
+	}
+}
 
 type TransportKey = "xhr" | "s3-simple" | "s3-multipart" | "tus";
 
@@ -16,23 +54,28 @@ type TransportDef = {
 	create: () => UploadTransport;
 };
 
-// Every transport below talks to a real local dev-server endpoint (see
-// vite.config.ts) — none of this is a production backend, but the
-// requests/responses are real, so the transport code runs unmodified.
 const TRANSPORTS: Record<TransportKey, TransportDef> = {
 	xhr: {
 		label: "XHR (generic endpoint)",
 		description:
-			"@mediadrop/xhr-upload — one request, the whole file. The dev endpoint fails ~1 in 4 uploads on purpose, so you can see retry/error states.",
-		create: () => createXhrUploadTransport({ endpoint: "/api/upload" }),
+			"@mediadrop/xhr-upload — one request, the whole file, written to disk by test-server.",
+		create: () =>
+			createXhrUploadTransport({
+				endpoint: `${API_BASE}/api/upload`,
+				formData: false,
+			}),
 	},
 	"s3-simple": {
 		label: "S3 (single request)",
 		description:
-			"@mediadrop/s3's s3Upload — one presigned PUT request, for files small enough that splitting into parts isn't worth it.",
+			"@mediadrop/s3's s3Upload — one presigned PUT request, signed by test-server against your real S3 bucket.",
 		create: () =>
 			s3Upload({
-				getUploadUrl: async () => ({ url: "/api/s3-simple", method: "PUT" }),
+				getUploadUrl: ({ file }) =>
+					postJson<S3PresignedUpload>("/api/s3/presign", {
+						filename: file.name,
+						contentType: file.type,
+					}),
 			}),
 	},
 	"s3-multipart": {
@@ -43,32 +86,37 @@ const TRANSPORTS: Record<TransportKey, TransportDef> = {
 			s3MultipartUpload({
 				partSize: 5 * 1024 * 1024,
 				sessionStore: browserUploadSessionStore(),
-				createMultipartUpload: async ({ file }) => {
-					const res = await fetch("/api/s3-multipart/create", {
-						method: "POST",
-						body: JSON.stringify({ name: file.name }),
-					});
-					return res.json();
-				},
-				getPartUploadUrl: async ({ key, uploadId, partNumber }) => ({
-					url: `/api/s3-multipart/part?uploadId=${uploadId}&partNumber=${partNumber}&key=${encodeURIComponent(key)}`,
-				}),
-				completeMultipartUpload: async ({ key, uploadId, parts }) => {
-					const res = await fetch("/api/s3-multipart/complete", {
-						method: "POST",
-						body: JSON.stringify({ uploadId, key, parts }),
-					});
-					return res.json();
-				},
+				createMultipartUpload: ({ file }) =>
+					postJson<S3MultipartCreateResult>("/api/s3/multipart/create", {
+						filename: file.name,
+						contentType: file.type,
+					}),
+				getPartUploadUrl: ({ key, uploadId, partNumber }) =>
+					postJson<S3MultipartPartUrlResult>("/api/s3/multipart/part", {
+						key,
+						uploadId,
+						partNumber,
+					}),
+				completeMultipartUpload: ({ key, uploadId, parts }) =>
+					postJson<S3MultipartCompleteResult>("/api/s3/multipart/complete", {
+						key,
+						uploadId,
+						parts: parts.map((part) => ({
+							partNumber: part.partNumber,
+							etag: part.etag,
+						})),
+					}),
+				abortMultipartUpload: ({ key, uploadId }) =>
+					post("/api/s3/multipart/abort", { key, uploadId }),
 			}),
 	},
 	tus: {
 		label: "tus (resumable chunks)",
 		description:
-			"@mediadrop/tus's tusUpload — POSTs to create, then PATCHes chunks, against a minimal local tus server (vite.config.ts). Resumes from the server-reported offset if you reselect the same file after a reload.",
+			"@mediadrop/tus's tusUpload — POSTs to create, then PATCHes chunks, against test-server's real @tus/server instance. Resumes from the server-reported offset if you reselect the same file after a reload.",
 		create: () =>
 			tusUpload({
-				endpoint: "/api/tus",
+				endpoint: `${API_BASE}/api/tus`,
 				sessionStore: browserUploadSessionStore(),
 			}),
 	},

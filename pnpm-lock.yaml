@@ -278,66 +278,6 @@ importers:
         specifier: ^8.1.3
         version: 8.1.3(@types/node@24.13.2)
 
-  examples/transports:
-    dependencies:
-      '@mediadrop/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@mediadrop/s3':
-        specifier: workspace:*
-        version: link:../../packages/s3
-      '@mediadrop/tus':
-        specifier: workspace:*
-        version: link:../../packages/tus
-    devDependencies:
-      '@mediadrop/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vite:
-        specifier: ^8.1.3
-        version: 8.1.3(@types/node@24.13.2)
-
-  examples/vanilla-basic:
-    dependencies:
-      '@mediadrop/vanilla':
-        specifier: workspace:*
-        version: link:../../packages/vanilla
-      '@mediadrop/xhr-upload':
-        specifier: workspace:*
-        version: link:../../packages/xhr-upload
-    devDependencies:
-      '@mediadrop/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vite:
-        specifier: ^8.1.3
-        version: 8.1.3(@types/node@24.13.2)
-
-  examples/widget-basic:
-    dependencies:
-      '@mediadrop/widget':
-        specifier: workspace:*
-        version: link:../../packages/widget
-      '@mediadrop/xhr-upload':
-        specifier: workspace:*
-        version: link:../../packages/xhr-upload
-    devDependencies:
-      '@mediadrop/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vite:
-        specifier: ^8.1.3
-        version: 8.1.3(@types/node@24.13.2)
-
   packages/core:
     devDependencies:
       '@mediadrop/tsconfig':

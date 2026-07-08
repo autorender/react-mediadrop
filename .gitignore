@@ -7,3 +7,10 @@ coverage
 react-dropzone
 uppy
 .claude
+.env
+
+# Local-only real-backend test harness for manually exercising every
+# transport against real infra (S3, a real tus server). Not part of the
+# workspace, never published, may hold real credentials in .env — never
+# committed.
+test-server
