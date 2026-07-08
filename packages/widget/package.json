@@ -1,10 +1,12 @@
 {
-	"name": "@mediadrop/react",
+	"name": "@mediadrop/widget",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Headless React hook (useMediaDrop) for file intake, validation, and drag/drop over @mediadrop/core.",
+	"description": "An optional, lightweight, framework-neutral DOM widget over @mediadrop/core's public API. Headless mediadrop remains the core product — this is a convenience layer, not the foundation.",
 	"license": "MIT",
-	"sideEffects": false,
+	"sideEffects": [
+		"*.css"
+	],
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",
@@ -12,13 +14,14 @@
 		".": {
 			"types": "./dist/index.d.mts",
 			"default": "./dist/index.mjs"
-		}
+		},
+		"./style.css": "./dist/style.css"
 	},
 	"files": [
 		"dist"
 	],
 	"scripts": {
-		"build": "tsdown",
+		"build": "tsdown && cp src/style.css dist/style.css",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"size": "node ../../scripts/check-bundle-size.mjs"
@@ -26,20 +29,12 @@
 	"sizeLimit": {
 		"dist/index.mjs": "4 KB"
 	},
-	"peerDependencies": {
-		"react": ">=18"
-	},
 	"dependencies": {
 		"@mediadrop/core": "workspace:*"
 	},
 	"devDependencies": {
 		"@mediadrop/tsconfig": "workspace:*",
-		"@testing-library/react": "^16.3.2",
-		"@types/react": "^19.2.7",
-		"@types/react-dom": "^19.2.3",
 		"jsdom": "^29.1.1",
-		"react": "^19.2.0",
-		"react-dom": "^19.2.0",
 		"typescript": "catalog:",
 		"vitest": "^4.1.9",
 		"tsdown": "^0.22.3"

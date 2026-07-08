@@ -1,6 +1,5 @@
 export type { DropResult, DropzoneController } from "./dropzone.js";
 export { createDropzoneController } from "./dropzone.js";
-export { createError } from "./errors.js";
 export { createFileItem } from "./file.js";
 export { createFileFingerprint } from "./fingerprint.js";
 export { createId } from "./id.js";

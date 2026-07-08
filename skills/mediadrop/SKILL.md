@@ -1,9 +1,9 @@
 ---
 name: mediadrop
-description: Integrate mediadrop (Phase 1 + Phase 2 + Phase 3) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel, S3, tus) for React or plain JS. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on @mediadrop/core, @mediadrop/vanilla, @mediadrop/react, @mediadrop/xhr-upload, @mediadrop/s3, or @mediadrop/tus.
+description: Integrate mediadrop (Phase 1 + Phase 2 + Phase 3 + Phase 4) — file intake, drag/drop, validation, upload (queue/concurrency/retry/cancel, S3, tus), and an optional prebuilt widget, for React, plain JS, or no framework at all. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on @mediadrop/core, @mediadrop/vanilla, @mediadrop/react, @mediadrop/widget, @mediadrop/xhr-upload, @mediadrop/s3, or @mediadrop/tus.
 ---
 
-# mediadrop — Phase 1 (file intake) + Phase 2 (upload) + Phase 3 (S3/tus)
+# mediadrop — Phase 1 (file intake) + Phase 2 (upload) + Phase 3 (S3/tus) + Phase 4 (widget)
 
 mediadrop is a lightweight, headless-first, transport-agnostic file uploader.
 **Phase 1** covers file selection, drag/drop, validation, a vanilla JS
@@ -14,13 +14,22 @@ transports on the *same* contract — `@mediadrop/s3` (presigned + multipart,
 with resumable metadata) and `@mediadrop/tus` (a small tus client) — plus
 the shared utilities (`withRetry`'s `shouldRetry`/`jitter`, session stores,
 file fingerprinting) that make resumability possible without duplicating
-retry logic per transport. Upload is **opt-in** — pass `transport` to get
-it; without it, nothing about Phase 1's behavior changes at all.
+retry logic per transport. **Phase 4** adds `@mediadrop/widget`, an
+*optional* prebuilt, themeable DOM widget over the exact same public
+`@mediadrop/core` API the other bindings use — headless-first still
+holds; this is just the one binding that also ships markup/CSS, and only
+if you choose to install it. Upload is **opt-in** — pass `transport` to
+get it; without it, nothing about Phase 1's behavior changes at all.
 
 Read [references/scope.md](references/scope.md) first if you are unsure
 whether a feature exists yet — it is the authoritative "what's real" list.
 [references/upload.md](references/upload.md) is the authoritative doc for
-everything upload-related, including S3/tus.
+the shared upload contract; [references/xhr-upload.md](references/xhr-upload.md),
+[references/s3.md](references/s3.md), and [references/tus.md](references/tus.md)
+cover each transport's specifics; [references/widget.md](references/widget.md)
+covers the optional prebuilt widget; and
+[references/troubleshooting.md](references/troubleshooting.md) is a
+symptom-first index of common integration mistakes.
 
 ## Which package to use
 
@@ -28,6 +37,7 @@ everything upload-related, including S3/tus.
 |---|---|
 | React app | `@mediadrop/react` (`useMediaDrop`) |
 | Plain JS / any other framework | `@mediadrop/vanilla` (`createMediaDrop`) |
+| Want a prebuilt dropzone + file list, no custom UI needed | `@mediadrop/widget` (`createMediaDropWidget`) — optional, see [references/widget.md](references/widget.md) |
 | Upload to a generic REST-ish endpoint | `@mediadrop/xhr-upload` (`createXhrUploadTransport`) |
 | Upload to S3 (presigned single request) | `@mediadrop/s3` (`s3Upload`) |
 | Upload large files to S3 (multipart, resumable) | `@mediadrop/s3` (`s3MultipartUpload`) |
@@ -68,8 +78,11 @@ model, store, and drag-state semantics in detail.
 
 - React: [references/react.md](references/react.md)
 - Vanilla JS: [references/vanilla.md](references/vanilla.md)
-- Validation/restrictions (shared by both): [references/validation.md](references/validation.md)
+- Optional prebuilt widget: [references/widget.md](references/widget.md)
+- Validation/restrictions (shared by all bindings): [references/validation.md](references/validation.md)
 - Upload (queue/concurrency/retry/cancel, transport contract): [references/upload.md](references/upload.md)
+- Transports: [references/xhr-upload.md](references/xhr-upload.md), [references/s3.md](references/s3.md), [references/tus.md](references/tus.md)
+- Common mistakes: [references/troubleshooting.md](references/troubleshooting.md)
 
 ## Hard rules for agents integrating mediadrop
 
@@ -97,12 +110,12 @@ model, store, and drag-state semantics in detail.
   expiration, concatenation, deferred-length, termination —
   `@mediadrop/tus` implements none of these), pause/resume, persistence
   of file *bytes* across a page reload, remote-provider import
-  (Google Drive/Dropbox-style pickers), OAuth, or a prebuilt
-  dashboard/progress widget. None of that is built — see
-  [references/upload.md](references/upload.md)'s "not implemented" list
-  before assuming otherwise. "Resumable" in this codebase always means
-  *metadata* persistence (upload IDs, offsets, completed parts) plus the
-  user reselecting the same file — never magic byte-level persistence.
+  (Google Drive/Dropbox-style pickers), OAuth, image transforms, or any
+  Autorender-specific adapter. None of that is built — see
+  [references/scope.md](references/scope.md) before assuming otherwise.
+  "Resumable" in this codebase always means *metadata* persistence
+  (upload IDs, offsets, completed parts) plus the user reselecting the
+  same file — never magic byte-level persistence.
 - **Retry/concurrency logic lives in one place**: `@mediadrop/core`'s
   `withRetry` (file-level, via the upload queue) and the same `withRetry`
   called again for part/chunk-level retry inside `@mediadrop/s3`/
@@ -115,10 +128,19 @@ model, store, and drag-state semantics in detail.
   declarative rules; use `validator` for anything project-specific
   (checksum, filename policy, business rules). Don't hand-roll validation
   that duplicates what `restrictions` already does.
-- Keep UI headless and developer-owned: `getRootProps`/`getInputProps`
-  (React) or the DOM elements you pass in (vanilla) return plain
-  props/hooks — style and markup are the integrator's responsibility.
-  There is no prebuilt widget to reach for.
+- Keep UI headless and developer-owned by default: `getRootProps`/
+  `getInputProps` (React) or the DOM elements you pass in (vanilla)
+  return plain props/hooks — style and markup are the integrator's
+  responsibility. `@mediadrop/widget` (see
+  [references/widget.md](references/widget.md)) is the one *optional*
+  exception — only reach for it when the task explicitly wants a
+  ready-made dropzone/file-list UI instead of hand-rolled markup, and
+  never assume it's installed just because a project uses mediadrop.
+- `@mediadrop/widget` is a rendering layer only — it must not gain
+  upload/retry/validation logic of its own, and it must not reach into
+  `@mediadrop/core` internals. If a widget-related task needs new
+  behavior beyond rendering, that behavior belongs in `@mediadrop/core`
+  (shared by every binding), not hidden inside the widget package.
 - `isDragAccept`/`isDragReject` are best-effort during an active drag
   (browsers withhold the file name until drop, so extension-based `accept`
   rules can't be evaluated mid-drag; the custom `validator` participates

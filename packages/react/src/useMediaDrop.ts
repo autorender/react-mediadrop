@@ -190,6 +190,18 @@ export function useMediaDrop(
 				});
 	}
 	const engine = engineRef.current;
+
+	// Cancels every queued/in-flight upload on unmount, the same guarantee
+	// `@mediadrop/vanilla`'s and `@mediadrop/widget`'s `destroy()` make —
+	// without this, an upload started right before a route change/unmount
+	// would keep running in the background with nothing left able to
+	// reference or cancel it.
+	useEffect(() => {
+		return () => {
+			if ("cancelAllUploads" in engine) engine.cancelAllUploads();
+		};
+	}, [engine]);
+
 	const dropzone = useMemo(() => createDropzoneController(), []);
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [dragState, setDragState] = useState<DragState>(IDLE_DRAG_STATE);

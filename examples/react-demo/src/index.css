@@ -20,6 +20,29 @@ body {
 	font-size: 0.9rem;
 }
 
+.transport-picker {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 1.25rem 0 0.75rem;
+}
+
+.transport-tab {
+	font-size: 0.85rem;
+}
+
+.transport-tab--active {
+	border-color: #6ea8fe;
+	background: #16161a;
+	color: #6ea8fe;
+}
+
+.transport-description {
+	color: #9a9aa2;
+	font-size: 0.85rem;
+	margin: 0 0 1.5rem;
+}
+
 .dropzone {
 	border: 2px dashed #4b4b52;
 	border-radius: 12px;

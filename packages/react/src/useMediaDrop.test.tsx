@@ -430,6 +430,40 @@ test("cancelUpload aborts an in-flight upload", async () => {
 	expect(apiRef.current?.files[0]?.uploadStatus).toBe("canceled");
 });
 
+test("unmounting cancels every in-flight upload instead of leaking it", () => {
+	let abortCount = 0;
+	const transport: UploadTransport = {
+		upload(_file, { signal }) {
+			return new Promise((_resolve, reject) => {
+				signal.addEventListener("abort", () => {
+					abortCount += 1;
+					reject(new Error("aborted"));
+				});
+			});
+		},
+	};
+	const apiRef: { current: UseMediaDropUploadResult | null } = {
+		current: null,
+	};
+	const { unmount } = render(
+		<UploadHarness apiRef={apiRef} options={{ transport, concurrency: 2 }} />,
+	);
+
+	const input = screen.getByTestId("input") as HTMLInputElement;
+	setInputFiles(input, [
+		makeFile("a.png", "image/png"),
+		makeFile("b.png", "image/png"),
+	]);
+	fireEvent.change(input);
+	act(() => {
+		apiRef.current?.uploadAll();
+	});
+
+	unmount();
+
+	expect(abortCount).toBe(2);
+});
+
 test("retryUpload re-enqueues a failed upload", async () => {
 	const { transport, reject, resolve } = createDeferredTransport();
 	const apiRef: { current: UseMediaDropUploadResult | null } = {

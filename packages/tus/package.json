@@ -4,6 +4,7 @@
 	"version": "0.0.0",
 	"description": "A small, dependency-free tus (resumable upload protocol) client adapter for @mediadrop/core. Core protocol flow only — see the README for unsupported extensions.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",
@@ -25,16 +26,10 @@
 	"sizeLimit": {
 		"dist/index.mjs": "3 KB"
 	},
-	"peerDependencies": {
+	"dependencies": {
 		"@mediadrop/core": "workspace:*"
 	},
-	"peerDependenciesMeta": {
-		"@mediadrop/core": {
-			"optional": true
-		}
-	},
 	"devDependencies": {
-		"@mediadrop/core": "workspace:*",
 		"@mediadrop/tsconfig": "workspace:*",
 		"jsdom": "^29.1.1",
 		"typescript": "catalog:",

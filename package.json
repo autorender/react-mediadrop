@@ -2,7 +2,7 @@
 	"name": "mediadrop-internal",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Battle-test workspace for mediadrop. Not the public repo — see docs/uppy-oss-research.md §22.",
+	"description": "Battle-test workspace for mediadrop. Not the public repo — see README.md.",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@11.10.0",

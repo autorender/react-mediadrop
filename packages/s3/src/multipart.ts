@@ -15,6 +15,7 @@ import type {
 	S3MultipartPart,
 	S3MultipartPartUrlContext,
 	S3MultipartPartUrlResult,
+	S3MultipartResult,
 	S3MultipartSession,
 } from "./types.js";
 
@@ -387,14 +388,13 @@ export function s3MultipartUpload(
 
 				if (sessionStore) await sessionStore.remove(sessionKey);
 
-				return {
-					response: {
-						key: result.key ?? activeKey,
-						location: result.location,
-						uploadId: activeUploadId,
-						parts: sortedParts,
-					},
+				const response: S3MultipartResult = {
+					key: result.key ?? activeKey,
+					location: result.location,
+					uploadId: activeUploadId,
+					parts: sortedParts,
 				};
+				return { response };
 			} catch (error) {
 				if (signal.aborted) {
 					if (abortOnCancel && abortMultipartUpload && uploadId && key) {

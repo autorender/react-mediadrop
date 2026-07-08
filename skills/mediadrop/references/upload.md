@@ -10,9 +10,11 @@ make resumability possible without every transport reinventing retry:
 `withRetry`'s `shouldRetry`/`jitter`, session stores, and file
 fingerprinting.
 
-It still does **not** add pause/resume, the full tus extension suite, a
-remote-provider/OAuth story, or a widget — see "What's still not
-implemented" below before assuming any of that exists.
+It still does **not** add pause/resume, the full tus extension suite, or
+a remote-provider/OAuth story — see [scope.md](scope.md) before assuming
+any of that exists. (Phase 4 does add an optional widget —
+[widget.md](widget.md) — but it's a rendering layer over this same queue,
+not a change to any of the above.)
 
 ## The mental model
 
@@ -217,105 +219,30 @@ say that the default fingerprint doesn't provide that — point at the
 `fingerprint` override rather than quietly hashing file contents inside
 core.
 
-## `@mediadrop/xhr-upload`
+## Transport-specific guides
 
-The reference transport, using `XMLHttpRequest` (not `fetch`, because
-`fetch` still has no cross-browser upload-progress API):
+The three sections that used to live here now have their own docs, since
+each transport has its own backend contract and gotchas:
 
-```ts
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+- [xhr-upload.md](xhr-upload.md) — the reference transport, generic REST-ish endpoints
+- [s3.md](s3.md) — presigned single-request and multipart, resumable metadata
+- [tus.md](tus.md) — the tus protocol client, resumable metadata
 
-const transport = createXhrUploadTransport({
-	endpoint: "/api/upload", // or (file) => `/api/upload/${file.id}` for a per-file URL
-	fields: { folder: "avatars" }, // extra multipart fields
-});
-```
+All three plug into the exact same `transport` option and the same queue
+described above — nothing in this doc changes depending on which one you
+pick.
 
-See [the package README](../../../packages/xhr-upload/README.md) for the
-full option list. It is zero-runtime-dependency and does not retry or
-control concurrency itself — see above.
+## Using any transport from `@mediadrop/widget`
 
-## `@mediadrop/s3`
-
-Two transports, no AWS SDK, no signing in this package — your backend
-signs URLs, this package only ever talks to those URLs:
-
-- **`s3Upload({ getUploadUrl })`** — one presigned PUT or POST request,
-  for files small enough for a single request. Same shape as
-  `@mediadrop/xhr-upload`, just S3's two presigned-request styles.
-- **`s3MultipartUpload({ createMultipartUpload, getPartUploadUrl, completeMultipartUpload, abortMultipartUpload?, ... })`**
-  — splits a file into parts (enforcing S3's real constraints: parts ≥ 5
-  MiB except the last, ≤ 10,000 parts total), uploads them with bounded
-  concurrency, aggregates progress across parts without double-counting,
-  retries a failed part via `withRetry`, and — with `sessionStore` — can
-  skip already-uploaded parts on a subsequent attempt (including after a
-  page reload, if the same file is reselected).
-
-```ts
-import { s3MultipartUpload } from "@mediadrop/s3";
-import { browserUploadSessionStore } from "@mediadrop/core";
-
-const transport = s3MultipartUpload({
-	createMultipartUpload: async ({ file }) => fetchFromYourBackend(file),
-	getPartUploadUrl: async ({ key, uploadId, partNumber }) => fetchFromYourBackend(...),
-	completeMultipartUpload: async ({ key, uploadId, parts }) => fetchFromYourBackend(...),
-	abortMultipartUpload: async ({ key, uploadId }) => fetchFromYourBackend(...),
-	sessionStore: browserUploadSessionStore(),
-});
-```
-
-Every callback is a request to **your own backend** — never to AWS
-directly, and never with an AWS credential in the browser. See the
-[package README](../../../packages/s3/README.md) for the exact backend
-contract each callback implies, and the CORS `ExposeHeaders: ["ETag"]`
-requirement multipart needs to read each part's ETag.
-
-## `@mediadrop/tus`
-
-A small, dependency-free tus client — the core create/`PATCH`/resume
-flow only, **not** the full tus extension suite:
-
-```ts
-import { tusUpload } from "@mediadrop/tus";
-
-const transport = tusUpload({
-	endpoint: "/files", // a real tus-compatible server's creation endpoint
-	sessionStore: browserUploadSessionStore(),
-});
-```
-
-Requires an actual tus server — don't reach for this against a generic
-REST endpoint (use `@mediadrop/xhr-upload` for that). Resume uses a fresh
-`HEAD` request for the authoritative offset, never a stale locally
-persisted one. Explicitly unsupported: the checksum, creation-with-upload,
-expiration, concatenation, deferred-length, and termination extensions —
-see the [package README](../../../packages/tus/README.md) for what each
-of those would have added, and don't imply they work.
+[widget.md](widget.md) covers the prebuilt DOM widget (Phase 4). It takes
+`transport` exactly like `useMediaDrop`/vanilla's `createMediaDrop` do —
+same gating (`uploadFile`/`uploadAll`/etc. only exist when `transport` is
+passed), same queue, no widget-specific upload logic.
 
 ## What's still not implemented — do not build around it, do not fake it
 
-- **Pause/resume.** Canceling an upload ends it and discards its resume
-  session (both `@mediadrop/s3` and `@mediadrop/tus`) — there is no
-  "pause and continue later" distinct from cancel. `retryUpload`/
-  `uploadFile` on a canceled file starts over via a *new* upload/session,
-  not a resumed one.
-- **Persistence of file bytes.** Session stores persist metadata (upload
-  IDs, offsets, completed parts) — never the `File`'s contents. Resuming
-  after a page reload always requires the user to reselect the exact same
-  file; nothing here can resume without that. Don't say "fully resumable"
-  without this caveat attached.
-- **The full tus extension suite.** `@mediadrop/tus` implements tus's
-  core flow only — see that package's README for the specific extensions
-  left out.
-- **Remote-provider import** (Google Drive/Dropbox-style pickers, a
-  Companion-equivalent server) and **OAuth** of any kind — still entirely
-  out of scope, same as Phase 1 and 2.
-- **A prebuilt progress UI or widget/dashboard.** `progress`/
-  `uploadStatus` are data on `MediaDropFile` — there is no progress bar,
-  toast, or dashboard component to import, for any transport. You still
-  own every bit of markup.
-- **Image compression/resize/AI transform hooks, and any
-  Autorender-specific adapter.** Not part of this phase either.
-
-If a task requires any of the above, say so explicitly rather than
-improvising a stand-in inside mediadrop's public API.
+See [scope.md](scope.md) for the authoritative, up-to-date list. In short:
+pause/resume, persistence of file *bytes* across a reload, the full tus
+extension suite, remote-provider import, OAuth, image transforms, and any
+Autorender-specific adapter are all out of scope — don't improvise a
+stand-in for any of them inside mediadrop's public API.

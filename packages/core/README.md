@@ -4,8 +4,9 @@ Framework-free file intake, validation, and drag/drop primitives for
 mediadrop. **Zero runtime dependencies** — this package never touches
 `window`/`document`; all browser wiring lives in the bindings.
 
-Most apps should use [`@mediadrop/react`](../react/README.md) or
-[`@mediadrop/vanilla`](../vanilla/README.md) instead — import this package
+Most apps should use [`@mediadrop/react`](../react/README.md),
+[`@mediadrop/vanilla`](../vanilla/README.md), or the prebuilt
+[`@mediadrop/widget`](../widget/README.md) instead — import this package
 directly only when building a new framework binding or an advanced
 integration.
 

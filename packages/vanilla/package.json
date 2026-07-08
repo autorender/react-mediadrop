@@ -4,6 +4,7 @@
 	"version": "0.0.0",
 	"description": "Thin plain-JS DOM binding over @mediadrop/core — drag/drop + file input wiring.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",

@@ -4,6 +4,7 @@
 	"version": "0.0.0",
 	"description": "Framework-free file intake, validation, drag/drop, and upload-queue/retry/session primitives for mediadrop.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",

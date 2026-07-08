@@ -5,7 +5,9 @@ that sends a file with `XMLHttpRequest`. **Zero runtime dependencies** —
 `@mediadrop/core` is a types-only peer dependency, erased at build time.
 
 XHR, not `fetch`, is deliberate: `fetch` still has no cross-browser
-upload-progress API, while `XMLHttpRequest.upload.onprogress` does.
+upload-progress API, while `XMLHttpRequest.upload.onprogress` does. Works
+as `transport` in `@mediadrop/react`, `@mediadrop/vanilla`, and
+[`@mediadrop/widget`](../widget/README.md) identically.
 
 ## Install
 

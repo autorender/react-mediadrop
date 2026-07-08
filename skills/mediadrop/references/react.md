@@ -230,6 +230,10 @@ override built-in behavior — don't reach into internals to disable it.
   say so explicitly rather than assuming the hook already does it.
 - Multiple `useMediaDrop()` calls on the same page are independent and safe
   — see [core-concepts.md](core-concepts.md#multiple-dropzones-on-one-page).
-- There's no dashboard/progress UI to import — every list item, remove
+- This hook ships no dashboard/progress UI — every list item, remove
   button, progress bar, and status message in the examples above is yours
   to build. `progress`/`uploadStatus` on `MediaDropFile` are data, not UI.
+  (`@mediadrop/widget` is a separate, optional, framework-agnostic
+  package with a prebuilt UI, if that's what the task actually wants —
+  see [widget.md](widget.md). It isn't a React component and doesn't
+  change anything about this hook.)

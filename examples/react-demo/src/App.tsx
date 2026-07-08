@@ -1,12 +1,78 @@
+import type { UploadTransport } from "@mediadrop/core";
+import { browserUploadSessionStore } from "@mediadrop/core";
 import { useMediaDrop } from "@mediadrop/react";
+import { s3MultipartUpload, s3Upload } from "@mediadrop/s3";
+import { tusUpload } from "@mediadrop/tus";
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+import { useMemo, useState } from "react";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
-// The dev server (see vite.config.ts) serves this locally — it drains the
-// request and fails ~1 in 4 uploads on purpose, so this demo's retry/error
-// UI has something real to show. It is not a real backend.
-const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
+type TransportKey = "xhr" | "s3-simple" | "s3-multipart" | "tus";
+
+type TransportDef = {
+	label: string;
+	description: string;
+	create: () => UploadTransport;
+};
+
+// Every transport below talks to a real local dev-server endpoint (see
+// vite.config.ts) — none of this is a production backend, but the
+// requests/responses are real, so the transport code runs unmodified.
+const TRANSPORTS: Record<TransportKey, TransportDef> = {
+	xhr: {
+		label: "XHR (generic endpoint)",
+		description:
+			"@mediadrop/xhr-upload — one request, the whole file. The dev endpoint fails ~1 in 4 uploads on purpose, so you can see retry/error states.",
+		create: () => createXhrUploadTransport({ endpoint: "/api/upload" }),
+	},
+	"s3-simple": {
+		label: "S3 (single request)",
+		description:
+			"@mediadrop/s3's s3Upload — one presigned PUT request, for files small enough that splitting into parts isn't worth it.",
+		create: () =>
+			s3Upload({
+				getUploadUrl: async () => ({ url: "/api/s3-simple", method: "PUT" }),
+			}),
+	},
+	"s3-multipart": {
+		label: "S3 (multipart, resumable)",
+		description:
+			"@mediadrop/s3's s3MultipartUpload — splits the file into parts, uploads them with bounded concurrency, and persists enough metadata (via browserUploadSessionStore) to skip already-uploaded parts if you reselect the same file after a reload.",
+		create: () =>
+			s3MultipartUpload({
+				partSize: 5 * 1024 * 1024,
+				sessionStore: browserUploadSessionStore(),
+				createMultipartUpload: async ({ file }) => {
+					const res = await fetch("/api/s3-multipart/create", {
+						method: "POST",
+						body: JSON.stringify({ name: file.name }),
+					});
+					return res.json();
+				},
+				getPartUploadUrl: async ({ key, uploadId, partNumber }) => ({
+					url: `/api/s3-multipart/part?uploadId=${uploadId}&partNumber=${partNumber}&key=${encodeURIComponent(key)}`,
+				}),
+				completeMultipartUpload: async ({ key, uploadId, parts }) => {
+					const res = await fetch("/api/s3-multipart/complete", {
+						method: "POST",
+						body: JSON.stringify({ uploadId, key, parts }),
+					});
+					return res.json();
+				},
+			}),
+	},
+	tus: {
+		label: "tus (resumable chunks)",
+		description:
+			"@mediadrop/tus's tusUpload — POSTs to create, then PATCHes chunks, against a minimal local tus server (vite.config.ts). Resumes from the server-reported offset if you reselect the same file after a reload.",
+		create: () =>
+			tusUpload({
+				endpoint: "/api/tus",
+				sessionStore: browserUploadSessionStore(),
+			}),
+	},
+};
 
 function formatBytes(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
@@ -14,7 +80,12 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function App() {
+function Uploader({ transportKey }: { transportKey: TransportKey }) {
+	const transport = useMemo(
+		() => TRANSPORTS[transportKey].create(),
+		[transportKey],
+	);
+
 	const {
 		getRootProps,
 		getInputProps,
@@ -50,16 +121,7 @@ export function App() {
 				: "idle";
 
 	return (
-		<main className="page">
-			<h1>@mediadrop/react demo</h1>
-			<p className="subtitle">
-				Manual test bed for Phase 1 (intake/validation/drag-drop) and Phase 2
-				(upload) — accepts PNG/JPEG/WebP, up to 5 files, 5 MB each. Uploads go
-				to a local dev-only endpoint (see <code>vite.config.ts</code>) that
-				fails ~1 in 4 requests on purpose, so you can see retry/cancel/error
-				states without leaving this page.
-			</p>
-
+		<>
 			<div
 				{...getRootProps()}
 				className={`dropzone dropzone--${dropzoneState}`}
@@ -178,6 +240,39 @@ export function App() {
 					);
 				})}
 			</ul>
+		</>
+	);
+}
+
+export function App() {
+	const [selected, setSelected] = useState<TransportKey>("xhr");
+
+	return (
+		<main className="page">
+			<h1>@mediadrop/react demo</h1>
+			<p className="subtitle">
+				One React app, every transport mediadrop ships — switch below to
+				re-mount the dropzone against a different <code>UploadTransport</code>.
+				Accepts PNG/JPEG/WebP, up to 5 files, 5 MB each.
+			</p>
+
+			<div className="transport-picker">
+				{(Object.keys(TRANSPORTS) as TransportKey[]).map((key) => (
+					<button
+						key={key}
+						type="button"
+						className={`transport-tab${selected === key ? " transport-tab--active" : ""}`}
+						onClick={() => setSelected(key)}
+					>
+						{TRANSPORTS[key].label}
+					</button>
+				))}
+			</div>
+			<p className="transport-description">
+				{TRANSPORTS[selected].description}
+			</p>
+
+			<Uploader key={selected} transportKey={selected} />
 		</main>
 	);
 }

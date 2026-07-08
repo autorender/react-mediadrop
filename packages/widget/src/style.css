@@ -1,0 +1,191 @@
+/**
+ * @mediadrop/widget's default theme. Every visual value is a CSS variable
+ * so you can override it (see the README) without forking this file —
+ * scoped to `.md-widget` and its subtree only, no global resets, no
+ * framework runtime.
+ */
+
+.md-widget {
+	--md-color-bg: #ffffff;
+	--md-color-surface: #f7f7f8;
+	--md-color-border: #d8d8dc;
+	--md-color-text: #1a1a1e;
+	--md-color-muted: #6b6b74;
+	--md-color-primary: #2f6fed;
+	--md-color-primary-text: #ffffff;
+	--md-color-danger: #d1373f;
+	--md-radius: 8px;
+	--md-font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+	--md-spacing: 0.75rem;
+
+	font-family: var(--md-font-family);
+	color: var(--md-color-text);
+	background: var(--md-color-bg);
+	display: flex;
+	flex-direction: column;
+	gap: var(--md-spacing);
+}
+
+@media (prefers-color-scheme: dark) {
+	.md-widget {
+		--md-color-bg: #17181c;
+		--md-color-surface: #1f2025;
+		--md-color-border: #33343a;
+		--md-color-text: #e9e9ec;
+		--md-color-muted: #93939c;
+		--md-color-primary: #6b9bff;
+		--md-color-primary-text: #0b0c10;
+		--md-color-danger: #ff6b70;
+	}
+}
+
+.md-widget.md-widget-disabled {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.md-dropzone {
+	border: 2px dashed var(--md-color-border);
+	border-radius: var(--md-radius);
+	padding: calc(var(--md-spacing) * 2);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: calc(var(--md-spacing) / 2);
+	transition:
+		border-color 120ms ease,
+		background-color 120ms ease;
+}
+
+.md-dropzone-active {
+	background: var(--md-color-surface);
+}
+
+.md-dropzone-accept {
+	border-color: var(--md-color-primary);
+}
+
+.md-dropzone-reject {
+	border-color: var(--md-color-danger);
+}
+
+.md-dropzone-text {
+	margin: 0;
+	color: var(--md-color-muted);
+}
+
+.md-button {
+	font: inherit;
+	font-family: var(--md-font-family);
+	border: 1px solid var(--md-color-border);
+	border-radius: var(--md-radius);
+	background: var(--md-color-surface);
+	color: var(--md-color-text);
+	padding: 0.4rem 0.9rem;
+	cursor: pointer;
+}
+
+.md-button:hover {
+	filter: brightness(0.97);
+}
+
+.md-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.md-button-primary {
+	background: var(--md-color-primary);
+	color: var(--md-color-primary-text);
+	border-color: var(--md-color-primary);
+}
+
+.md-button-danger {
+	background: transparent;
+	color: var(--md-color-danger);
+	border-color: var(--md-color-danger);
+}
+
+.md-actions {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--md-spacing) / 2);
+}
+
+.md-actions:has(.md-progress-total) {
+	justify-content: space-between;
+}
+
+.md-progress-total {
+	flex: 1;
+	margin-right: var(--md-spacing);
+}
+
+.md-empty-state {
+	text-align: center;
+	color: var(--md-color-muted);
+	padding: var(--md-spacing);
+	font-size: 0.9rem;
+}
+
+.md-file-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--md-spacing) / 2);
+}
+
+.md-file-item {
+	border: 1px solid var(--md-color-border);
+	border-radius: var(--md-radius);
+	padding: var(--md-spacing);
+	background: var(--md-color-surface);
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--md-spacing) / 2);
+}
+
+.md-file-item--rejected {
+	border-color: var(--md-color-danger);
+}
+
+.md-file-item-meta {
+	display: flex;
+	align-items: baseline;
+	gap: var(--md-spacing);
+	flex-wrap: wrap;
+	font-size: 0.9rem;
+}
+
+.md-file-name {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.md-file-size,
+.md-file-status,
+.md-upload-status {
+	color: var(--md-color-muted);
+	font-size: 0.85rem;
+}
+
+.md-errors {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.md-error {
+	color: var(--md-color-danger);
+	font-size: 0.85rem;
+}
+
+.md-progress {
+	display: block;
+	width: 100%;
+	height: 6px;
+	accent-color: var(--md-color-primary);
+}

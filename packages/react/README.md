@@ -1,7 +1,9 @@
 # @mediadrop/react
 
 Headless `useMediaDrop` hook over [`@mediadrop/core`](../core/README.md).
-No prebuilt component — you own the markup.
+No prebuilt component — you own the markup. Want a prebuilt UI instead?
+See [`@mediadrop/widget`](../widget/README.md) (framework-agnostic, not
+React-specific).
 
 ## Install
 
