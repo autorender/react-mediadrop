@@ -2,8 +2,9 @@
 	"name": "@mediadrop/react",
 	"private": true,
 	"version": "0.0.0",
-	"description": "React hooks over @mediadrop/core.",
+	"description": "Headless React hook (useMediaDrop) for file intake, validation, and drag/drop over @mediadrop/core.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",
@@ -19,7 +20,11 @@
 	"scripts": {
 		"build": "tsdown",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest run"
+		"test": "vitest run",
+		"size": "node ../../scripts/check-bundle-size.mjs"
+	},
+	"sizeLimit": {
+		"dist/index.mjs": "4 KB"
 	},
 	"peerDependencies": {
 		"react": ">=18"
@@ -29,8 +34,12 @@
 	},
 	"devDependencies": {
 		"@mediadrop/tsconfig": "workspace:*",
+		"@testing-library/react": "^16.3.2",
 		"@types/react": "^19.2.7",
+		"@types/react-dom": "^19.2.3",
+		"jsdom": "^29.1.1",
 		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
 		"typescript": "catalog:",
 		"vitest": "^4.1.9",
 		"tsdown": "^0.22.3"

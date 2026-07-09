@@ -1,0 +1,39 @@
+{
+	"name": "@mediadrop/s3",
+	"private": true,
+	"version": "0.0.0",
+	"description": "S3 presigned-URL and multipart upload transport adapters for @mediadrop/core. No AWS SDK, no signing server — bring your own presigning backend.",
+	"license": "MIT",
+	"sideEffects": false,
+	"type": "module",
+	"main": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"size": "node ../../scripts/check-bundle-size.mjs"
+	},
+	"sizeLimit": {
+		"dist/index.mjs": "4 KB"
+	},
+	"dependencies": {
+		"@mediadrop/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@mediadrop/tsconfig": "workspace:*",
+		"jsdom": "^29.1.1",
+		"typescript": "catalog:",
+		"vitest": "^4.1.9",
+		"tsdown": "^0.22.3"
+	}
+}

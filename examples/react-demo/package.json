@@ -1,0 +1,32 @@
+{
+	"name": "react-demo",
+	"private": true,
+	"version": "0.0.0",
+	"description": "Manual test bed for @mediadrop/react across every transport (xhr-upload, s3, tus) — not published, not part of the public API.",
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@mediadrop/core": "workspace:*",
+		"@mediadrop/react": "workspace:*",
+		"@mediadrop/s3": "workspace:*",
+		"@mediadrop/tus": "workspace:*",
+		"@mediadrop/xhr-upload": "workspace:*",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
+	},
+	"devDependencies": {
+		"@mediadrop/tsconfig": "workspace:*",
+		"@types/node": "^24.0.0",
+		"@types/react": "^19.2.7",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"typescript": "catalog:",
+		"vite": "^8.1.3"
+	}
+}
