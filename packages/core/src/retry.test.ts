@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { withRetry } from "./retry.js";
+import { createHttpError, defaultShouldRetry, withRetry } from "./retry.js";
 
 test("resolves on the first successful attempt without retrying", async () => {
 	const attempt = vi.fn().mockResolvedValue("ok");
@@ -154,6 +154,65 @@ test("jitter randomizes the backoff delay within the configured fraction", async
 	} finally {
 		Math.random = originalRandom;
 	}
+});
+
+test("createHttpError attaches status to a real Error", () => {
+	const error = createHttpError("failed with 403", 403);
+	expect(error).toBeInstanceOf(Error);
+	expect(error.message).toBe("failed with 403");
+	expect(error.status).toBe(403);
+});
+
+test("defaultShouldRetry: retries errors with no status (network errors, aborts aside)", () => {
+	expect(defaultShouldRetry(new Error("network error"))).toBe(true);
+	expect(defaultShouldRetry("not even an Error instance")).toBe(true);
+});
+
+test("defaultShouldRetry: retries 408, 429, and every 5xx", () => {
+	expect(defaultShouldRetry(createHttpError("timeout", 408))).toBe(true);
+	expect(defaultShouldRetry(createHttpError("rate limited", 429))).toBe(true);
+	expect(defaultShouldRetry(createHttpError("server error", 500))).toBe(true);
+	expect(defaultShouldRetry(createHttpError("bad gateway", 502))).toBe(true);
+});
+
+test("defaultShouldRetry: does not retry other 4xx — they'll fail identically every time", () => {
+	expect(defaultShouldRetry(createHttpError("bad request", 400))).toBe(false);
+	expect(defaultShouldRetry(createHttpError("unauthorized", 401))).toBe(false);
+	expect(defaultShouldRetry(createHttpError("forbidden", 403))).toBe(false);
+	expect(defaultShouldRetry(createHttpError("not found", 404))).toBe(false);
+	expect(defaultShouldRetry(createHttpError("payload too large", 413))).toBe(
+		false,
+	);
+});
+
+test("withRetry's default shouldRetry skips a permanent 4xx instead of burning the retry budget", async () => {
+	const attempt = vi.fn().mockRejectedValue(createHttpError("forbidden", 403));
+
+	await expect(
+		withRetry(
+			attempt,
+			{ retries: 5, retryDelays: [0] },
+			new AbortController().signal,
+		),
+	).rejects.toMatchObject({ status: 403 });
+
+	expect(attempt).toHaveBeenCalledTimes(1);
+});
+
+test("withRetry's default shouldRetry keeps retrying a transient 503 up to the configured count", async () => {
+	const attempt = vi
+		.fn()
+		.mockRejectedValueOnce(createHttpError("unavailable", 503))
+		.mockResolvedValueOnce("ok");
+
+	const result = await withRetry(
+		attempt,
+		{ retries: 2, retryDelays: [0] },
+		new AbortController().signal,
+	);
+
+	expect(result).toBe("ok");
+	expect(attempt).toHaveBeenCalledTimes(2);
 });
 
 test("jitter: 0 (default) uses the exact retryDelays value, unaffected by Math.random", async () => {

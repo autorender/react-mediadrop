@@ -266,6 +266,41 @@ test("retries a failed chunk using the shared retry engine", async () => {
 	await promise;
 });
 
+test("chunkStallTimeoutMs aborts a stalled PATCH and retries it, via the shared retry engine", async () => {
+	vi.useFakeTimers();
+	try {
+		const transport = tusUpload({
+			endpoint: "/files",
+			chunkStallTimeoutMs: 1000,
+			chunkRetries: 1,
+			chunkRetryDelays: [0],
+		});
+		const file = makeFile("a.png", "image/png", 10);
+
+		const promise = transport.upload(file, {
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		});
+		await waitForXhrCount(1);
+		MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+		await waitForXhrCount(2);
+
+		// No progress at all on the first PATCH attempt — it stalls.
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(MockXhr.instances[1]?.aborted).toBe(true);
+
+		// The shared retry engine (not a second timeout loop) retries with a
+		// fresh PATCH.
+		await waitForXhrCount(3);
+		expect(MockXhr.instances[2]?.method).toBe("PATCH");
+		MockXhr.instances[2]?.respond(204, { "Upload-Offset": "10" });
+
+		await promise;
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
 test("a cancel that lands right as the final chunk resolves still rejects, not resolves", async () => {
 	// Regression test: the queue (@mediadrop/core's upload-queue.ts) only ever
 	// reports uploadStatus: "canceled" from a *rejected* transport promise —

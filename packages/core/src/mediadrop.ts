@@ -29,6 +29,13 @@ export type MediaDropUploadOptions = {
 	/** Retries after the first attempt, shared across every file. Default `0`. */
 	retries?: number;
 	retryDelays?: number[];
+	/**
+	 * Grace period (ms) after `cancelUpload`/`cancelAllUploads` aborts a
+	 * transport's `signal` before its concurrency slot is force-freed
+	 * regardless of whether the transport ever settled — a safety net for a
+	 * transport that doesn't honor `signal`. Default `5000`.
+	 */
+	cancelGraceMs?: number;
 };
 
 export type MediaDropUploadInstance = MediaDropInstance & {
@@ -75,6 +82,7 @@ export function createMediaDrop(
 		concurrency,
 		retries,
 		retryDelays,
+		cancelGraceMs,
 	} = options;
 	const store = createStore<MediaDropState>({ files: [] });
 	// Set once (below) when `transport` is configured. `removeFile`/`clearFiles`
@@ -158,7 +166,7 @@ export function createMediaDrop(
 	}
 
 	queue = createUploadQueue(
-		{ transport, concurrency, retries, retryDelays },
+		{ transport, concurrency, retries, retryDelays, cancelGraceMs },
 		{
 			getFile: (id) => store.getState().files.find((item) => item.id === id),
 			updateFile: (id, patch) => {

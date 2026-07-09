@@ -134,6 +134,7 @@ createMediaDrop({
 	concurrency: 3, // max uploads in flight at once. Default 1 (sequential).
 	retries: 2, // retries *after* the first attempt, shared for every file. Default 0.
 	retryDelays: [1000, 2000, 4000], // backoff per retry; last value repeats if exhausted.
+	cancelGraceMs: 5000, // force-free a slot this long after cancel if the transport never settles. Default 5000.
 });
 ```
 
@@ -152,6 +153,14 @@ createMediaDrop({
 
 Retrying stops immediately once a file is canceled — a cancel always wins
 over a pending retry; it does not wait out the backoff delay first.
+
+**`cancelGraceMs` (default `5000`)** is a safety net, not the normal
+path: a well-behaved transport wires up `signal` and rejects promptly
+once aborted, so cancel usually settles almost immediately. If a
+transport doesn't (a bug, or a third-party one you don't control),
+`cancelUpload`/`cancelAllUploads` would otherwise leak that concurrency
+slot forever and starve every file still waiting behind it — this timer
+force-frees the slot after the grace period regardless.
 
 **`removeFile(id)`/`clearFiles()` cancel any in-flight upload for the
 files they remove.** Removing a file that's mid-upload does not leave an

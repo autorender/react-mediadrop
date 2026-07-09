@@ -14,8 +14,8 @@ export {
 	normalizeAccept,
 	validateFile,
 } from "./restrictions.js";
-export type { RetryOptions } from "./retry.js";
-export { withRetry } from "./retry.js";
+export type { HttpError, RetryOptions } from "./retry.js";
+export { createHttpError, defaultShouldRetry, withRetry } from "./retry.js";
 export type {
 	BrowserUploadSessionStoreOptions,
 	MediaDropUploadSessionStore,
@@ -24,6 +24,8 @@ export {
 	browserUploadSessionStore,
 	memoryUploadSessionStore,
 } from "./session-store.js";
+export type { StallWatchdog } from "./stall-watchdog.js";
+export { createStallWatchdog } from "./stall-watchdog.js";
 export type { Listener, Selector, Store, Unsubscribe } from "./store.js";
 export { createStore } from "./store.js";
 export type {

@@ -212,6 +212,120 @@ test("aborts the multipart upload on cancel and never completes it", async () =>
 	expect(completeMultipartUpload).not.toHaveBeenCalled();
 });
 
+test("aborts the multipart upload on a genuine failure too, not just cancel, and clears the session", async () => {
+	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
+	const sessionStore = memoryUploadSessionStore();
+	const removeSpy = vi.spyOn(sessionStore, "remove");
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: vi.fn(),
+		abortMultipartUpload,
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+		partRetries: 0,
+		sessionStore,
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+		{ onProgress: vi.fn(), signal: new AbortController().signal },
+	);
+	await waitForXhrCount(1);
+	// A genuine, non-cancel failure — the part upload itself fails and every
+	// retry (partRetries: 0, so just this one attempt) is exhausted.
+	MockXhr.instances[0]?.respond(403, "Forbidden");
+
+	await expect(promise).rejects.toMatchObject({ status: 403 });
+
+	await vi.waitFor(() => {
+		expect(abortMultipartUpload).toHaveBeenCalledWith({
+			file: expect.anything(),
+			key: "k1",
+			uploadId: "u1",
+		});
+	});
+	// The session pointed at an upload we just told S3 to abort — keeping
+	// it around would make a later retry try to resume against a dead
+	// uploadId, so it must be gone.
+	expect(removeSpy).toHaveBeenCalled();
+});
+
+test("abortOnFailure: false leaves a genuinely failed upload's session and multipart upload alone", async () => {
+	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
+	const sessionStore = memoryUploadSessionStore();
+	const removeSpy = vi.spyOn(sessionStore, "remove");
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: vi.fn(),
+		abortMultipartUpload,
+		abortOnFailure: false,
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+		partRetries: 0,
+		sessionStore,
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+		{ onProgress: vi.fn(), signal: new AbortController().signal },
+	);
+	await waitForXhrCount(1);
+	MockXhr.instances[0]?.respond(403, "Forbidden");
+
+	await expect(promise).rejects.toMatchObject({ status: 403 });
+
+	expect(abortMultipartUpload).not.toHaveBeenCalled();
+	expect(removeSpy).not.toHaveBeenCalled();
+});
+
+test("partStallTimeoutMs aborts a stalled part and retries it, without touching other parts", async () => {
+	vi.useFakeTimers();
+	try {
+		let getPartUrlCalls = 0;
+		const transport = s3MultipartUpload({
+			createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+			getPartUploadUrl: async ({ partNumber }) => {
+				getPartUrlCalls++;
+				return { url: `https://s3.example/part/${partNumber}` };
+			},
+			completeMultipartUpload: async () => ({ location: "done" }),
+			partSize: S3_MIN_PART_SIZE,
+			partConcurrency: 1,
+			partStallTimeoutMs: 1000,
+			partRetries: 1,
+			partRetryDelays: [0],
+		});
+
+		const promise = transport.upload(
+			makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+			{ onProgress: vi.fn(), signal: new AbortController().signal },
+		);
+		// Let createMultipartUpload + getPartUploadUrl's async hops settle
+		// (vi.waitFor auto-advances fake timers as needed).
+		await waitForXhrCount(1);
+
+		// No progress at all on the first attempt — it stalls.
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(MockXhr.instances[0]?.aborted).toBe(true);
+
+		// The shared retry engine (not a second timeout loop) retries the
+		// same part with a fresh XHR, after its own (0ms) retry delay.
+		await waitForXhrCount(2);
+		expect(getPartUrlCalls).toBe(2);
+		MockXhr.instances[1]?.respond(200, "", { ETag: '"etag-retry"' });
+
+		await promise;
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
 test("retries a failed part using the shared retry engine, not a second retry loop", async () => {
 	let getPartUrlCalls = 0;
 	const transport = s3MultipartUpload({
@@ -243,6 +357,36 @@ test("retries a failed part using the shared retry engine, not a second retry lo
 
 	await promise;
 	expect(getPartUrlCalls).toBe(2);
+});
+
+test("a permanent 4xx on a part fails fast instead of burning the retry budget", async () => {
+	let getPartUrlCalls = 0;
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => {
+			getPartUrlCalls++;
+			return { url: `https://s3.example/part/${partNumber}` };
+		},
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+		partRetries: 3,
+		partRetryDelays: [0, 0, 0],
+	});
+
+	const promise = transport.upload(
+		makeFile("a.png", "image/png", S3_MIN_PART_SIZE),
+		{
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		},
+	);
+	await waitForXhrCount(1);
+	MockXhr.instances[0]?.respond(403, "Forbidden");
+
+	await expect(promise).rejects.toMatchObject({ status: 403 });
+	// The default shouldRetry treats a 403 as permanent — one attempt, no retries.
+	expect(getPartUrlCalls).toBe(1);
 });
 
 test("persists session metadata as parts complete, and resumes by skipping them", async () => {

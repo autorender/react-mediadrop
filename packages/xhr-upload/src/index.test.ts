@@ -181,6 +181,7 @@ test("rejects on a non-2xx status, without the transport retrying internally", a
 	MockXhr.instances[0]?.respond(500, "", {});
 
 	await expect(promise).rejects.toThrow(/500/);
+	await expect(promise).rejects.toMatchObject({ status: 500 });
 	// Only one XHR was ever opened — retry is the queue's job, not this transport's.
 	expect(MockXhr.instances).toHaveLength(1);
 });
@@ -229,6 +230,56 @@ test("an already-aborted signal rejects immediately without ever opening a reque
 		}),
 	).rejects.toThrow(/aborted/i);
 	expect(MockXhr.instances).toHaveLength(0);
+});
+
+test("stallTimeoutMs aborts and rejects if no progress happens in time", async () => {
+	vi.useFakeTimers();
+	try {
+		const transport = createXhrUploadTransport({
+			endpoint: "https://example.test/upload",
+			stallTimeoutMs: 1000,
+		});
+		const promise = transport.upload(makeFile(), {
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		});
+		// Attach the rejection assertion before advancing the fake clock, so
+		// the handler is already in place the instant the timer fires.
+		const rejection = expect(promise).rejects.toThrow(/stalled/i);
+
+		await vi.advanceTimersByTimeAsync(1000);
+
+		expect(MockXhr.instances[0]?.aborted).toBe(true);
+		await rejection;
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+test("stallTimeoutMs never fires as long as progress keeps arriving, even for a slow transfer", async () => {
+	vi.useFakeTimers();
+	try {
+		const transport = createXhrUploadTransport({
+			endpoint: "https://example.test/upload",
+			stallTimeoutMs: 1000,
+		});
+		const promise = transport.upload(makeFile(), {
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		});
+		const xhr = MockXhr.instances[0];
+
+		for (let i = 0; i < 5; i++) {
+			await vi.advanceTimersByTimeAsync(900);
+			xhr?.progress((i + 1) * 100, 1000);
+		}
+		expect(xhr?.aborted).toBe(false);
+
+		xhr?.respond(200, "{}", { "Content-Type": "application/json" });
+		await expect(promise).resolves.toBeDefined();
+	} finally {
+		vi.useRealTimers();
+	}
 });
 
 test("endpoint, headers, and fields can be computed per file", async () => {

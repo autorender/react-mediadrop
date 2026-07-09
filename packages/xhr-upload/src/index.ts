@@ -3,6 +3,7 @@ import type {
 	UploadTransport,
 	UploadTransportResult,
 } from "@mediadrop/core";
+import { createHttpError, createStallWatchdog } from "@mediadrop/core";
 
 export type XhrUploadFields =
 	| Record<string, string>
@@ -35,6 +36,17 @@ export type XhrUploadOptions = {
 	formData?: boolean;
 	/** Status codes treated as success. Default: `200 <= status < 300`. */
 	isSuccessStatus?: (status: number) => boolean;
+	/**
+	 * Abort and reject if no upload progress happens for this many ms —
+	 * catches a silently dead connection (dropped network, the machine
+	 * sleeping mid-transfer) that would otherwise hang forever instead of
+	 * erroring into the queue's retry. This is a *stall* timeout, reset on
+	 * every progress event — not a flat total-duration timeout, so a large
+	 * file on a slow-but-healthy connection is never falsely aborted.
+	 * Default `0` (disabled), matching every other opt-in escape hatch
+	 * here (`retries`, `jitter`, etc).
+	 */
+	stallTimeoutMs?: number;
 };
 
 function resolve<T>(
@@ -96,6 +108,7 @@ export function createXhrUploadTransport(
 		withCredentials = false,
 		formData = true,
 		isSuccessStatus = (status) => status >= 200 && status < 300,
+		stallTimeoutMs = 0,
 	} = options;
 
 	return {
@@ -116,7 +129,14 @@ export function createXhrUploadTransport(
 					xhr.setRequestHeader(key, value);
 				}
 
+				let stalled = false;
+				const watchdog = createStallWatchdog(() => {
+					stalled = true;
+					xhr.abort();
+				}, stallTimeoutMs);
+
 				xhr.upload.onprogress = (event) => {
+					watchdog.reset();
 					onProgress({
 						loaded: event.loaded,
 						total: event.lengthComputable ? event.total : null,
@@ -124,21 +144,32 @@ export function createXhrUploadTransport(
 				};
 
 				xhr.onload = () => {
+					watchdog.clear();
 					if (isSuccessStatus(xhr.status)) {
 						resolvePromise({ response: parseResponseBody(xhr) });
 					} else {
 						reject(
-							new Error(
+							createHttpError(
 								`Upload failed with status ${xhr.status}${
 									xhr.statusText ? `: ${xhr.statusText}` : ""
 								}`,
+								xhr.status,
 							),
 						);
 					}
 				};
-				xhr.onerror = () => reject(new Error("Upload failed: network error"));
-				xhr.ontimeout = () => reject(new Error("Upload failed: timed out"));
-				xhr.onabort = () => reject(new Error("Upload aborted"));
+				xhr.onerror = () => {
+					watchdog.clear();
+					reject(new Error("Upload failed: network error"));
+				};
+				xhr.onabort = () => {
+					watchdog.clear();
+					reject(
+						stalled
+							? new Error(`Upload stalled: no progress for ${stallTimeoutMs}ms`)
+							: new Error("Upload aborted"),
+					);
+				};
 
 				signal.addEventListener("abort", () => xhr.abort(), { once: true });
 

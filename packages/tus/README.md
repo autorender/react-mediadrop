@@ -46,6 +46,13 @@ The core tus 1.0.0 flow, and nothing more:
 Retries a failed chunk via `@mediadrop/core`'s shared `withRetry` — this
 package has no retry/backoff logic of its own.
 
+**`chunkStallTimeoutMs`** (default `0`, disabled) aborts and retries one
+chunk's `PATCH` if it makes no upload progress for that long — a *stall*
+timeout, reset on every progress tick, not a flat total-duration one, so
+a large chunk on a slow-but-healthy connection is never falsely aborted.
+Catches a silently dead connection that would otherwise hang the chunk
+forever instead of erroring into the shared retry engine.
+
 ## Unsupported tus extensions
 
 Deliberately out of scope for this phase — if your server requires one of

@@ -3,6 +3,7 @@ import type {
 	UploadTransport,
 	UploadTransportResult,
 } from "@mediadrop/core";
+import { createHttpError, createStallWatchdog } from "@mediadrop/core";
 import type { S3PresignedUpload } from "./types.js";
 
 export type S3UploadOptions = {
@@ -12,6 +13,13 @@ export type S3UploadOptions = {
 	}) => Promise<S3PresignedUpload>;
 	/** Status codes treated as success. Default: `200 <= status < 300`. */
 	isSuccessStatus?: (status: number) => boolean;
+	/**
+	 * Abort and reject if no upload progress happens for this many ms — a
+	 * *stall* timeout (reset on every progress event), not a flat
+	 * total-duration one, so a large file on a slow-but-healthy connection
+	 * is never falsely aborted. Default `0` (disabled).
+	 */
+	stallTimeoutMs?: number;
 };
 
 function buildPostFormData(
@@ -33,6 +41,7 @@ function sendXhr(
 	onProgress: (loaded: number, total: number | null) => void,
 	signal: AbortSignal,
 	isSuccessStatus: (status: number) => boolean,
+	stallTimeoutMs: number,
 ): Promise<UploadTransportResult> {
 	return new Promise((resolve, reject) => {
 		if (signal.aborted) {
@@ -47,11 +56,19 @@ function sendXhr(
 			xhr.setRequestHeader(key, value);
 		}
 
+		let stalled = false;
+		const watchdog = createStallWatchdog(() => {
+			stalled = true;
+			xhr.abort();
+		}, stallTimeoutMs);
+
 		xhr.upload.onprogress = (event) => {
+			watchdog.reset();
 			onProgress(event.loaded, event.lengthComputable ? event.total : null);
 		};
 
 		xhr.onload = () => {
+			watchdog.clear();
 			if (isSuccessStatus(xhr.status)) {
 				resolve({
 					response: {
@@ -62,15 +79,25 @@ function sendXhr(
 				});
 			} else {
 				reject(
-					new Error(
+					createHttpError(
 						`S3 upload failed with status ${xhr.status}${xhr.statusText ? `: ${xhr.statusText}` : ""}`,
+						xhr.status,
 					),
 				);
 			}
 		};
-		xhr.onerror = () => reject(new Error("S3 upload failed: network error"));
-		xhr.ontimeout = () => reject(new Error("S3 upload failed: timed out"));
-		xhr.onabort = () => reject(new Error("Upload aborted"));
+		xhr.onerror = () => {
+			watchdog.clear();
+			reject(new Error("S3 upload failed: network error"));
+		};
+		xhr.onabort = () => {
+			watchdog.clear();
+			reject(
+				stalled
+					? new Error(`Upload stalled: no progress for ${stallTimeoutMs}ms`)
+					: new Error("Upload aborted"),
+			);
+		};
 		signal.addEventListener("abort", () => xhr.abort(), { once: true });
 
 		if (method === "POST") {
@@ -95,6 +122,7 @@ export function s3Upload(options: S3UploadOptions): UploadTransport {
 	const {
 		getUploadUrl,
 		isSuccessStatus = (status) => status >= 200 && status < 300,
+		stallTimeoutMs = 0,
 	} = options;
 
 	return {
@@ -109,6 +137,7 @@ export function s3Upload(options: S3UploadOptions): UploadTransport {
 				(loaded, total) => onProgress({ loaded, total }),
 				signal,
 				isSuccessStatus,
+				stallTimeoutMs,
 			);
 		},
 	};

@@ -183,6 +183,7 @@ export function useMediaDrop(
 					concurrency: options.concurrency,
 					retries: options.retries,
 					retryDelays: options.retryDelays,
+					cancelGraceMs: options.cancelGraceMs,
 				})
 			: createMediaDrop({
 					restrictions: options.restrictions,

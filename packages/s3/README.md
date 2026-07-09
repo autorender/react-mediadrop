@@ -108,14 +108,40 @@ into the options above):
 part's ETag from the PUT response, and `s3MultipartUpload` will reject
 with a message telling you exactly that.
 
-### Progress and cancellation
+### Progress, cancellation, and cleanup
 
 Progress is `sum(completed part sizes) + sum(in-flight part bytes so
 far)`, reported every time any part's progress changes — never
-double-counted, even with multiple parts in flight at once. Canceling
+double-counted, even with multiple parts in flight at once.
+
+**`partStallTimeoutMs`** (default `0`, disabled) aborts and retries one
+part if it makes no upload progress for that long — a *stall* timeout,
+reset on every progress tick, not a flat total-duration one, so a large
+part on a slow-but-healthy connection is never falsely aborted. Catches a
+silently dead connection that would otherwise hang the part (and
+therefore the whole upload) forever instead of erroring into the shared
+retry engine.
+
+Canceling
 aborts every in-flight part's request and calls `abortMultipartUpload`
 (unless `abortOnCancel: false`) if the upload was already created; it
 never calls `completeMultipartUpload` for a canceled upload.
+
+**A genuine failure (not a cancel) also calls `abortMultipartUpload`**
+by default (`abortOnFailure`, default `true`) — once every part retry is
+exhausted, or `createMultipartUpload`/`completeMultipartUpload` itself
+rejects, the multipart upload is aborted and the local resume session is
+cleared (resuming against an upload S3 was just told to abort can't
+work; a later retry starts a fresh `createMultipartUpload` instead).
+Without this, a failed upload leaves its multipart upload orphaned in
+S3 — invisible in the bucket's normal object listing, but still
+accruing storage cost — until something cleans it up. Set
+`abortOnFailure: false` if you'd rather leave it and resume later
+instead. Either way, **set a
+[bucket lifecycle rule](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html)
+to expire incomplete multipart uploads** as defense-in-depth — the one
+case neither option covers is losing power/network before this package
+gets a chance to call `abortMultipartUpload` at all.
 
 ### Resumability — read this before relying on it
 

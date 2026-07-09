@@ -9,6 +9,17 @@ export type UploadQueueOptions = {
 	/** Retries *after* the first attempt, shared across every file. Default `0`. */
 	retries?: number;
 	retryDelays?: number[];
+	/**
+	 * Grace period (ms) after `cancel`/`cancelAll` aborts a transport's
+	 * `signal` before the queue force-frees that upload's concurrency slot
+	 * regardless of whether the transport's promise has settled. The
+	 * contract every transport is supposed to follow is "wire up `signal`
+	 * and reject once aborted" — but a transport that doesn't (a bug, or a
+	 * third-party one you don't control) would otherwise leak its slot
+	 * forever, silently starving every file still waiting behind it.
+	 * Default `5000`.
+	 */
+	cancelGraceMs?: number;
 };
 
 /**
@@ -49,9 +60,24 @@ export function createUploadQueue(
 	options: UploadQueueOptions,
 	store: UploadQueueStore,
 ): UploadQueue {
-	const { transport, concurrency = 1, retries = 0, retryDelays } = options;
+	const {
+		transport,
+		concurrency = 1,
+		retries = 0,
+		retryDelays,
+		cancelGraceMs = 5000,
+	} = options;
 	const pending: string[] = [];
 	const active = new Map<string, AbortController>();
+	const graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+	function clearGraceTimer(id: string): void {
+		const timer = graceTimers.get(id);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+			graceTimers.delete(id);
+		}
+	}
 
 	function pump(): void {
 		while (active.size < concurrency && pending.length > 0) {
@@ -104,6 +130,7 @@ export function createUploadQueue(
 				});
 			})
 			.finally(() => {
+				clearGraceTimer(id);
 				active.delete(id);
 				pump();
 			});
@@ -119,10 +146,31 @@ export function createUploadQueue(
 		pump();
 	}
 
+	// If `transport.upload()` doesn't honor `signal` (a bug, or a
+	// third-party transport you don't control), calling `controller.abort()`
+	// alone would leave this slot occupied forever, and everything still
+	// `pending` behind it would starve. This timer force-frees the slot
+	// after `cancelGraceMs` regardless — checked against the exact
+	// `controller` instance so it can't misfire against a *later* attempt
+	// that reused the same file id (e.g. a fast retry within the grace
+	// window).
+	function scheduleForceFree(id: string, controller: AbortController): void {
+		const timer = setTimeout(() => {
+			graceTimers.delete(id);
+			if (active.get(id) === controller) {
+				active.delete(id);
+				store.updateFile(id, { uploadStatus: "canceled" });
+				pump();
+			}
+		}, cancelGraceMs);
+		graceTimers.set(id, timer);
+	}
+
 	function cancel(id: string): void {
 		const controller = active.get(id);
 		if (controller) {
 			controller.abort();
+			scheduleForceFree(id, controller);
 			return;
 		}
 		const pendingIndex = pending.indexOf(id);

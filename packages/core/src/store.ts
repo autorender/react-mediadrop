@@ -18,17 +18,41 @@ export type Store<T> = {
 export function createStore<T extends object>(initialState: T): Store<T> {
 	let state = initialState;
 	const listeners = new Set<Listener<T>>();
+	let isNotifying = false;
 
 	function getState(): T {
 		return state;
 	}
 
+	// A listener that calls `setState` again synchronously (reentrantly)
+	// doesn't recurse into a second, nested notify pass — `isNotifying`
+	// makes that inner call a no-op beyond updating `state`, and the
+	// `do`/`while` below detects that `state` moved again after the
+	// current pass finishes and runs one more pass so every listener still
+	// eventually observes the latest value, in order, with no listener
+	// visited twice for the same state and none skipped. Listeners are
+	// snapshotted per pass so a subscribe/unsubscribe call from inside a
+	// listener can't affect which listeners *this* pass notifies.
+	function notify(): void {
+		if (isNotifying) return;
+		isNotifying = true;
+		try {
+			let lastNotified: T;
+			do {
+				lastNotified = state;
+				for (const listener of [...listeners]) {
+					listener(state);
+				}
+			} while (lastNotified !== state);
+		} finally {
+			isNotifying = false;
+		}
+	}
+
 	function setState(update: Partial<T> | ((current: T) => Partial<T>)): void {
 		const partial = typeof update === "function" ? update(state) : update;
 		state = { ...state, ...partial };
-		for (const listener of listeners) {
-			listener(state);
-		}
+		notify();
 	}
 
 	function subscribe<S>(

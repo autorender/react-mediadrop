@@ -104,6 +104,7 @@ test("rejects on a non-2xx status without retrying internally", async () => {
 	MockXhr.instances[0]?.respond(403, "Forbidden");
 
 	await expect(promise).rejects.toThrow(/403/);
+	await expect(promise).rejects.toMatchObject({ status: 403 });
 	expect(MockXhr.instances).toHaveLength(1);
 });
 
@@ -122,6 +123,30 @@ test("aborting the signal cancels the request", async () => {
 
 	expect(MockXhr.instances[0]?.aborted).toBe(true);
 	await expect(promise).rejects.toThrow(/aborted/i);
+});
+
+test("stallTimeoutMs aborts and rejects if no progress happens in time", async () => {
+	vi.useFakeTimers();
+	try {
+		const transport = s3Upload({
+			getUploadUrl: async () => ({ url: "https://bucket.s3.example/key" }),
+			stallTimeoutMs: 1000,
+		});
+
+		const promise = transport.upload(makeFile(), {
+			onProgress: vi.fn(),
+			signal: new AbortController().signal,
+		});
+		const rejection = expect(promise).rejects.toThrow(/stalled/i);
+		await flush();
+
+		await vi.advanceTimersByTimeAsync(1000);
+
+		expect(MockXhr.instances[0]?.aborted).toBe(true);
+		await rejection;
+	} finally {
+		vi.useRealTimers();
+	}
 });
 
 test("an already-aborted signal never calls getUploadUrl or opens a request", async () => {

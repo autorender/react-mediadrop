@@ -206,6 +206,76 @@ test("cancel on an in-flight file aborts its signal and settles it as canceled, 
 	expect(store.getFile("a")?.uploadError).toBeUndefined();
 });
 
+test("cancel force-frees the slot after cancelGraceMs if the transport ignores its AbortSignal", async () => {
+	vi.useFakeTimers();
+	try {
+		const store = createFakeStore([makeFile("a"), makeFile("b")]);
+		const misbehavingTransport: UploadTransport = {
+			upload() {
+				// Never resolves, never rejects, ignores `signal` entirely —
+				// simulates a broken/third-party transport.
+				return new Promise(() => {});
+			},
+		};
+		const queue = createUploadQueue(
+			{ transport: misbehavingTransport, concurrency: 1, cancelGraceMs: 1000 },
+			store,
+		);
+
+		queue.enqueue("a");
+		queue.enqueue("b");
+		expect(store.getFile("b")?.uploadStatus).toBe("queued");
+
+		queue.cancel("a");
+		// Not yet force-freed — the grace period hasn't elapsed.
+		expect(store.getFile("b")?.uploadStatus).toBe("queued");
+
+		await vi.advanceTimersByTimeAsync(1000);
+
+		expect(store.getFile("a")?.uploadStatus).toBe("canceled");
+		// "b" got its turn once the stuck slot was force-freed.
+		expect(store.getFile("b")?.uploadStatus).toBe("uploading");
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+test("the force-free timer doesn't misfire against a fresh attempt that reused the same file id", async () => {
+	vi.useFakeTimers();
+	try {
+		const store = createFakeStore([makeFile("a")]);
+		let callCount = 0;
+		let resolveSecond: (() => void) | undefined;
+		const transport: UploadTransport = {
+			upload() {
+				callCount += 1;
+				if (callCount === 1) return new Promise(() => {}); // first attempt: stuck
+				return new Promise((resolve) => {
+					resolveSecond = () => resolve({ response: "ok" });
+				});
+			},
+		};
+		const queue = createUploadQueue({ transport, cancelGraceMs: 1000 }, store);
+
+		queue.enqueue("a");
+		queue.cancel("a");
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(store.getFile("a")?.uploadStatus).toBe("canceled");
+
+		// A brand new attempt for the same file id starts a fresh controller...
+		queue.enqueue("a");
+		expect(store.getFile("a")?.uploadStatus).toBe("uploading");
+
+		// ...and must not be force-cancelled by the *first* attempt's timer.
+		resolveSecond?.();
+		await vi.waitFor(() => {
+			expect(store.getFile("a")?.uploadStatus).toBe("done");
+		});
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
 test("cancelAll cancels every queued and in-flight file", () => {
 	const store = createFakeStore([makeFile("a"), makeFile("b"), makeFile("c")]);
 	const { transport, signals } = createDeferredTransport();

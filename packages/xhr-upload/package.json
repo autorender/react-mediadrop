@@ -2,7 +2,7 @@
 	"name": "@mediadrop/xhr-upload",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Reference XMLHttpRequest transport adapter for @mediadrop/core's pluggable upload queue. Zero runtime dependencies.",
+	"description": "Reference XMLHttpRequest transport adapter for @mediadrop/core's pluggable upload queue.",
 	"license": "MIT",
 	"sideEffects": false,
 	"type": "module",
@@ -26,16 +26,10 @@
 	"sizeLimit": {
 		"dist/index.mjs": "2 KB"
 	},
-	"peerDependencies": {
+	"dependencies": {
 		"@mediadrop/core": "workspace:*"
 	},
-	"peerDependenciesMeta": {
-		"@mediadrop/core": {
-			"optional": true
-		}
-	},
 	"devDependencies": {
-		"@mediadrop/core": "workspace:*",
 		"@mediadrop/tsconfig": "workspace:*",
 		"jsdom": "^29.1.1",
 		"typescript": "catalog:",

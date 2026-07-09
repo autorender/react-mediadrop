@@ -36,7 +36,10 @@ const transport = tusUpload({
    server-side, this falls back to creating a fresh upload automatically.
 
 Retries a failed chunk via `@mediadrop/core`'s shared `withRetry` — no
-retry/backoff logic of its own.
+retry/backoff logic of its own. `chunkStallTimeoutMs` (default `0`,
+disabled) aborts and retries a chunk with no upload progress for that
+long — a stall timeout, not a flat one, so it won't false-abort a
+large-but-healthy chunk.
 
 ## Unsupported tus extensions — don't imply these work
 

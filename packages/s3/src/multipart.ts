@@ -1,5 +1,7 @@
 import {
 	createFileFingerprint,
+	createHttpError,
+	createStallWatchdog,
 	type MediaDropUploadSessionStore,
 	type RetryOptions,
 	type UploadTransport,
@@ -54,6 +56,13 @@ export type S3MultipartUploadOptions = {
 	/** Retries per part *after* the first attempt, via `@mediadrop/core`'s `withRetry` — not a second, hand-rolled retry loop. Default `3`. */
 	partRetries?: number;
 	partRetryDelays?: number[];
+	/**
+	 * Abort and retry a part if it makes no upload progress for this many
+	 * ms — a *stall* timeout (reset on every progress event), not a flat
+	 * total-duration one, so a large part on a slow-but-healthy connection
+	 * is never falsely aborted. Default `0` (disabled).
+	 */
+	partStallTimeoutMs?: number;
 
 	/** Enables resumable metadata persistence. Required for `resume`. */
 	sessionStore?: MediaDropUploadSessionStore;
@@ -63,6 +72,18 @@ export type S3MultipartUploadOptions = {
 	resume?: boolean;
 	/** Call `abortMultipartUpload` (if provided) when the upload is canceled. Default `true`. */
 	abortOnCancel?: boolean;
+	/**
+	 * Call `abortMultipartUpload` (if provided) when the upload fails for
+	 * any *other* reason (retries exhausted, `createMultipartUpload`/
+	 * `completeMultipartUpload` rejecting, etc.) — without this, a failed
+	 * upload leaves its multipart upload orphaned in S3 (accruing storage
+	 * cost) until your bucket's lifecycle rule, if any, cleans it up. When
+	 * this fires, the local resume session is cleared too, since resuming
+	 * against an upload S3 was just told to abort can't work — a
+	 * subsequent retry starts a fresh `createMultipartUpload` instead.
+	 * Default `true`.
+	 */
+	abortOnFailure?: boolean;
 };
 
 type PartPlan = { partNumber: number; start: number; end: number };
@@ -115,6 +136,7 @@ function uploadPartBytes(
 	blob: Blob,
 	signal: AbortSignal,
 	onProgress: (loaded: number) => void,
+	stallTimeoutMs: number,
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		if (signal.aborted) {
@@ -126,8 +148,17 @@ function uploadPartBytes(
 		for (const [key, value] of Object.entries(headers ?? {})) {
 			xhr.setRequestHeader(key, value);
 		}
-		xhr.upload.onprogress = (event) => onProgress(event.loaded);
+		let stalled = false;
+		const watchdog = createStallWatchdog(() => {
+			stalled = true;
+			xhr.abort();
+		}, stallTimeoutMs);
+		xhr.upload.onprogress = (event) => {
+			watchdog.reset();
+			onProgress(event.loaded);
+		};
 		xhr.onload = () => {
+			watchdog.clear();
 			if (xhr.status >= 200 && xhr.status < 300) {
 				const etag = xhr.getResponseHeader("ETag");
 				if (!etag) {
@@ -141,11 +172,28 @@ function uploadPartBytes(
 				}
 				resolve(etag);
 			} else {
-				reject(new Error(`Part upload failed with status ${xhr.status}`));
+				reject(
+					createHttpError(
+						`Part upload failed with status ${xhr.status}`,
+						xhr.status,
+					),
+				);
 			}
 		};
-		xhr.onerror = () => reject(new Error("Part upload failed: network error"));
-		xhr.onabort = () => reject(new Error("Upload aborted"));
+		xhr.onerror = () => {
+			watchdog.clear();
+			reject(new Error("Part upload failed: network error"));
+		};
+		xhr.onabort = () => {
+			watchdog.clear();
+			reject(
+				stalled
+					? new Error(
+							`Part upload stalled: no progress for ${stallTimeoutMs}ms`,
+						)
+					: new Error("Upload aborted"),
+			);
+		};
 		signal.addEventListener("abort", () => xhr.abort(), { once: true });
 		xhr.send(blob);
 	});
@@ -211,10 +259,12 @@ export function s3MultipartUpload(
 		partConcurrency = 3,
 		partRetries = 3,
 		partRetryDelays,
+		partStallTimeoutMs = 0,
 		sessionStore,
 		fingerprint = createFileFingerprint,
 		resume = Boolean(sessionStore),
 		abortOnCancel = true,
+		abortOnFailure = true,
 	} = options;
 
 	return {
@@ -336,6 +386,7 @@ export function s3MultipartUpload(
 									partProgress.set(part.partNumber, loaded);
 									reportProgress();
 								},
+								partStallTimeoutMs,
 							);
 						},
 						retryOptions,
@@ -396,17 +447,27 @@ export function s3MultipartUpload(
 				};
 				return { response };
 			} catch (error) {
-				if (signal.aborted) {
-					if (abortOnCancel && abortMultipartUpload && uploadId && key) {
-						try {
-							await abortMultipartUpload({ file, key, uploadId });
-						} catch {
-							// Best-effort — the cancel outcome doesn't depend on this succeeding.
-						}
+				const isCancel = signal.aborted;
+				// On cancel, `abortOnCancel` decides; on any other failure (retries
+				// exhausted, the backend rejecting create/complete, etc.),
+				// `abortOnFailure` does — without the latter, a genuinely failed
+				// upload leaves its multipart upload orphaned in S3 instead of
+				// cleaned up (see the option's doc comment).
+				const shouldAbort = isCancel ? abortOnCancel : abortOnFailure;
+				if (shouldAbort && abortMultipartUpload && uploadId && key) {
+					try {
+						await abortMultipartUpload({ file, key, uploadId });
+					} catch {
+						// Best-effort — the failure outcome doesn't depend on this succeeding.
 					}
-					// Phase 3 has no pause: every cancel is final, so its resume
-					// session is discarded rather than left around indefinitely.
-					if (sessionStore) await sessionStore.remove(sessionKey);
+				}
+				// Once we've told S3 to abort (or it's a cancel — Phase 3 has no
+				// pause, every cancel is final), the local session no longer
+				// points at a usable multipart upload: clear it so a later retry
+				// starts a fresh `createMultipartUpload` instead of resuming
+				// against an uploadId that no longer exists.
+				if ((isCancel || shouldAbort) && sessionStore) {
+					await sessionStore.remove(sessionKey);
 				}
 				throw error;
 			}

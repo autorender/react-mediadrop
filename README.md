@@ -3,7 +3,8 @@
 Private battle-test workspace for **mediadrop** — OSS file-uploader (`@mediadrop/*`).
 
 Not the public repo. This exists to stabilize the toolchain and API shape before a
-fresh `autorenderhq/mediadrop` repo gets created at launch.
+fresh `autorenderhq/mediadrop` repo gets created at launch. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
 
 ## What is mediadrop, and why headless-first?
 
@@ -40,7 +41,7 @@ for the full boundary between what's implemented and what isn't.
 - `packages/core` — framework-free file intake, validation, drag/drop, upload-queue, retry, session-store, and fingerprint primitives
 - `packages/vanilla` — thin DOM binding over `@mediadrop/core`, for plain JS/TS
 - `packages/react` — headless `useMediaDrop` hook over `@mediadrop/core`
-- `packages/xhr-upload` — reference `XMLHttpRequest` upload transport, zero runtime dependencies
+- `packages/xhr-upload` — reference `XMLHttpRequest` upload transport, no third-party runtime dependency
 - `packages/s3` — S3 presigned/multipart upload transport, no AWS SDK
 - `packages/tus` — a small tus protocol client transport, no `tus-js-client` dependency
 - `packages/tsconfig` — shared TypeScript config

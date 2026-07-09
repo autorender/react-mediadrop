@@ -30,6 +30,13 @@ export type TusUploadOptions = {
 	/** Retries per chunk *after* the first attempt, via `@mediadrop/core`'s `withRetry`. Default `3`. */
 	chunkRetries?: number;
 	chunkRetryDelays?: number[];
+	/**
+	 * Abort and retry a chunk if it makes no upload progress for this many
+	 * ms — a *stall* timeout (reset on every progress event), not a flat
+	 * total-duration one, so a large chunk on a slow-but-healthy
+	 * connection is never falsely aborted. Default `0` (disabled).
+	 */
+	chunkStallTimeoutMs?: number;
 };
 
 function resolveOption<T>(
@@ -98,6 +105,7 @@ export function tusUpload(options: TusUploadOptions): UploadTransport {
 		resume = Boolean(sessionStore),
 		chunkRetries = 3,
 		chunkRetryDelays,
+		chunkStallTimeoutMs = 0,
 	} = options;
 
 	return {
@@ -192,6 +200,7 @@ export function tusUpload(options: TusUploadOptions): UploadTransport {
 										loaded: chunkStart + loaded,
 										total: file.file.size,
 									}),
+								stallTimeoutMs: chunkStallTimeoutMs,
 							}),
 						{ retries: chunkRetries, retryDelays: chunkRetryDelays },
 						signal,

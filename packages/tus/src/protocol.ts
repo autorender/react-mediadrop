@@ -1,3 +1,4 @@
+import { createStallWatchdog } from "@mediadrop/core";
 import { TUS_RESUMABLE, TusError } from "./types.js";
 
 type XhrResult = {
@@ -14,6 +15,7 @@ function sendXhr(
 		body?: Blob | null;
 		signal: AbortSignal;
 		onUploadProgress?: (loaded: number) => void;
+		stallTimeoutMs?: number;
 	},
 ): Promise<XhrResult> {
 	return new Promise((resolve, reject) => {
@@ -26,20 +28,43 @@ function sendXhr(
 		for (const [key, value] of Object.entries(options.headers ?? {})) {
 			xhr.setRequestHeader(key, value);
 		}
+
+		let stalled = false;
+		const watchdog = createStallWatchdog(() => {
+			stalled = true;
+			xhr.abort();
+		}, options.stallTimeoutMs ?? 0);
+
 		if (options.onUploadProgress) {
 			const onUploadProgress = options.onUploadProgress;
-			xhr.upload.onprogress = (event) => onUploadProgress(event.loaded);
+			xhr.upload.onprogress = (event) => {
+				watchdog.reset();
+				onUploadProgress(event.loaded);
+			};
 		}
 		xhr.onload = () => {
+			watchdog.clear();
 			resolve({
 				status: xhr.status,
 				getHeader: (name) => xhr.getResponseHeader(name),
 				responseURL: xhr.responseURL,
 			});
 		};
-		xhr.onerror = () =>
+		xhr.onerror = () => {
+			watchdog.clear();
 			reject(new Error(`${method} ${url} failed: network error`));
-		xhr.onabort = () => reject(new TusError("aborted", "Upload aborted"));
+		};
+		xhr.onabort = () => {
+			watchdog.clear();
+			reject(
+				stalled
+					? new TusError(
+							"aborted",
+							`${method} ${url} stalled: no progress for ${options.stallTimeoutMs}ms`,
+						)
+					: new TusError("aborted", "Upload aborted"),
+			);
+		};
 		options.signal.addEventListener("abort", () => xhr.abort(), { once: true });
 		xhr.send(options.body ?? null);
 	});
@@ -122,6 +147,7 @@ export async function patchChunk(
 		headers?: Record<string, string>;
 		signal: AbortSignal;
 		onProgress?: (loaded: number) => void;
+		stallTimeoutMs?: number;
 	},
 ): Promise<{ offset: number }> {
 	const result = await sendXhr("PATCH", uploadUrl, {
@@ -134,6 +160,7 @@ export async function patchChunk(
 		body: options.chunk,
 		signal: options.signal,
 		onUploadProgress: options.onProgress,
+		stallTimeoutMs: options.stallTimeoutMs,
 	});
 	if (result.status < 200 || result.status >= 300) {
 		throw new TusError(

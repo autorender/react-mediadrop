@@ -1,8 +1,10 @@
 # @mediadrop/xhr-upload
 
 A reference `UploadTransport` (see [`@mediadrop/core`](../core/README.md))
-that sends a file with `XMLHttpRequest`. **Zero runtime dependencies** —
-`@mediadrop/core` is a types-only peer dependency, erased at build time.
+that sends a file with `XMLHttpRequest`. Its only dependency is
+`@mediadrop/core` itself (for `createHttpError`, so a failed upload's
+`.status` is inspectable the same way as every other transport) — no
+third-party runtime dependency.
 
 XHR, not `fetch`, is deliberate: `fetch` still has no cross-browser
 upload-progress API, while `XMLHttpRequest.upload.onprogress` does. Works
@@ -68,3 +70,4 @@ for the full queue/retry/cancel contract this plugs into.
 | `withCredentials` | `boolean` | `false` | |
 | `formData` | `boolean` | `true` | `false` sends the raw file body. |
 | `isSuccessStatus` | `(status) => boolean` | `200–299` | |
+| `stallTimeoutMs` | `number` | `0` (disabled) | Abort and reject if no upload progress happens for this long — a *stall* timeout (reset on every progress tick), not a flat total-duration one, so a large file on a slow-but-healthy connection is never falsely aborted. Catches a silently dead connection instead of hanging forever. |

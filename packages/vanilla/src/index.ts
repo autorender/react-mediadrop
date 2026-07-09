@@ -21,6 +21,7 @@ export type {
 	MediaDropState,
 	MediaDropUploadOptions,
 	MediaDropUploadProgress,
+	MediaDropUploadSessionStore,
 	MediaDropUploadStatus,
 	MediaDropValidator,
 	UploadTransport,
@@ -94,6 +95,7 @@ export function createMediaDrop(
 		concurrency,
 		retries,
 		retryDelays,
+		cancelGraceMs,
 	} = options;
 
 	// `let` + `if`/`else` (not `const engine: T = transport ? A : B`) is
@@ -112,6 +114,7 @@ export function createMediaDrop(
 			concurrency,
 			retries,
 			retryDelays,
+			cancelGraceMs,
 		});
 	} else {
 		engine = createCoreMediaDrop({ restrictions, validator });
