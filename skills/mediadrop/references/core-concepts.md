@@ -1,10 +1,9 @@
 # Core concepts
 
 These concepts are shared across `@mediadrop/core`, `@mediadrop/vanilla`,
-`@mediadrop/react`, and `@mediadrop/widget`. This doc describes what's
-implemented in Phase 1 (file intake/validation/drag-drop) and Phase 2
-(upload). See [upload.md](upload.md) for the upload-specific
-queue/retry/cancel contract.
+and `@mediadrop/react`. This doc describes what's implemented in Phase 1
+(file intake/validation/drag-drop) and Phase 2 (upload). See
+[upload.md](upload.md) for the upload-specific queue/retry/cancel contract.
 
 ## The file model
 

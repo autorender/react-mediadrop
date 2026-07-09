@@ -5,8 +5,7 @@ a simple presigned upload for small files, and multipart upload (with
 resumable metadata) for large ones. **No AWS SDK, no signing server in
 this package.** Your backend signs URLs; this package only ever talks to
 those URLs with `XMLHttpRequest`. Works as `transport` in
-`@mediadrop/react`, `@mediadrop/vanilla`, and
-[`@mediadrop/widget`](../widget/README.md) identically — there is no
+`@mediadrop/react` and `@mediadrop/vanilla` identically — there is no
 S3-specific binding.
 
 ## Install

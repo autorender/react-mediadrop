@@ -10,11 +10,9 @@ make resumability possible without every transport reinventing retry:
 `withRetry`'s `shouldRetry`/`jitter`, session stores, and file
 fingerprinting.
 
-It still does **not** add pause/resume, the full tus extension suite, or
-a remote-provider/OAuth story — see [scope.md](scope.md) before assuming
-any of that exists. (Phase 4 does add an optional widget —
-[widget.md](widget.md) — but it's a rendering layer over this same queue,
-not a change to any of the above.)
+It still does **not** add pause/resume, the full tus extension suite, a
+remote-provider/OAuth story, or a widget — see [scope.md](scope.md) before
+assuming any of that exists.
 
 ## The mental model
 
@@ -231,13 +229,6 @@ each transport has its own backend contract and gotchas:
 All three plug into the exact same `transport` option and the same queue
 described above — nothing in this doc changes depending on which one you
 pick.
-
-## Using any transport from `@mediadrop/widget`
-
-[widget.md](widget.md) covers the prebuilt DOM widget (Phase 4). It takes
-`transport` exactly like `useMediaDrop`/vanilla's `createMediaDrop` do —
-same gating (`uploadFile`/`uploadAll`/etc. only exist when `transport` is
-passed), same queue, no widget-specific upload logic.
 
 ## What's still not implemented — do not build around it, do not fake it
 

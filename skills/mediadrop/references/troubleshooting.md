@@ -7,8 +7,8 @@ mediadrop. If you're debugging something that isn't here, check
 ## "Only one file uploads at a time even though I have several accepted"
 
 `concurrency` defaults to **1** (sequential) on `createMediaDrop`/
-`useMediaDrop`/the widget. Pass `concurrency: 3` (or whatever fits your
-backend) if you want files in flight at once. This is not a bug — see
+`useMediaDrop`. Pass `concurrency: 3` (or whatever fits your backend) if
+you want files in flight at once. This is not a bug — see
 [upload.md](upload.md#the-queue-concurrency-retry-cancel).
 
 ## "TypeScript says `uploadFile`/`uploadAll`/etc. don't exist"
@@ -60,7 +60,7 @@ URLs. For a generic endpoint you control, use
 [`@mediadrop/xhr-upload`](xhr-upload.md) instead — don't stand up a fake
 tus/S3 backend just to reuse those packages.
 
-## "An upload kept running after I removed/tore down its widget or component"
+## "An upload kept running after I removed/tore down its component"
 
 `removeFile`/`clearFiles` on `@mediadrop/core` (and therefore every
 binding) cancel any in-flight upload for the files they remove — this is
@@ -68,8 +68,8 @@ handled for you. If you're writing new binding/wrapper code (not just
 using an existing one) and tearing it down doesn't stop in-flight
 uploads, that's a bug in the new code: call `cancelAllUploads()` (if
 `transport` was passed) as part of teardown, the same way
-`@mediadrop/vanilla`, `@mediadrop/react`, and `@mediadrop/widget` each do
-in their own `destroy()`.
+`@mediadrop/vanilla`'s `destroy()` and `@mediadrop/react`'s unmount
+cleanup do.
 
 ## "Drag-over styling doesn't reflect the right accept/reject state"
 
@@ -86,11 +86,3 @@ accept/reject decision always happens at drop time.
 `isDragGlobal` is a `@mediadrop/react`-only convenience — there's no core
 or vanilla equivalent. Wire your own `dragenter`/`dragleave`/`dragend`/
 `drop` listeners on `document` if you need the same thing outside React.
-
-## "Should I install `@mediadrop/widget`?"
-
-Only if the project wants mediadrop's prebuilt markup/CSS. It's entirely
-optional — every other package works the same with or without it. Check
-`package.json` before assuming it's present, and don't add it to a
-project that's already built its own UI over `@mediadrop/vanilla`/
-`@mediadrop/react` unless asked to.

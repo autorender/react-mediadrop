@@ -2,9 +2,6 @@
 
 Thin DOM binding over [`@mediadrop/core`](../core/README.md) for plain
 JS/TS projects (or any framework without a dedicated mediadrop binding).
-You own the markup here; want a prebuilt UI instead? See
-[`@mediadrop/widget`](../widget/README.md), built on the same
-`@mediadrop/core` APIs this binding uses.
 
 ```ts
 import { createMediaDrop } from "@mediadrop/vanilla";

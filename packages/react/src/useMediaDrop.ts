@@ -192,10 +192,9 @@ export function useMediaDrop(
 	const engine = engineRef.current;
 
 	// Cancels every queued/in-flight upload on unmount, the same guarantee
-	// `@mediadrop/vanilla`'s and `@mediadrop/widget`'s `destroy()` make —
-	// without this, an upload started right before a route change/unmount
-	// would keep running in the background with nothing left able to
-	// reference or cancel it.
+	// `@mediadrop/vanilla`'s `destroy()` makes — without this, an upload
+	// started right before a route change/unmount would keep running in
+	// the background with nothing left able to reference or cancel it.
 	useEffect(() => {
 		return () => {
 			if ("cancelAllUploads" in engine) engine.cancelAllUploads();

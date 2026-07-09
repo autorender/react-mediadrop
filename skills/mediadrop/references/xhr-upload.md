@@ -10,7 +10,7 @@ contract this plugs into — this transport adds none of that itself.
 ## Quickstart
 
 ```ts
-import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla, @mediadrop/widget
+import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
 
 const transport = createXhrUploadTransport({

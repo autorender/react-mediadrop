@@ -14,17 +14,14 @@ upload concurrency, retry/backoff, cancel races, resumable metadata):
 one implementation, shared by every binding.
 
 **Headless-first** means the engine never assumes it owns your markup.
-`@mediadrop/react` and `@mediadrop/vanilla` are thin wiring, not a UI.
-`@mediadrop/widget` (Phase 4) is the one exception, and it stays optional
-by construction: it's a small DOM layer built entirely on the same public
-`createMediaDrop`/`createDropzoneController` APIs any binding uses — it
-doesn't reach into core internals, doesn't duplicate the upload queue or
-retry logic, and doesn't do anything you couldn't do yourself by wiring
-`@mediadrop/vanilla` to your own markup. If you don't want mediadrop's
-markup or CSS, don't install `@mediadrop/widget` — everything else works
-exactly the same without it.
+`@mediadrop/react` and `@mediadrop/vanilla` are thin wiring, not a UI —
+`getRootProps`/`getInputProps` (React) or the DOM elements you pass in
+(vanilla) return plain props/hooks; style and markup are always yours.
+There is no prebuilt widget or dashboard, in this phase or planned for
+any phase — see
+[`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md).
 
-## Status: Phase 1 + Phase 2 + Phase 3 + Phase 4
+## Status: Phase 1 + Phase 2 + Phase 3
 
 Phase 1 covers file intake, drag/drop, validation, a vanilla JS binding, and
 a React hook. Phase 2 adds upload on top: a pluggable transport contract,
@@ -32,11 +29,9 @@ a queue with concurrency/retry/cancel (owned by `@mediadrop/core`, not
 duplicated per transport or binding), and a reference XHR transport. Phase 3
 adds advanced transports on the same contract: S3 (presigned + multipart,
 with resumable metadata) and a small tus client — both retry through
-`@mediadrop/core`'s shared `withRetry`, never their own copy. Phase 4 adds
-`@mediadrop/widget`, an optional themeable DOM widget over the same public
-API, plus a full set of runnable examples. **There is still no pause/resume,
-no remote-provider import, no OAuth, no image transforms, and no
-Autorender-specific adapter.** See
+`@mediadrop/core`'s shared `withRetry`, never their own copy. **There is
+still no pause/resume, no remote-provider import, no OAuth, no image
+transforms, no prebuilt widget, and no Autorender-specific adapter.** See
 [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
 for the full boundary between what's implemented and what isn't.
 
@@ -45,7 +40,6 @@ for the full boundary between what's implemented and what isn't.
 - `packages/core` — framework-free file intake, validation, drag/drop, upload-queue, retry, session-store, and fingerprint primitives
 - `packages/vanilla` — thin DOM binding over `@mediadrop/core`, for plain JS/TS
 - `packages/react` — headless `useMediaDrop` hook over `@mediadrop/core`
-- `packages/widget` — optional, themeable DOM widget (dropzone + file list + upload UI) over the same public API as the bindings above
 - `packages/xhr-upload` — reference `XMLHttpRequest` upload transport, zero runtime dependencies
 - `packages/s3` — S3 presigned/multipart upload transport, no AWS SDK
 - `packages/tus` — a small tus protocol client transport, no `tus-js-client` dependency
@@ -101,29 +95,10 @@ const uploader = createMediaDrop({
 
 See [`skills/mediadrop/references/vanilla.md`](skills/mediadrop/references/vanilla.md).
 
-### Widget (optional, Phase 4)
-
-```ts
-import { createMediaDropWidget } from "@mediadrop/widget";
-import "@mediadrop/widget/style.css";
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
-
-createMediaDropWidget({
-	target: document.querySelector("#uploader"),
-	restrictions: { accept: ["image/*"], maxFiles: 5 },
-	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
-});
-```
-
-One call renders a dropzone, file list, per-file progress/cancel/retry,
-and upload-all/clear controls. Theming is CSS custom properties, not a
-closed styling system — see
-[`packages/widget/README.md`](packages/widget/README.md).
-
 ### Upload (opt-in)
 
 ```ts
-import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla, @mediadrop/widget
+import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
 
 const mediadrop = createMediaDrop({
@@ -155,10 +130,10 @@ contract each expects, and exactly what resuming does and doesn't mean.
 ## Supported / not supported
 
 **Supported today:** drag/drop and picker intake, sync validation
-(accept/size/count + custom validator), React and vanilla bindings, an
-optional themeable widget, upload with concurrency/retry/cancel via any
-of four transports (XHR, S3 simple, S3 multipart, tus), and resumable
-*metadata* (never file bytes) for S3 multipart and tus.
+(accept/size/count + custom validator), React and vanilla bindings,
+upload with concurrency/retry/cancel via any of four transports (XHR, S3
+simple, S3 multipart, tus), and resumable *metadata* (never file bytes)
+for S3 multipart and tus.
 
 **Not supported, anywhere in this codebase:**
 
@@ -168,6 +143,7 @@ of four transports (XHR, S3 simple, S3 multipart, tus), and resumable
   Uppy-Companion-equivalent server) or any OAuth flow.
 - Image transforms (compression, resizing, format conversion, cropping)
   or AI hooks (content moderation, tagging).
+- A prebuilt widget, dashboard, or progress UI — you own all markup.
 - A hosted upload service — mediadrop is a client library; you provide
   and own the backend.
 - AWS SigV4 signing in the browser — `@mediadrop/s3` never signs
@@ -177,18 +153,13 @@ of four transports (XHR, S3 simple, S3 multipart, tus), and resumable
 See [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
 for the complete, authoritative list.
 
-## Examples
+## Example
 
-- `examples/react-demo` (`pnpm --filter react-demo dev`) — `@mediadrop/react` + `@mediadrop/xhr-upload`
-- `examples/vanilla-basic` (`pnpm --filter vanilla-basic dev`) — `@mediadrop/vanilla` with a fully hand-rolled UI
-- `examples/widget-basic` (`pnpm --filter widget-basic dev`) — `@mediadrop/widget`, one function call
-- `examples/transports` (`pnpm --filter transports dev`) — `@mediadrop/s3` (simple + multipart) and `@mediadrop/tus` side by side
-
-Every example talks to a real local dev-server endpoint (see each
-example's `vite.config.ts`) that discards what it receives and, in
-`react-demo`/`widget-basic`, fails ~1 in 4 uploads on purpose — so you can
-see queueing, progress, cancel, retry, and error states without needing a
-real backend.
+`examples/react-demo` (`pnpm --filter react-demo dev`) exercises every
+transport (XHR, S3 simple, S3 multipart, tus) from one React app, with a
+tab switcher to pick which `UploadTransport` the dropzone uses. It talks
+to a real backend — see `test-server/` (local-only, git-ignored, not part
+of the workspace) — rather than a faked dev-server mock.
 
 ## Commands
 

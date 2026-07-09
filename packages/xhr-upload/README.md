@@ -6,8 +6,7 @@ that sends a file with `XMLHttpRequest`. **Zero runtime dependencies** —
 
 XHR, not `fetch`, is deliberate: `fetch` still has no cross-browser
 upload-progress API, while `XMLHttpRequest.upload.onprogress` does. Works
-as `transport` in `@mediadrop/react`, `@mediadrop/vanilla`, and
-[`@mediadrop/widget`](../widget/README.md) identically.
+as `transport` in `@mediadrop/react` and `@mediadrop/vanilla` identically.
 
 ## Install
 

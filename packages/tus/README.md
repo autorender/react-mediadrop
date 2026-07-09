@@ -3,9 +3,8 @@
 A small, dependency-free [tus](https://tus.io) protocol client adapter
 for [`@mediadrop/core`](../core/README.md). Requires a tus-compatible
 server — this package is the browser-side client only, covering the core
-create/upload/resume flow. Works as `transport` in `@mediadrop/react`,
-`@mediadrop/vanilla`, and [`@mediadrop/widget`](../widget/README.md)
-identically — there is no tus-specific binding.
+create/upload/resume flow. Works as `transport` in `@mediadrop/react`
+and `@mediadrop/vanilla` identically — there is no tus-specific binding.
 
 ## Install
 

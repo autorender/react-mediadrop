@@ -66,26 +66,6 @@ See [upload.md](upload.md) for the full contract. Summary:
   engine the Phase 2 queue already used. No transport implements its own
   retry loop.
 
-## Implemented (Phase 4 — widget, examples, adoption docs)
-
-See [widget.md](widget.md) for the full contract. Summary:
-
-- **`@mediadrop/widget`**: an *optional* prebuilt, themeable DOM widget
-  (dropzone, file list, per-file progress/cancel/retry, upload-all/clear)
-  over the exact same public `createMediaDrop`/`createDropzoneController`
-  APIs the other bindings use. It has no upload/retry/validation logic of
-  its own and no access to `@mediadrop/core` internals — headless-first
-  still holds for every package that doesn't opt into this one.
-  Theming is plain CSS custom properties and prefixed class names, not a
-  closed styling system or Shadow DOM.
-- Runnable examples for every binding and transport
-  (`examples/react-demo`, `examples/vanilla-basic`,
-  `examples/widget-basic`, `examples/transports`), each talking to a real
-  local dev-server endpoint, none of them a production backend.
-- This is still a **rendering layer, not a new capability** — nothing a
-  project could do with the widget was impossible before; it is
-  markup/CSS you no longer have to write yourself.
-
 ## Not implemented — do not build around it, do not fake it
 
 If a task requires any of the following, say so explicitly rather than
@@ -104,13 +84,10 @@ improvising a stand-in inside mediadrop's public API:
 - **OAuth** of any kind.
 - **AI transform hooks** (image compression, resizing, format conversion,
   content moderation).
-- **A hosted dashboard, image editor, or anything beyond `@mediadrop/widget`'s
-  dropzone/file-list/upload UI.** No drag-to-reorder, folder-tree view,
-  crop/compress controls, remote-provider tabs, modal dashboard, or auth
-  UI — see [widget.md](widget.md) for the exact list the widget itself
-  excludes. `progress`/`uploadStatus` remain data you can read from any
-  binding; the widget is one way to render them, not the only way, and
-  not a requirement.
+- **A prebuilt dashboard/widget or progress UI.** mediadrop is
+  headless-first; there is no drop-in UI component to import, in this
+  phase or planned for any phase. `progress`/`uploadStatus` are data you
+  read — building the progress bar/toast/dashboard is still your job.
 - **Any Autorender-specific or Cloudinary-specific adapter.**
 - **A production AWS SDK dependency, or AWS credentials, in any browser
   package.** `@mediadrop/s3` never signs anything itself.
