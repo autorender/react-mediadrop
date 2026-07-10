@@ -77,6 +77,11 @@ body {
 	color: #e5534b;
 }
 
+.hint--setup {
+	color: #d29922;
+	margin: 0 0 1.5rem;
+}
+
 button {
 	font: inherit;
 	border-radius: 6px;
