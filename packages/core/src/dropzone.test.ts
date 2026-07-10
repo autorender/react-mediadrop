@@ -11,7 +11,9 @@ function createDragEvent(fileTypes: string[]): DragEvent {
 	const files = fileTypes.map((type) => new File([], "f", { type }));
 	return {
 		preventDefault: () => {},
-		dataTransfer: { items, files },
+		// Real browsers always populate `types` alongside `items`/`files` for
+		// a file drag — include it here so these fixtures stay realistic.
+		dataTransfer: { items, files, types: ["Files"] },
 	} as unknown as DragEvent;
 }
 
@@ -73,6 +75,36 @@ test("is indeterminate when the browser withholds item types", () => {
 	expect(state.isDragReject).toBe(false);
 });
 
+/** A drag whose `dataTransfer.types` doesn't include "Files" — a text selection, a link, an image dragged from elsewhere on the page. */
+function createNonFileDragEvent(): DragEvent {
+	return {
+		preventDefault: () => {},
+		dataTransfer: { items: [], files: [], types: ["text/plain"] },
+	} as unknown as DragEvent;
+}
+
+test("dragging non-file content (e.g. a text selection) does not activate the dropzone", () => {
+	const controller = createDropzoneController();
+	const state = controller.handleDragEnter(createNonFileDragEvent());
+	expect(state).toEqual({
+		isDragActive: false,
+		isDragAccept: false,
+		isDragReject: false,
+	});
+});
+
+test("a non-file drag entering and leaving does not leak into a subsequent real file drag's depth accounting", () => {
+	const controller = createDropzoneController();
+	controller.handleDragEnter(createNonFileDragEvent());
+	controller.handleDragLeave();
+
+	const state = controller.handleDragEnter(createDragEvent(["image/png"]));
+	expect(state.isDragActive).toBe(true);
+
+	const afterLeave = controller.handleDragLeave();
+	expect(afterLeave.isDragActive).toBe(false);
+});
+
 test("does not flicker when the drag crosses into nested children", () => {
 	const controller = createDropzoneController();
 	controller.handleDragEnter(createDragEvent(["image/png"]));
@@ -119,7 +151,7 @@ function createDragEventWithRealFiles(files: File[]): DragEvent {
 	}));
 	return {
 		preventDefault: () => {},
-		dataTransfer: { items, files },
+		dataTransfer: { items, files, types: ["Files"] },
 	} as unknown as DragEvent;
 }
 

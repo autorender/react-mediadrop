@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
+
+import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { s3Upload } from "./simple.js";
-import { installMockXhr, MockXhr, makeFile } from "./test-utils.js";
 
 let uninstall: () => void;
 beforeEach(() => {

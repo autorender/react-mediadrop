@@ -106,6 +106,16 @@ type MediaDropFile = {
 };
 ```
 
+`uploadError.code` is always `"upload-error"` — a stable, single value
+every consumer can rely on regardless of transport. `uploadError.status`
+(HTTP status, e.g. from a rejected/aborted request) and
+`uploadError.sourceCode` (a transport's own finer-grained error
+classification, e.g. `@mediadrop/tus`'s `TusError.code` such as
+`"offset-mismatch"`) are both optional — present only when the failing
+transport attached that information, omitted otherwise. Don't `switch`
+exhaustively on `sourceCode`; it's transport-specific and open-ended, not
+a closed union like `MediaDropErrorCode`.
+
 `uploadStatus` is **`undefined` until an upload is requested** for that
 file — a freshly-accepted file has no `uploadStatus` at all, not
 `"queued"`. It only ever applies to `status: "accepted"` files; a

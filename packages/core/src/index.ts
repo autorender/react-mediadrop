@@ -52,3 +52,5 @@ export type {
 	UploadQueueStore,
 } from "./upload-queue.js";
 export { createUploadQueue } from "./upload-queue.js";
+export type { XhrSendOptions, XhrSendResult } from "./xhr.js";
+export { sendXhr } from "./xhr.js";

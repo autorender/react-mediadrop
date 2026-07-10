@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { memoryUploadSessionStore } from "@mediadrop/core";
+import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { installMockXhr, MockXhr, makeFile } from "./test-utils.js";
 import { tusUpload } from "./tus-upload.js";
 import { TusError } from "./types.js";
 
@@ -37,9 +37,9 @@ test("creates the upload with the correct tus creation headers", async () => {
 	expect(create?.requestHeaders["Upload-Metadata"]).toContain("filename");
 	expect(create?.requestHeaders["Upload-Metadata"]).toContain("filetype");
 
-	create?.respond(201, { Location: "/files/abc123" });
+	create?.respond(201, "", { Location: "/files/abc123" });
 	await waitForXhrCount(2);
-	MockXhr.instances[1]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[1]?.respond(204, "", { "Upload-Offset": "10" });
 
 	await promise;
 });
@@ -53,7 +53,7 @@ test("uploads the file body via PATCH with the correct offset/content-type heade
 		signal: new AbortController().signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc123" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc123" });
 	await waitForXhrCount(2);
 
 	const patch = MockXhr.instances[1];
@@ -68,7 +68,7 @@ test("uploads the file body via PATCH with the correct offset/content-type heade
 	);
 	expect(patch?.sentBody).toBeInstanceOf(Blob);
 
-	patch?.respond(204, { "Upload-Offset": "10" });
+	patch?.respond(204, "", { "Upload-Offset": "10" });
 	const result = await promise;
 	expect(result.response).toEqual({
 		uploadUrl: "https://mediadrop.test/files/abc123",
@@ -86,25 +86,85 @@ test("splits large files into multiple chunks", async () => {
 		signal: new AbortController().signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 
 	await waitForXhrCount(2);
 	expect(MockXhr.instances[1]?.requestHeaders["Upload-Offset"]).toBe("0");
-	MockXhr.instances[1]?.respond(204, { "Upload-Offset": "5" });
+	MockXhr.instances[1]?.respond(204, "", { "Upload-Offset": "5" });
 
 	await waitForXhrCount(3);
 	expect(MockXhr.instances[2]?.requestHeaders["Upload-Offset"]).toBe("5");
-	MockXhr.instances[2]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[2]?.respond(204, "", { "Upload-Offset": "10" });
 
 	await waitForXhrCount(4);
 	expect(MockXhr.instances[3]?.requestHeaders["Upload-Offset"]).toBe("10");
-	MockXhr.instances[3]?.respond(204, { "Upload-Offset": "12" });
+	MockXhr.instances[3]?.respond(204, "", { "Upload-Offset": "12" });
 
 	const result = await promise;
 	expect(result.response).toEqual({
 		uploadUrl: "https://mediadrop.test/files/abc",
 		offset: 12,
 	});
+});
+
+/** See `@mediadrop/s3`'s `multipart.test.ts` for why this isn't a plain `toEqual`. */
+function expectBytesEqual(
+	actual: Uint8Array,
+	expected: Uint8Array,
+	label: string,
+): void {
+	if (actual.length !== expected.length) {
+		throw new Error(
+			`${label}: length mismatch — expected ${expected.length} bytes, got ${actual.length}`,
+		);
+	}
+	for (let i = 0; i < actual.length; i++) {
+		if (actual[i] !== expected[i]) {
+			throw new Error(
+				`${label}: byte mismatch at index ${i} — expected ${expected[i]}, got ${actual[i]}`,
+			);
+		}
+	}
+}
+
+test("sends each chunk's exact byte range — no off-by-one gap or overlap at chunk boundaries", async () => {
+	// Distinguishable bytes at every position (not uniform padding) so a
+	// boundary bug is actually detectable, not invisible against all-zero
+	// content. 12 bytes, chunkSize 5 -> chunks [0,5), [5,10), [10,12).
+	const content = new Uint8Array(12).map((_, i) => i + 1);
+	const file = {
+		id: "a",
+		file: new File([content], "a.png", { type: "image/png" }),
+		name: "a.png",
+		size: 12,
+		type: "image/png",
+		status: "accepted" as const,
+		errors: [],
+	};
+	const transport = tusUpload({ endpoint: "/files", chunkSize: 5 });
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await waitForXhrCount(1);
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
+
+	const expectedRanges = [
+		[0, 5],
+		[5, 10],
+		[10, 12],
+	];
+	for (let i = 0; i < expectedRanges.length; i++) {
+		await waitForXhrCount(i + 2);
+		const patch = MockXhr.instances[i + 1];
+		const bytes = new Uint8Array(await (patch?.sentBody as Blob).arrayBuffer());
+		const [start, end] = expectedRanges[i] ?? [0, 0];
+		expectBytesEqual(bytes, content.slice(start, end), `chunk ${i + 1}`);
+		patch?.respond(204, "", { "Upload-Offset": String(end) });
+	}
+
+	await promise;
 });
 
 test("reports progress as chunks complete", async () => {
@@ -117,13 +177,13 @@ test("reports progress as chunks complete", async () => {
 		signal: new AbortController().signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 	await waitForXhrCount(2);
 
 	MockXhr.instances[1]?.progress(4);
 	expect(onProgress).toHaveBeenLastCalledWith({ loaded: 4, total: 10 });
 
-	MockXhr.instances[1]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[1]?.respond(204, "", { "Upload-Offset": "10" });
 	await promise;
 	expect(onProgress).toHaveBeenLastCalledWith({ loaded: 10, total: 10 });
 });
@@ -152,14 +212,14 @@ test("resumes using the offset from a fresh HEAD request, not a stale local valu
 	const head = MockXhr.instances[0];
 	expect(head?.method).toBe("HEAD");
 	expect(head?.url).toBe("/files/existing");
-	head?.respond(200, { "Upload-Offset": "6" }); // server says 6 bytes already uploaded
+	head?.respond(200, "", { "Upload-Offset": "6" }); // server says 6 bytes already uploaded
 
 	await waitForXhrCount(2);
 	const patch = MockXhr.instances[1];
 	expect(patch?.method).toBe("PATCH");
 	expect(patch?.requestHeaders["Upload-Offset"]).toBe("6"); // resumed from HEAD's offset, not the stale "0"
 
-	patch?.respond(204, { "Upload-Offset": "10" });
+	patch?.respond(204, "", { "Upload-Offset": "10" });
 	await promise;
 });
 
@@ -189,11 +249,11 @@ test("falls back to creating a new upload when the resumed URL is gone (HEAD fai
 	await waitForXhrCount(2);
 	const create = MockXhr.instances[1];
 	expect(create?.method).toBe("POST");
-	create?.respond(201, { Location: "/files/new" });
+	create?.respond(201, "", { Location: "/files/new" });
 
 	await waitForXhrCount(3);
 	expect(MockXhr.instances[2]?.requestHeaders["Upload-Offset"]).toBe("0");
-	MockXhr.instances[2]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[2]?.respond(204, "", { "Upload-Offset": "10" });
 
 	await promise;
 });
@@ -208,9 +268,9 @@ test("removes the session after a successful completion", async () => {
 		signal: new AbortController().signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 	await waitForXhrCount(2);
-	MockXhr.instances[1]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[1]?.respond(204, "", { "Upload-Offset": "10" });
 	await promise;
 
 	const { createFileFingerprint } = await import("@mediadrop/core");
@@ -229,7 +289,7 @@ test("aborting the signal cancels the request and clears the session", async () 
 		signal: controller.signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 	await waitForXhrCount(2);
 
 	controller.abort();
@@ -254,14 +314,14 @@ test("retries a failed chunk using the shared retry engine", async () => {
 		signal: new AbortController().signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 
 	await waitForXhrCount(2);
 	MockXhr.instances[1]?.respond(500); // first PATCH attempt fails
 
 	await waitForXhrCount(3);
 	expect(MockXhr.instances[2]?.method).toBe("PATCH");
-	MockXhr.instances[2]?.respond(204, { "Upload-Offset": "10" }); // retry succeeds
+	MockXhr.instances[2]?.respond(204, "", { "Upload-Offset": "10" }); // retry succeeds
 
 	await promise;
 });
@@ -282,7 +342,7 @@ test("chunkStallTimeoutMs aborts a stalled PATCH and retries it, via the shared 
 			signal: new AbortController().signal,
 		});
 		await waitForXhrCount(1);
-		MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+		MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 		await waitForXhrCount(2);
 
 		// No progress at all on the first PATCH attempt — it stalls.
@@ -293,7 +353,7 @@ test("chunkStallTimeoutMs aborts a stalled PATCH and retries it, via the shared 
 		// fresh PATCH.
 		await waitForXhrCount(3);
 		expect(MockXhr.instances[2]?.method).toBe("PATCH");
-		MockXhr.instances[2]?.respond(204, { "Upload-Offset": "10" });
+		MockXhr.instances[2]?.respond(204, "", { "Upload-Offset": "10" });
 
 		await promise;
 	} finally {
@@ -317,14 +377,14 @@ test("a cancel that lands right as the final chunk resolves still rejects, not r
 		signal: controller.signal,
 	});
 	await waitForXhrCount(1);
-	MockXhr.instances[0]?.respond(201, { Location: "/files/abc" });
+	MockXhr.instances[0]?.respond(201, "", { Location: "/files/abc" });
 	await waitForXhrCount(2);
 
 	// Resolve the final chunk and cancel in the same synchronous tick — the
 	// resolution wins the race (a settled promise can't be un-resolved), so
 	// this reproduces "the request had already succeeded by the time the
 	// cancel was processed" without relying on timing luck.
-	MockXhr.instances[1]?.respond(204, { "Upload-Offset": "10" });
+	MockXhr.instances[1]?.respond(204, "", { "Upload-Offset": "10" });
 	controller.abort();
 
 	await expect(promise).rejects.toThrow();

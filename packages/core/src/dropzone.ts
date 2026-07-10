@@ -68,6 +68,11 @@ function evaluateValidatorPreview(
  * `accept`/`validator` are passed per-call (not baked in at creation) so
  * callers can reflect restriction changes without recreating the controller.
  */
+function hasFiles(event: DragEvent): boolean {
+	const types = event.dataTransfer?.types;
+	return types ? Array.from(types).includes("Files") : false;
+}
+
 export function createDropzoneController() {
 	let depth = 0;
 	let state: DragState = IDLE_DRAG_STATE;
@@ -120,6 +125,14 @@ export function createDropzoneController() {
 		validator?: MediaDropValidator,
 	): DragState {
 		depth += 1;
+		// Dragging a text selection, a link, or an image from elsewhere on the
+		// page also fires `dragenter` — none of those carry "Files" among
+		// `dataTransfer.types`. Without this gate the dropzone would show the
+		// same "drag active" affordance for those as for an actual file drag.
+		if (!hasFiles(event)) {
+			state = IDLE_DRAG_STATE;
+			return state;
+		}
 		const acceptance = evaluateAcceptance(event, accept, validator);
 		state = { isDragActive: true, ...acceptance };
 		return state;

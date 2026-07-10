@@ -73,18 +73,37 @@ function useMediaDrop(options?: {
 	removeFile(id: string): void;
 	clearFiles(): void;
 	open(): void;
-	getRootProps(arg?: {
+	getRootProps(arg?: HTMLAttributes<HTMLElement> & {
 		onClick?, onKeyDown?, onFocus?, onBlur?,
 		onDragEnter?, onDragOver?, onDragLeave?, onDrop?
 	}): {
 		role, tabIndex,
 		onClick, onKeyDown, onFocus, onBlur,
 		onDragEnter, onDragOver, onDragLeave, onDrop,
+		// ...plus whatever else was passed in `arg` (aria-*, className, id, data-*, ...)
 	};
-	getInputProps(arg?: {
+	getInputProps(arg?: InputHTMLAttributes<HTMLInputElement> & {
 		onChange?, onClick?
-	}): { ref, type: "file", multiple, accept, style, onChange, onClick };
+	}): { ref, type: "file", multiple, accept, style, onChange, onClick, /* ...passthrough */ };
 };
+```
+
+Both accept and pass through arbitrary HTML attributes alongside the
+recognized handlers — useful for `aria-label`/`aria-describedby`/
+`className`/`id`/`data-*`. A consumer-supplied `style` on
+`getInputProps()` is merged, but `display: none` always wins — it can't
+be overridden, since the hidden native input is load-bearing (see
+"Click-to-open and keyboard activation" below).
+
+```tsx
+<div
+	{...getRootProps({
+		"aria-label": "File upload dropzone",
+		className: "dropzone",
+	})}
+>
+	<input {...getInputProps({ "aria-hidden": "true" })} />
+</div>
 ```
 
 Passing `transport` (plus optional `concurrency`/`retries`/`retryDelays`)

@@ -4,3 +4,15 @@ packages:
 
 catalog:
   typescript: ^5.9.3
+  vitest: ^4.1.10
+  "@vitest/coverage-v8": ^4.1.10
+  tsdown: ^0.22.3
+  jsdom: ^29.1.1
+
+# No dependency in this tree currently declares a preinstall/postinstall
+# script (verified via `find node_modules/.pnpm -name package.json | xargs
+# grep -l '"postinstall"\|"preinstall"'` during plan 006's audit) — an
+# explicit empty allowlist keeps it that way: any future dependency that
+# adds one is blocked from running it until someone deliberately adds it
+# here, rather than silently executing arbitrary install-time code.
+onlyBuiltDependencies: []

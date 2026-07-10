@@ -171,6 +171,58 @@ test("without a transport, no upload methods exist on the instance", () => {
 	expect("cancelUpload" in mediadrop).toBe(false);
 });
 
+test("updateFile only replaces the patched file's object, leaving every other file's reference untouched", () => {
+	const { transport } = createDeferredTransport();
+	const mediadrop = createMediaDrop({ transport });
+	const items = mediadrop.addFiles(
+		Array.from({ length: 50 }, (_, i) =>
+			makeFile(`f${i}.png`, "image/png", 10),
+		),
+	);
+	const before = mediadrop.getState().files;
+	const targetId = items[25]?.id ?? "";
+
+	mediadrop.uploadFile(targetId);
+
+	const after = mediadrop.getState().files;
+	expect(after).not.toBe(before);
+	for (let i = 0; i < before.length; i++) {
+		if (before[i]?.id === targetId) {
+			expect(after[i]).not.toBe(before[i]);
+		} else {
+			expect(after[i]).toBe(before[i]);
+		}
+	}
+});
+
+test("updateFile and getFile locate the target file via the id→index map, not an O(n) scan", () => {
+	// Neither `getFile` nor `updateFile` (see mediadrop.ts's queue store
+	// adapter) may call `.find`/`.findIndex` over `state.files` — that's
+	// exactly the per-progress-tick scan this map exists to avoid. Spying
+	// on the prototype methods catches a regression back to a linear scan
+	// even though the reference-identity assertions above would still pass.
+	const { transport } = createDeferredTransport();
+	const mediadrop = createMediaDrop({ transport });
+	const items = mediadrop.addFiles(
+		Array.from({ length: 50 }, (_, i) =>
+			makeFile(`f${i}.png`, "image/png", 10),
+		),
+	);
+	const targetId = items[25]?.id ?? "";
+
+	const findSpy = vi.spyOn(Array.prototype, "find");
+	const findIndexSpy = vi.spyOn(Array.prototype, "findIndex");
+	try {
+		mediadrop.uploadFile(targetId);
+		expect(mediadrop.getState().files[25]?.uploadStatus).toBe("uploading");
+	} finally {
+		expect(findSpy).not.toHaveBeenCalled();
+		expect(findIndexSpy).not.toHaveBeenCalled();
+		findSpy.mockRestore();
+		findIndexSpy.mockRestore();
+	}
+});
+
 test("with a transport, uploadFile drives a file through uploadStatus without touching its validation status", async () => {
 	const { transport, resolve } = createDeferredTransport();
 	const mediadrop = createMediaDrop({ transport });

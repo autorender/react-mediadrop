@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import {
 	browserUploadSessionStore,
 	memoryUploadSessionStore,
@@ -85,6 +85,42 @@ test("browserUploadSessionStore: is SSR-safe when window/localStorage is unavail
 		await expect(store.remove("anything")).resolves.toBeUndefined();
 	} finally {
 		globalThis.window = originalWindow;
+	}
+});
+
+test("browserUploadSessionStore: set() does not throw when storage.setItem throws (e.g. quota exceeded)", async () => {
+	const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+	const setItemSpy = vi
+		.spyOn(Storage.prototype, "setItem")
+		.mockImplementation(() => {
+			throw new Error("QuotaExceededError");
+		});
+	try {
+		const store = browserUploadSessionStore();
+		await expect(
+			store.set("session-1", { uploadId: "u1" }),
+		).resolves.toBeUndefined();
+		expect(warnSpy).toHaveBeenCalled();
+	} finally {
+		setItemSpy.mockRestore();
+		warnSpy.mockRestore();
+	}
+});
+
+test("browserUploadSessionStore: remove() does not throw when storage.removeItem throws", async () => {
+	const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+	const removeItemSpy = vi
+		.spyOn(Storage.prototype, "removeItem")
+		.mockImplementation(() => {
+			throw new Error("storage disabled");
+		});
+	try {
+		const store = browserUploadSessionStore();
+		await expect(store.remove("session-1")).resolves.toBeUndefined();
+		expect(warnSpy).toHaveBeenCalled();
+	} finally {
+		removeItemSpy.mockRestore();
+		warnSpy.mockRestore();
 	}
 });
 

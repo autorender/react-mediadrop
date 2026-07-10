@@ -1,11 +1,5 @@
-import { createStallWatchdog } from "@mediadrop/core";
+import { sendXhr as coreSendXhr } from "@mediadrop/core";
 import { TUS_RESUMABLE, TusError } from "./types.js";
-
-type XhrResult = {
-	status: number;
-	getHeader: (name: string) => string | null;
-	responseURL: string;
-};
 
 function sendXhr(
 	method: string,
@@ -17,56 +11,25 @@ function sendXhr(
 		onUploadProgress?: (loaded: number) => void;
 		stallTimeoutMs?: number;
 	},
-): Promise<XhrResult> {
-	return new Promise((resolve, reject) => {
-		if (options.signal.aborted) {
-			reject(new TusError("aborted", "Upload aborted"));
-			return;
-		}
-		const xhr = new XMLHttpRequest();
-		xhr.open(method, url, true);
-		for (const [key, value] of Object.entries(options.headers ?? {})) {
-			xhr.setRequestHeader(key, value);
-		}
-
-		let stalled = false;
-		const watchdog = createStallWatchdog(() => {
-			stalled = true;
-			xhr.abort();
-		}, options.stallTimeoutMs ?? 0);
-
-		if (options.onUploadProgress) {
-			const onUploadProgress = options.onUploadProgress;
-			xhr.upload.onprogress = (event) => {
-				watchdog.reset();
-				onUploadProgress(event.loaded);
-			};
-		}
-		xhr.onload = () => {
-			watchdog.clear();
-			resolve({
-				status: xhr.status,
-				getHeader: (name) => xhr.getResponseHeader(name),
-				responseURL: xhr.responseURL,
-			});
-		};
-		xhr.onerror = () => {
-			watchdog.clear();
-			reject(new Error(`${method} ${url} failed: network error`));
-		};
-		xhr.onabort = () => {
-			watchdog.clear();
-			reject(
-				stalled
-					? new TusError(
-							"aborted",
-							`${method} ${url} stalled: no progress for ${options.stallTimeoutMs}ms`,
-						)
-					: new TusError("aborted", "Upload aborted"),
-			);
-		};
-		options.signal.addEventListener("abort", () => xhr.abort(), { once: true });
-		xhr.send(options.body ?? null);
+) {
+	return coreSendXhr({
+		method,
+		url,
+		headers: options.headers,
+		body: options.body,
+		signal: options.signal,
+		stallTimeoutMs: options.stallTimeoutMs,
+		onUploadProgress: options.onUploadProgress
+			? (loaded: number) => options.onUploadProgress?.(loaded)
+			: undefined,
+		createAbortedError: () => new TusError("aborted", "Upload aborted"),
+		createStalledError: (ms: number) =>
+			new TusError(
+				"aborted",
+				`${method} ${url} stalled: no progress for ${ms}ms`,
+			),
+		createNetworkError: () =>
+			new Error(`${method} ${url} failed: network error`),
 	});
 }
 

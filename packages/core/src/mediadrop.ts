@@ -91,9 +91,37 @@ export function createMediaDrop(
 	// concurrency slot would never free up.
 	let queue: UploadQueue | null = null;
 
+	// id -> index within the current `store.getState().files` array, kept in
+	// sync with every operation that changes the array's membership or
+	// order (`addFiles`/`removeFile`/`clearFiles`). This exists so
+	// `updateFile` — called on every single progress event, for every
+	// in-flight file — can look up "which element is this?" in O(1) instead
+	// of an O(n) `.find`/`.map` scan over the whole list on every tick.
+	let indexById = new Map<string, number>();
+
+	function rebuildIndex(files: MediaDropFile[]): void {
+		indexById = new Map(files.map((item, i) => [item.id, i]));
+	}
+
+	// Cache of the aggregate read helpers, invalidated only when the
+	// `files` array reference actually changes — cheap since every mutation
+	// above already produces a new array/reference, so this is a correct,
+	// exact-match cache key, not an approximation.
+	let aggregateCacheFiles: MediaDropFile[] | null = null;
+	let acceptedCache: MediaDropFile[] = [];
+	let rejectedCache: MediaDropFile[] = [];
+
+	function refreshAggregatesIfNeeded(): void {
+		const files = store.getState().files;
+		if (files === aggregateCacheFiles) return;
+		aggregateCacheFiles = files;
+		acceptedCache = files.filter((item) => item.status === "accepted");
+		rejectedCache = files.filter((item) => item.status === "rejected");
+	}
+
 	function countAccepted(): number {
-		return store.getState().files.filter((item) => item.status === "accepted")
-			.length;
+		refreshAggregatesIfNeeded();
+		return acceptedCache.length;
 	}
 
 	function addFiles(input: FileList | File[]): MediaDropFile[] {
@@ -127,28 +155,45 @@ export function createMediaDrop(
 			return item;
 		});
 
-		store.setState((state) => ({ files: [...state.files, ...items] }));
+		store.setState((state) => {
+			const files = [...state.files, ...items];
+			// Appending never shifts an existing id's index, so just add the
+			// new entries rather than rebuilding the whole map.
+			for (let i = 0; i < items.length; i++) {
+				const item = items[i];
+				if (item) indexById.set(item.id, state.files.length + i);
+			}
+			return { files };
+		});
 		return items;
 	}
 
 	function removeFile(id: string): void {
 		queue?.cancel(id);
-		store.setState((state) => ({
-			files: state.files.filter((item) => item.id !== id),
-		}));
+		store.setState((state) => {
+			const files = state.files.filter((item) => item.id !== id);
+			// Removal shifts every subsequent index, so the map needs a full
+			// rebuild here — but this is a rare, user-driven action, not the
+			// per-progress-tick hot path `updateFile` is.
+			rebuildIndex(files);
+			return { files };
+		});
 	}
 
 	function clearFiles(): void {
 		queue?.cancelAll();
+		indexById = new Map();
 		store.setState({ files: [] });
 	}
 
 	function getAcceptedFiles(): MediaDropFile[] {
-		return store.getState().files.filter((item) => item.status === "accepted");
+		refreshAggregatesIfNeeded();
+		return acceptedCache;
 	}
 
 	function getRejectedFiles(): MediaDropFile[] {
-		return store.getState().files.filter((item) => item.status === "rejected");
+		refreshAggregatesIfNeeded();
+		return rejectedCache;
 	}
 
 	const base: MediaDropInstance = {
@@ -168,13 +213,20 @@ export function createMediaDrop(
 	queue = createUploadQueue(
 		{ transport, concurrency, retries, retryDelays, cancelGraceMs },
 		{
-			getFile: (id) => store.getState().files.find((item) => item.id === id),
+			getFile: (id) => {
+				const index = indexById.get(id);
+				return index === undefined ? undefined : store.getState().files[index];
+			},
 			updateFile: (id, patch) => {
-				store.setState((state) => ({
-					files: state.files.map((item) =>
-						item.id === id ? { ...item, ...patch } : item,
-					),
-				}));
+				store.setState((state) => {
+					const index = indexById.get(id);
+					if (index === undefined) return state;
+					const files = state.files.slice();
+					const current = files[index];
+					if (!current) return state;
+					files[index] = { ...current, ...patch };
+					return { files };
+				});
 			},
 		},
 	);

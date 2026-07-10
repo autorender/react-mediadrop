@@ -46,7 +46,28 @@ export type UploadQueue = {
 
 function toUploadError(error: unknown): MediaDropError {
 	const message = error instanceof Error ? error.message : String(error);
-	return { code: "upload-error", message };
+
+	// `createHttpError` (retry.ts) attaches `status`; `@mediadrop/tus`'s
+	// `TusError` attaches `code`. Neither is a class this module imports —
+	// both are duck-typed here so any current or future transport's own
+	// error-tagging convention is picked up without core needing to know
+	// about it by name.
+	const tagged = error as { status?: unknown; code?: unknown } | null;
+	const status =
+		error instanceof Error && typeof tagged?.status === "number"
+			? tagged.status
+			: undefined;
+	const sourceCode =
+		error instanceof Error && typeof tagged?.code === "string"
+			? tagged.code
+			: undefined;
+
+	return {
+		code: "upload-error",
+		message,
+		...(status !== undefined ? { status } : {}),
+		...(sourceCode !== undefined ? { sourceCode } : {}),
+	};
 }
 
 /**
@@ -77,6 +98,16 @@ export function createUploadQueue(
 			clearTimeout(timer);
 			graceTimers.delete(id);
 		}
+	}
+
+	// Shared by the settle handlers below and `scheduleForceFree` — true
+	// only if `id` still maps to this exact controller/attempt. Without
+	// this, a transport that settles *after* force-free already reassigned
+	// `id` to a brand-new attempt (a fast retry within the grace window)
+	// would clobber that newer attempt's live state with its own stale
+	// result.
+	function isStillActive(id: string, controller: AbortController): boolean {
+		return active.get(id) === controller;
 	}
 
 	function pump(): void {
@@ -114,12 +145,18 @@ export function createUploadQueue(
 			controller.signal,
 		)
 			.then((result) => {
+				if (!isStillActive(id, controller)) return;
+				if (controller.signal.aborted) {
+					store.updateFile(id, { uploadStatus: "canceled" });
+					return;
+				}
 				store.updateFile(id, {
 					uploadStatus: "done",
 					uploadResult: result.response,
 				});
 			})
 			.catch((error) => {
+				if (!isStillActive(id, controller)) return;
 				if (controller.signal.aborted) {
 					store.updateFile(id, { uploadStatus: "canceled" });
 					return;
@@ -131,7 +168,9 @@ export function createUploadQueue(
 			})
 			.finally(() => {
 				clearGraceTimer(id);
-				active.delete(id);
+				if (isStillActive(id, controller)) {
+					active.delete(id);
+				}
 				pump();
 			});
 	}

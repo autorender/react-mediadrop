@@ -27,6 +27,8 @@ Autorender, the short version:
    reentrancy) the way the existing suite does, not just happy-path
    smoke tests.
 
-Once this becomes the public repo, this file will cover external PRs
-(issue templates, review process, CLA if any) — none of that exists yet
-because there isn't an external contributor audience yet.
+Issue and PR templates (`.github/ISSUE_TEMPLATE/`,
+`.github/PULL_REQUEST_TEMPLATE.md`) and a vulnerability-reporting process
+([`SECURITY.md`](SECURITY.md)) already exist. A CLA and a full external
+review process are still deferred until this becomes the public repo and
+there's an actual external contributor audience.

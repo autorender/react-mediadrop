@@ -83,12 +83,34 @@ export function browserUploadSessionStore(
 		async set(key, value) {
 			const storage = getStorage();
 			if (!storage) return;
-			storage.setItem(prefix + key, JSON.stringify(value));
+			// `setItem` throws in real, unexceptional conditions —
+			// `QuotaExceededError` when storage is full, or on essentially
+			// every call in some browsers' private-browsing modes. A
+			// persistence failure here means "this upload isn't resumable
+			// this time," not "the upload itself failed" — swallow it
+			// (matching `get`'s existing swallow-on-corrupt-JSON precedent)
+			// rather than letting it surface as a confusing, unrelated
+			// upload error.
+			try {
+				storage.setItem(prefix + key, JSON.stringify(value));
+			} catch (error) {
+				console.warn(
+					`mediadrop: failed to persist upload session "${key}"`,
+					error,
+				);
+			}
 		},
 		async remove(key) {
 			const storage = getStorage();
 			if (!storage) return;
-			storage.removeItem(prefix + key);
+			try {
+				storage.removeItem(prefix + key);
+			} catch (error) {
+				console.warn(
+					`mediadrop: failed to remove upload session "${key}"`,
+					error,
+				);
+			}
 		},
 	};
 }

@@ -64,7 +64,12 @@ function dispatchDragEvent(
 	Object.defineProperty(event, "dataTransfer", {
 		value: {
 			files,
-			items: files.map((file) => ({ kind: "file", type: file.type })),
+			items: files.map((file) => ({
+				kind: "file",
+				type: file.type,
+				getAsFile: () => file,
+			})),
+			types: ["Files"],
 		},
 	});
 	target.dispatchEvent(event);
@@ -90,6 +95,48 @@ test("dropping files on the root reports them via onChange", () => {
 
 	expect(onChange).toHaveBeenCalledTimes(1);
 	expect(onChange.mock.calls[0]?.[0].files).toHaveLength(1);
+});
+
+test("onDragStateChange reports isDragActive during a drag and idle again after drop", () => {
+	const onDragStateChange = vi.fn();
+	createMediaDrop({ root, onDragStateChange });
+
+	dispatchDragEvent(root, "dragenter", [makeFile("a.png", "image/png")]);
+	expect(onDragStateChange).toHaveBeenCalledWith(
+		expect.objectContaining({ isDragActive: true }),
+	);
+
+	dispatchDragEvent(root, "drop", [makeFile("a.png", "image/png")]);
+	expect(onDragStateChange).toHaveBeenLastCalledWith(
+		expect.objectContaining({ isDragActive: false }),
+	);
+});
+
+test("onDragStateChange reports idle again after dragleave", () => {
+	const onDragStateChange = vi.fn();
+	createMediaDrop({ root, onDragStateChange });
+
+	dispatchDragEvent(root, "dragenter", [makeFile("a.png", "image/png")]);
+	dispatchDragEvent(root, "dragleave");
+
+	expect(onDragStateChange).toHaveBeenLastCalledWith(
+		expect.objectContaining({ isDragActive: false }),
+	);
+});
+
+test("a custom validator's rejection is reflected via onDragStateChange during the drag, not just on drop", () => {
+	const onDragStateChange = vi.fn();
+	const validator = (file: File) =>
+		file.name.includes("bad")
+			? { code: "validator-error" as const, message: "bad file" }
+			: null;
+	createMediaDrop({ root, onDragStateChange, validator });
+
+	dispatchDragEvent(root, "dragenter", [makeFile("bad.png", "image/png")]);
+
+	expect(onDragStateChange).toHaveBeenCalledWith(
+		expect.objectContaining({ isDragActive: true, isDragReject: true }),
+	);
 });
 
 test("open() clicks the input", () => {

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { memoryUploadSessionStore } from "@mediadrop/core";
+import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { S3_MIN_PART_SIZE, s3MultipartUpload } from "./multipart.js";
-import { installMockXhr, MockXhr, makeFile } from "./test-utils.js";
 
 let uninstall: () => void;
 beforeEach(() => {
@@ -25,6 +25,31 @@ function respondAllOpenParts(): void {
 		const xhr = MockXhr.instances[i];
 		if (xhr && xhr.status === 0) {
 			xhr.respond(200, "", { ETag: `"etag-${i}"` });
+		}
+	}
+}
+
+/**
+ * `expect(bytes).toEqual(expected)` on a multi-megabyte typed array takes
+ * ~20+ seconds (chai's generic deep-equality isn't optimized for large
+ * typed arrays) — a plain indexed loop is a few milliseconds instead, and
+ * still reports exactly where the first mismatch is.
+ */
+function expectBytesEqual(
+	actual: Uint8Array,
+	expected: Uint8Array,
+	label: string,
+): void {
+	if (actual.length !== expected.length) {
+		throw new Error(
+			`${label}: length mismatch — expected ${expected.length} bytes, got ${actual.length}`,
+		);
+	}
+	for (let i = 0; i < actual.length; i++) {
+		if (actual[i] !== expected[i]) {
+			throw new Error(
+				`${label}: byte mismatch at index ${i} — expected ${expected[i]}, got ${actual[i]}`,
+			);
 		}
 	}
 }
@@ -66,6 +91,60 @@ test("splits a file into parts respecting the minimum part size, except the last
 
 	await promise;
 	expect(partUrls).toEqual([1, 2, 3]);
+});
+
+test("sends each part's exact byte range — no off-by-one gap or overlap at part boundaries", async () => {
+	// Distinguishable bytes at every position (not uniform padding) so a
+	// boundary bug (e.g. sending [0,100),[100,200) instead of the correct
+	// [0,100),[99,199)) is actually detectable, not invisible against
+	// all-zero content. 2 full parts + a small remainder, matching the
+	// part-count test above.
+	const fileSize = S3_MIN_PART_SIZE * 2 + 100;
+	const content = new Uint8Array(fileSize);
+	for (let i = 0; i < fileSize; i++) content[i] = i % 256;
+	const file = new File([content], "a.png", { type: "image/png" });
+
+	const transport = s3MultipartUpload({
+		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: async () => ({ location: "done", key: "k1" }),
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+	});
+
+	const promise = transport.upload(
+		{
+			id: "a",
+			file,
+			name: "a.png",
+			size: fileSize,
+			type: "image/png",
+			status: "accepted",
+			errors: [],
+		},
+		{ onProgress: vi.fn(), signal: new AbortController().signal },
+	);
+
+	const expectedRanges = [
+		[0, S3_MIN_PART_SIZE],
+		[S3_MIN_PART_SIZE, S3_MIN_PART_SIZE * 2],
+		[S3_MIN_PART_SIZE * 2, fileSize],
+	];
+
+	for (let i = 0; i < expectedRanges.length; i++) {
+		await waitForXhrCount(i + 1);
+		const xhr = MockXhr.instances[i];
+		const sentBody = xhr?.sentBody;
+		expect(sentBody).toBeInstanceOf(Blob);
+		const bytes = new Uint8Array(await (sentBody as Blob).arrayBuffer());
+		const [start, end] = expectedRanges[i] ?? [0, 0];
+		expectBytesEqual(bytes, content.slice(start, end), `part ${i + 1}`);
+		xhr?.respond(200, "", { ETag: `"etag-${i}"` });
+	}
+
+	await promise;
 });
 
 test("uploads parts with the given concurrency, not more at once", async () => {
@@ -443,6 +522,183 @@ test("persists session metadata as parts complete, and resumes by skipping them"
 
 	const result = await secondAttempt;
 	expect(result.response).toMatchObject({ uploadId: "u1" });
+});
+
+test("a stored session whose fingerprint doesn't match the current file starts a fresh upload instead of resuming", async () => {
+	const sessionStore = memoryUploadSessionStore();
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
+
+	// A session for a *different* file (deliberately wrong fingerprint) —
+	// isValidSession must reject this and treat it as "no session."
+	await sessionStore.set("s3-multipart:not-this-files-fingerprint", {
+		type: "s3-multipart",
+		fingerprint: "not-this-files-fingerprint",
+		uploadId: "stale-upload",
+		key: "stale-key",
+		partSize: S3_MIN_PART_SIZE,
+		completedParts: [
+			{ partNumber: 1, etag: '"stale"', size: S3_MIN_PART_SIZE },
+		],
+		createdAt: 1,
+		updatedAt: 1,
+	});
+
+	const createMultipartUpload = vi
+		.fn()
+		.mockResolvedValue({ uploadId: "u-fresh", key: "k-fresh" });
+	const getPartUploadUrl = vi
+		.fn()
+		.mockResolvedValue({ url: "https://s3.example/part/1" });
+	const transport = s3MultipartUpload({
+		createMultipartUpload,
+		getPartUploadUrl,
+		completeMultipartUpload: async () => ({ location: "done" }),
+		partSize: S3_MIN_PART_SIZE,
+		sessionStore,
+	});
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await driveAllParts(1, 1);
+	await promise;
+
+	// A fresh upload was created — the stale, differently-fingerprinted
+	// session was never trusted.
+	expect(createMultipartUpload).toHaveBeenCalledTimes(1);
+	expect(getPartUploadUrl).toHaveBeenCalledWith(
+		expect.objectContaining({ uploadId: "u-fresh", key: "k-fresh" }),
+	);
+});
+
+test("a resumed uploadId that S3 no longer recognizes (404) fails cleanly instead of hanging or silently succeeding", async () => {
+	// Documents current behavior without `listUploadedParts` configured:
+	// the stored uploadId/parts are trusted optimistically — the first
+	// request against a now-gone upload ID is what actually surfaces the
+	// problem, as a normal (non-retried, since 404 is a permanent 4xx)
+	// HTTP error, not silent corruption or a hang.
+	const sessionStore = memoryUploadSessionStore();
+	// Exactly one part — avoids the default partConcurrency (3) opening a
+	// second, never-responded-to XHR alongside the one this test resolves.
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
+	const { createFileFingerprint } = await import("@mediadrop/core");
+	const fp = await createFileFingerprint(file.file);
+	await sessionStore.set(`s3-multipart:${fp}`, {
+		type: "s3-multipart",
+		fingerprint: fp,
+		uploadId: "gone-upload",
+		key: "k1",
+		partSize: S3_MIN_PART_SIZE,
+		completedParts: [],
+		createdAt: 1,
+		updatedAt: 1,
+	});
+
+	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
+	const createMultipartUpload = vi.fn();
+	const transport = s3MultipartUpload({
+		createMultipartUpload,
+		getPartUploadUrl: async ({ partNumber }) => ({
+			url: `https://s3.example/part/${partNumber}`,
+		}),
+		completeMultipartUpload: vi.fn(),
+		abortMultipartUpload,
+		partSize: S3_MIN_PART_SIZE,
+		partConcurrency: 1,
+		partRetries: 0,
+		sessionStore,
+	});
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+	await waitForXhrCount(1);
+	// The uploadId in the resumed session no longer exists server-side.
+	MockXhr.instances[0]?.respond(404, "NoSuchUpload");
+
+	await expect(promise).rejects.toMatchObject({ status: 404 });
+	// Resumed against a stale uploadId — createMultipartUpload is never
+	// called (the code trusted the stored uploadId instead of creating a
+	// new one), and the failed upload is cleaned up: abort attempted,
+	// session cleared, so a subsequent retry starts genuinely fresh.
+	expect(createMultipartUpload).not.toHaveBeenCalled();
+	await vi.waitFor(() => {
+		expect(abortMultipartUpload).toHaveBeenCalledWith(
+			expect.objectContaining({ uploadId: "gone-upload", key: "k1" }),
+		);
+	});
+	expect(await sessionStore.get(`s3-multipart:${fp}`)).toBeNull();
+});
+
+test("without listUploadedParts, a stored completedParts entry inconsistent with the current file's part plan is trusted as-is (documented limitation)", async () => {
+	// This documents a real, already-disclosed tradeoff (see
+	// `listUploadedParts`'s own doc comment in multipart.ts): without it,
+	// resume trusts locally stored part metadata without checking it's
+	// actually consistent with the current file's own computed part
+	// boundaries. Here the stored "completed" part 1 has a size that
+	// doesn't match what computePartPlan would produce for this file — the
+	// upload still treats it as done and skips re-uploading it, rather than
+	// detecting the inconsistency. Recommendation for a follow-up: consider
+	// validating a resumed session's completedParts total size against the
+	// current file's size before trusting it, falling back to a fresh
+	// upload on mismatch, when `listUploadedParts` isn't configured.
+	const sessionStore = memoryUploadSessionStore();
+	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 2);
+	const { createFileFingerprint } = await import("@mediadrop/core");
+	const fp = await createFileFingerprint(file.file);
+	await sessionStore.set(`s3-multipart:${fp}`, {
+		type: "s3-multipart",
+		fingerprint: fp,
+		uploadId: "u1",
+		key: "k1",
+		partSize: S3_MIN_PART_SIZE,
+		// Inconsistent: this file's real part 1 is exactly S3_MIN_PART_SIZE
+		// bytes, but the stored metadata claims a different size for it.
+		completedParts: [
+			{ partNumber: 1, etag: '"stale-etag"', size: S3_MIN_PART_SIZE - 10 },
+		],
+		createdAt: 1,
+		updatedAt: 1,
+	});
+
+	const getPartUploadUrl = vi
+		.fn()
+		.mockResolvedValue({ url: "https://s3.example/part/2" });
+	const completeArgs: unknown[] = [];
+	const transport = s3MultipartUpload({
+		createMultipartUpload: vi.fn(),
+		getPartUploadUrl,
+		completeMultipartUpload: async (context) => {
+			completeArgs.push(context.parts);
+			return { location: "done", key: "k1" };
+		},
+		partSize: S3_MIN_PART_SIZE,
+		sessionStore,
+	});
+
+	const promise = transport.upload(file, {
+		onProgress: vi.fn(),
+		signal: new AbortController().signal,
+	});
+
+	// Part 1 is never re-requested — it's trusted as already done, despite
+	// the size mismatch. Only part 2 gets uploaded.
+	await waitForXhrCount(1);
+	expect(getPartUploadUrl).toHaveBeenCalledTimes(1);
+	expect(getPartUploadUrl).toHaveBeenCalledWith(
+		expect.objectContaining({ partNumber: 2 }),
+	);
+	MockXhr.instances[0]?.respond(200, "", { ETag: '"etag-2"' });
+
+	await promise;
+	// The stale, size-inconsistent part 1 metadata is passed straight
+	// through to completeMultipartUpload unchanged.
+	expect(completeArgs[0]).toEqual([
+		{ partNumber: 1, etag: '"stale-etag"', size: S3_MIN_PART_SIZE - 10 },
+		{ partNumber: 2, etag: '"etag-2"', size: S3_MIN_PART_SIZE },
+	]);
 });
 
 test("removes the session after a successful completion", async () => {

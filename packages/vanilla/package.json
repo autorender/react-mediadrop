@@ -19,6 +19,7 @@
 	],
 	"scripts": {
 		"build": "tsdown",
+		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"size": "node ../../scripts/check-bundle-size.mjs"
@@ -31,9 +32,10 @@
 	},
 	"devDependencies": {
 		"@mediadrop/tsconfig": "workspace:*",
-		"jsdom": "^29.1.1",
+		"jsdom": "catalog:",
 		"typescript": "catalog:",
-		"vitest": "^4.1.9",
-		"tsdown": "^0.22.3"
+		"vitest": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
+		"tsdown": "catalog:"
 	}
 }

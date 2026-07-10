@@ -343,13 +343,33 @@ export function s3MultipartUpload(
 				const activeUploadId = uploadId;
 				const activeKey = key;
 				const partProgress = new Map<number, number>();
+				// Maintained incrementally (not re-summed from the two maps above
+				// on every call) since `reportProgress` runs on every single
+				// part's every progress event — re-summing every completed +
+				// in-flight part on every one of those calls is O(parts) work
+				// repeated O(parts) times over a file's upload. All writes to
+				// `partProgress`/`completedParts` go through `setPartProgress`/
+				// `completePart` below specifically so this total can never
+				// drift out of sync with them.
+				let totalLoaded = 0;
+				for (const part of completedParts.values()) totalLoaded += part.size;
+
+				function setPartProgress(partNumber: number, loaded: number): void {
+					const previous = partProgress.get(partNumber) ?? 0;
+					totalLoaded += loaded - previous;
+					partProgress.set(partNumber, loaded);
+				}
+
+				function completePart(partNumber: number, part: S3MultipartPart): void {
+					const previous = partProgress.get(partNumber) ?? 0;
+					totalLoaded += part.size - previous;
+					partProgress.delete(partNumber);
+					completedParts.set(partNumber, part);
+				}
 
 				function reportProgress(): void {
-					let loaded = 0;
-					for (const part of completedParts.values()) loaded += part.size;
-					for (const bytes of partProgress.values()) loaded += bytes;
 					onProgress({
-						loaded: Math.min(loaded, file.file.size),
+						loaded: Math.min(totalLoaded, file.file.size),
 						total: file.file.size,
 					});
 				}
@@ -370,7 +390,7 @@ export function s3MultipartUpload(
 
 					const etag = await withRetry(
 						async () => {
-							partProgress.set(part.partNumber, 0);
+							setPartProgress(part.partNumber, 0);
 							const { url, headers } = await getPartUploadUrl({
 								file,
 								key: activeKey,
@@ -383,7 +403,7 @@ export function s3MultipartUpload(
 								blob,
 								partSignalController.signal,
 								(loaded) => {
-									partProgress.set(part.partNumber, loaded);
+									setPartProgress(part.partNumber, loaded);
 									reportProgress();
 								},
 								partStallTimeoutMs,
@@ -393,8 +413,7 @@ export function s3MultipartUpload(
 						partSignalController.signal,
 					);
 
-					partProgress.delete(part.partNumber);
-					completedParts.set(part.partNumber, {
+					completePart(part.partNumber, {
 						partNumber: part.partNumber,
 						etag,
 						size,

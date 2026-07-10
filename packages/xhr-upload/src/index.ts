@@ -2,8 +2,9 @@ import type {
 	MediaDropFile,
 	UploadTransport,
 	UploadTransportResult,
+	XhrSendResult,
 } from "@mediadrop/core";
-import { createHttpError, createStallWatchdog } from "@mediadrop/core";
+import { createHttpError, sendXhr } from "@mediadrop/core";
 
 export type XhrUploadFields =
 	| Record<string, string>
@@ -72,16 +73,16 @@ function buildFormData(
 	return formData;
 }
 
-function parseResponseBody(xhr: XMLHttpRequest): unknown {
-	const contentType = xhr.getResponseHeader("Content-Type") ?? "";
-	if (contentType.includes("json") && xhr.responseText) {
+function parseResponseBody(result: XhrSendResult): unknown {
+	const contentType = result.getHeader("Content-Type") ?? "";
+	if (contentType.includes("json") && result.responseText) {
 		try {
-			return JSON.parse(xhr.responseText);
+			return JSON.parse(result.responseText);
 		} catch {
-			return xhr.responseText;
+			return result.responseText;
 		}
 	}
-	return xhr.responseText;
+	return result.responseText;
 }
 
 /**
@@ -112,69 +113,33 @@ export function createXhrUploadTransport(
 	} = options;
 
 	return {
-		upload(file, { onProgress, signal }) {
-			return new Promise<UploadTransportResult>((resolvePromise, reject) => {
-				if (signal.aborted) {
-					reject(new Error("Upload aborted"));
-					return;
-				}
+		async upload(file, { onProgress, signal }) {
+			const url = resolve(endpoint, file);
+			const resolvedHeaders = headers ? resolve(headers, file) : undefined;
 
-				const url = resolve(endpoint, file);
-				const xhr = new XMLHttpRequest();
-				xhr.open(method, url, true);
-				xhr.withCredentials = withCredentials;
-
-				const resolvedHeaders = headers ? resolve(headers, file) : undefined;
-				for (const [key, value] of Object.entries(resolvedHeaders ?? {})) {
-					xhr.setRequestHeader(key, value);
-				}
-
-				let stalled = false;
-				const watchdog = createStallWatchdog(() => {
-					stalled = true;
-					xhr.abort();
-				}, stallTimeoutMs);
-
-				xhr.upload.onprogress = (event) => {
-					watchdog.reset();
-					onProgress({
-						loaded: event.loaded,
-						total: event.lengthComputable ? event.total : null,
-					});
-				};
-
-				xhr.onload = () => {
-					watchdog.clear();
-					if (isSuccessStatus(xhr.status)) {
-						resolvePromise({ response: parseResponseBody(xhr) });
-					} else {
-						reject(
-							createHttpError(
-								`Upload failed with status ${xhr.status}${
-									xhr.statusText ? `: ${xhr.statusText}` : ""
-								}`,
-								xhr.status,
-							),
-						);
-					}
-				};
-				xhr.onerror = () => {
-					watchdog.clear();
-					reject(new Error("Upload failed: network error"));
-				};
-				xhr.onabort = () => {
-					watchdog.clear();
-					reject(
-						stalled
-							? new Error(`Upload stalled: no progress for ${stallTimeoutMs}ms`)
-							: new Error("Upload aborted"),
-					);
-				};
-
-				signal.addEventListener("abort", () => xhr.abort(), { once: true });
-
-				xhr.send(formData ? buildFormData(file, fieldName, fields) : file.file);
+			const result = await sendXhr({
+				method,
+				url,
+				headers: resolvedHeaders,
+				withCredentials,
+				body: formData ? buildFormData(file, fieldName, fields) : file.file,
+				signal,
+				stallTimeoutMs,
+				onUploadProgress: (loaded, total) => onProgress({ loaded, total }),
 			});
+
+			if (!isSuccessStatus(result.status)) {
+				throw createHttpError(
+					`Upload failed with status ${result.status}${
+						result.statusText ? `: ${result.statusText}` : ""
+					}`,
+					result.status,
+				);
+			}
+
+			return {
+				response: parseResponseBody(result),
+			} satisfies UploadTransportResult;
 		},
 	};
 }

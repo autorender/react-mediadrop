@@ -1,4 +1,5 @@
 import { expect, test, vi } from "vitest";
+import { createHttpError } from "./retry.js";
 import type { UploadTransport } from "./transport.js";
 import type { MediaDropFile } from "./types.js";
 import { createUploadQueue, type UploadQueueStore } from "./upload-queue.js";
@@ -145,6 +146,49 @@ test("a failing upload with no retries configured ends in uploadStatus: error", 
 	});
 });
 
+test("a failing upload's HTTP status is preserved on uploadError instead of discarded", async () => {
+	const store = createFakeStore([makeFile("a")]);
+	const { transport, reject } = createDeferredTransport();
+	const queue = createUploadQueue({ transport }, store);
+
+	queue.enqueue("a");
+	reject("a", createHttpError("Forbidden", 403));
+	await vi.waitFor(() => {
+		expect(store.getFile("a")?.uploadStatus).toBe("error");
+	});
+
+	expect(store.getFile("a")?.uploadError).toEqual({
+		code: "upload-error",
+		message: "Forbidden",
+		status: 403,
+	});
+});
+
+test("a failing upload's transport-specific error code is preserved as sourceCode on uploadError", async () => {
+	const store = createFakeStore([makeFile("a")]);
+	const { transport, reject } = createDeferredTransport();
+	const queue = createUploadQueue({ transport }, store);
+
+	class FakeTusError extends Error {
+		code = "offset-mismatch";
+	}
+
+	queue.enqueue("a");
+	reject(
+		"a",
+		new FakeTusError("tus PATCH response was missing the Upload-Offset header"),
+	);
+	await vi.waitFor(() => {
+		expect(store.getFile("a")?.uploadStatus).toBe("error");
+	});
+
+	expect(store.getFile("a")?.uploadError).toEqual({
+		code: "upload-error",
+		message: "tus PATCH response was missing the Upload-Offset header",
+		sourceCode: "offset-mismatch",
+	});
+});
+
 test("retries automatically on failure, up to the configured count, before succeeding", async () => {
 	const store = createFakeStore([makeFile("a")]);
 	let attempt = 0;
@@ -271,6 +315,51 @@ test("the force-free timer doesn't misfire against a fresh attempt that reused t
 		await vi.waitFor(() => {
 			expect(store.getFile("a")?.uploadStatus).toBe("done");
 		});
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+test("a transport that settles after force-free does not corrupt a later re-upload of the same id", async () => {
+	vi.useFakeTimers();
+	try {
+		const store = createFakeStore([makeFile("a")]);
+		// Tracks each *call*'s own resolver separately (unlike
+		// createDeferredTransport's helper, which is keyed by file id and
+		// so can't model two distinct in-flight calls for the same id).
+		const resolvers: Array<(v: { response?: unknown }) => void> = [];
+		const transport: UploadTransport = {
+			upload() {
+				return new Promise((resolve) => {
+					resolvers.push(resolve);
+				});
+			},
+		};
+		const queue = createUploadQueue({ transport, cancelGraceMs: 10 }, store);
+
+		queue.enqueue("a");
+		queue.cancel("a");
+
+		// Force-free runs before the first (stuck) transport call ever settles.
+		await vi.advanceTimersByTimeAsync(10);
+		expect(store.getFile("a")?.uploadStatus).toBe("canceled");
+
+		// A fast user retry starts a brand-new attempt/controller for "a".
+		queue.enqueue("a");
+		expect(store.getFile("a")?.uploadStatus).toBe("uploading");
+		expect(resolvers).toHaveLength(2);
+
+		// The *original* (first) call's resolver fires late — after
+		// force-free already reassigned "a" to the second attempt. Flush
+		// microtasks so its (guarded, no-op) .then handler gets a turn to run.
+		resolvers[0]?.({ response: "stale" });
+		await vi.advanceTimersByTimeAsync(0);
+
+		// The stale resolution must not have clobbered the second attempt's
+		// live state back to "done" — it should still reflect the second
+		// attempt (uploading, since its own transport call never resolved).
+		expect(store.getFile("a")?.uploadStatus).toBe("uploading");
+		expect(store.getFile("a")?.uploadResult).toBeUndefined();
 	} finally {
 		vi.useRealTimers();
 	}

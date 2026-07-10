@@ -9,6 +9,18 @@ export type MediaDropErrorCode =
 export type MediaDropError = {
 	code: MediaDropErrorCode;
 	message: string;
+	/** The original error's HTTP status, when it had one (e.g. thrown via `createHttpError`) — omitted when not applicable. */
+	status?: number;
+	/**
+	 * The original error's own classification code, when it had one distinct
+	 * from `MediaDropErrorCode` — e.g. `@mediadrop/tus`'s `TusError.code`
+	 * (`"offset-mismatch"`, `"head-failed"`, ...). `code` on this type stays
+	 * `"upload-error"` for every upload failure (a stable, small union every
+	 * consumer can switch over); `sourceCode` is the finer-grained detail a
+	 * transport attached, preserved instead of discarded — omitted when the
+	 * original error didn't have one.
+	 */
+	sourceCode?: string;
 };
 
 export type MediaDropFileStatus = "idle" | "accepted" | "rejected";

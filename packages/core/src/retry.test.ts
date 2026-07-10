@@ -34,6 +34,33 @@ test("retries up to the configured count, then resolves if a later attempt succe
 	expect(attempt).toHaveBeenNthCalledWith(3, 3);
 });
 
+test("delay() removes its abort listener when it resolves normally, not just when aborted", async () => {
+	const controller = new AbortController();
+	const addSpy = vi.spyOn(controller.signal, "addEventListener");
+	const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+
+	const attempt = vi
+		.fn()
+		.mockRejectedValueOnce(new Error("fail 1"))
+		.mockRejectedValueOnce(new Error("fail 2"))
+		.mockResolvedValueOnce("ok");
+
+	await withRetry(
+		attempt,
+		{ retries: 2, retryDelays: [0, 0] },
+		controller.signal,
+	);
+
+	// Two retries => two delay() calls => two "abort" listeners added, and
+	// (per this fix) both removed again once each delay resolves normally.
+	const abortAdds = addSpy.mock.calls.filter(([type]) => type === "abort");
+	const abortRemoves = removeSpy.mock.calls.filter(
+		([type]) => type === "abort",
+	);
+	expect(abortAdds).toHaveLength(2);
+	expect(abortRemoves).toHaveLength(2);
+});
+
 test("throws the last error once retries are exhausted", async () => {
 	const attempt = vi.fn().mockRejectedValue(new Error("always fails"));
 

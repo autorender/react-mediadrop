@@ -1,0 +1,31 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended"],
+	"rebaseWhen": "never",
+	"vulnerabilityAlerts": {
+		"groupName": "security updates"
+	},
+	"packageRules": [
+		{
+			"description": "Group routine non-major dev-only updates to reduce PR noise.",
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+			"groupName": "dev dependency updates"
+		},
+		{
+			"description": "Keep build, test, and release tooling together.",
+			"matchPackageNames": [
+				"@biomejs/**",
+				"@changesets/**",
+				"tsdown",
+				"@tsdown/**",
+				"turbo",
+				"typescript",
+				"vite",
+				"vitest"
+			],
+			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+			"groupName": "tooling updates"
+		}
+	]
+}

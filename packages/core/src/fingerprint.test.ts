@@ -51,6 +51,20 @@ test("changes when lastModified differs", () => {
 	expect(createFileFingerprint(a)).not.toBe(createFileFingerprint(b));
 });
 
+test("does not collide for tuples that would be identical under a naive space-joined descriptor", () => {
+	// Under a naive `[name, size, type, lastModified, relativePath].join(" ")`
+	// encoding, these two tuples produce the exact same descriptor string:
+	// "x 1" + " " + "1" + " " + "y" + " " + "2" + " " + ""  ===
+	// "x"   + " " + "1" + " " + "1 y" + " " + "2" + " " + ""
+	// (both equal "x 1 1 y 2 ") because the space inside `name`/`type` is
+	// indistinguishable from the delimiter itself. The length-prefixed
+	// encoding must tell these apart.
+	const a = makeFile("x 1", 1, "y", 2);
+	const b = makeFile("x", 1, "1 y", 2);
+
+	expect(createFileFingerprint(a)).not.toBe(createFileFingerprint(b));
+});
+
 test("returns a short, storage-key-friendly string, not the raw metadata", () => {
 	const file = makeFile(
 		"a-very-long-filename-indeed.png",

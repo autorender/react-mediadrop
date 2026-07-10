@@ -184,6 +184,10 @@ function Uploader({ transportKey }: { transportKey: TransportKey }) {
 						event.stopPropagation();
 						open();
 					}}
+					onKeyDown={(event) => {
+						// Same reasoning as onClick above, but for Enter/Space.
+						event.stopPropagation();
+					}}
 				>
 					Choose files
 				</button>

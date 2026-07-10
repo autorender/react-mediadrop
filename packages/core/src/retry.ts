@@ -78,15 +78,22 @@ function delay(ms: number, signal: AbortSignal): Promise<void> {
 			reject(createRetryAbortedError());
 			return;
 		}
-		const timer = setTimeout(resolve, ms);
-		signal.addEventListener(
-			"abort",
-			() => {
-				clearTimeout(timer);
-				reject(createRetryAbortedError());
-			},
-			{ once: true },
-		);
+		// `{ once: true }` only removes `onAbort` if abort actually fires —
+		// if the timer fires first and `resolve()` runs normally, the
+		// listener is never removed on its own. Since `withRetry` calls
+		// `delay()` again on the *same* signal for every subsequent retry,
+		// an upload that retries N times would otherwise accumulate N
+		// live-but-useless abort listeners on that signal for the rest of
+		// its lifetime — remove it explicitly on the resolve path too.
+		const onAbort = (): void => {
+			clearTimeout(timer);
+			reject(createRetryAbortedError());
+		};
+		const timer = setTimeout(() => {
+			signal.removeEventListener("abort", onAbort);
+			resolve();
+		}, ms);
+		signal.addEventListener("abort", onAbort, { once: true });
 	});
 }
 

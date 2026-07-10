@@ -1,115 +1,16 @@
 // @vitest-environment jsdom
-import type { MediaDropFile } from "@mediadrop/core";
+import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createXhrUploadTransport } from "./index.js";
 
-/**
- * A hand-rolled `XMLHttpRequest` double — jsdom's own implementation tries
- * to perform a real network request, which we don't want in a unit test.
- * This gives full, synchronous control over every event the transport
- * listens to.
- */
-class MockXhr {
-	static instances: MockXhr[] = [];
-
-	method = "";
-	url = "";
-	withCredentials = false;
-	status = 0;
-	statusText = "";
-	responseText = "";
-	requestHeaders: Record<string, string> = {};
-	responseHeaders: Record<string, string> = {};
-	sentBody: unknown;
-	aborted = false;
-	upload: {
-		onprogress:
-			| ((event: {
-					loaded: number;
-					total: number;
-					lengthComputable: boolean;
-			  }) => void)
-			| null;
-	} = {
-		onprogress: null,
-	};
-	onload: (() => void) | null = null;
-	onerror: (() => void) | null = null;
-	ontimeout: (() => void) | null = null;
-	onabort: (() => void) | null = null;
-
-	constructor() {
-		MockXhr.instances.push(this);
-	}
-
-	open(method: string, url: string): void {
-		this.method = method;
-		this.url = url;
-	}
-
-	setRequestHeader(key: string, value: string): void {
-		this.requestHeaders[key] = value;
-	}
-
-	send(body: unknown): void {
-		this.sentBody = body;
-	}
-
-	abort(): void {
-		this.aborted = true;
-		this.onabort?.();
-	}
-
-	getResponseHeader(name: string): string | null {
-		return this.responseHeaders[name] ?? null;
-	}
-
-	respond(
-		status: number,
-		body = "",
-		headers: Record<string, string> = {},
-	): void {
-		this.status = status;
-		this.responseText = body;
-		this.responseHeaders = headers;
-		this.onload?.();
-	}
-
-	progress(loaded: number, total: number | null): void {
-		this.upload.onprogress?.({
-			loaded,
-			total: total ?? 0,
-			lengthComputable: total !== null,
-		});
-	}
-
-	networkError(): void {
-		this.onerror?.();
-	}
-}
-
-function makeFile(name = "a.png", type = "image/png"): MediaDropFile {
-	return {
-		id: "a",
-		file: new File(["x"], name, { type }),
-		name,
-		size: 1,
-		type,
-		status: "accepted",
-		errors: [],
-	};
-}
-
-let originalXhr: typeof XMLHttpRequest;
+let uninstall: () => void;
 
 beforeEach(() => {
-	MockXhr.instances = [];
-	originalXhr = globalThis.XMLHttpRequest;
-	globalThis.XMLHttpRequest = MockXhr as unknown as typeof XMLHttpRequest;
+	uninstall = installMockXhr();
 });
 
 afterEach(() => {
-	globalThis.XMLHttpRequest = originalXhr;
+	uninstall();
 });
 
 test("sends a multipart/form-data request by default and resolves on a 2xx status", async () => {
@@ -297,8 +198,10 @@ test("endpoint, headers, and fields can be computed per file", async () => {
 
 	expect(xhr?.url).toBe("https://example.test/upload/a");
 	expect(xhr?.requestHeaders["X-File-Name"]).toBe("a.png");
-	expect((xhr?.sentBody as FormData).get("fieldId")).toBeNull();
 	expect((xhr?.sentBody as FormData).get("fileId")).toBe("a");
+	// Exactly the computed `fields` entries plus the file itself — nothing
+	// extra or stray leaks into the FormData.
+	expect([...(xhr?.sentBody as FormData).keys()]).toEqual(["fileId", "file"]);
 
 	xhr?.respond(200);
 	await promise;

@@ -12,6 +12,8 @@ import type {
 	ChangeEvent,
 	CSSProperties,
 	FocusEvent,
+	HTMLAttributes,
+	InputHTMLAttributes,
 	KeyboardEvent,
 	MouseEvent,
 	DragEvent as ReactDragEvent,
@@ -61,7 +63,7 @@ export type UseMediaDropOptions = MediaDropOptions & {
 	noDrag?: boolean;
 };
 
-export type GetRootPropsArg = {
+export type GetRootPropsArg = HTMLAttributes<HTMLElement> & {
 	onClick?: (event: MouseEvent<HTMLElement>) => void;
 	onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 	onFocus?: (event: FocusEvent<HTMLElement>) => void;
@@ -72,7 +74,17 @@ export type GetRootPropsArg = {
 	onDrop?: (event: ReactDragEvent<HTMLElement>) => void;
 };
 
-export type RootProps = {
+export type RootProps = Omit<
+	HTMLAttributes<HTMLElement>,
+	| "onClick"
+	| "onKeyDown"
+	| "onFocus"
+	| "onBlur"
+	| "onDragEnter"
+	| "onDragOver"
+	| "onDragLeave"
+	| "onDrop"
+> & {
 	role: string;
 	tabIndex?: number;
 	onClick: (event: MouseEvent<HTMLElement>) => void;
@@ -85,12 +97,15 @@ export type RootProps = {
 	onDrop: (event: ReactDragEvent<HTMLElement>) => void;
 };
 
-export type GetInputPropsArg = {
+export type GetInputPropsArg = InputHTMLAttributes<HTMLInputElement> & {
 	onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 	onClick?: (event: MouseEvent<HTMLInputElement>) => void;
 };
 
-export type InputProps = {
+export type InputProps = Omit<
+	InputHTMLAttributes<HTMLInputElement>,
+	"ref" | "type" | "multiple" | "accept" | "style" | "onChange" | "onClick"
+> & {
 	ref: RefCallback<HTMLInputElement>;
 	type: "file";
 	multiple: boolean;
@@ -324,6 +339,11 @@ export function useMediaDrop(
 	}, []);
 	const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
 		if (optionsRef.current.noKeyboard) return;
+		// Only react when the event originated on the root itself, not when
+		// it bubbled up from a focusable descendant (a button, a link, a
+		// "remove file" control) — otherwise activating any such descendant
+		// via keyboard also (incorrectly) opens the file dialog.
+		if (event.target !== event.currentTarget) return;
 		if (event.key === " " || event.key === "Enter") {
 			event.preventDefault();
 			inputRef.current?.click();
@@ -339,18 +359,32 @@ export function useMediaDrop(
 	}, []);
 
 	const getRootProps = useCallback(
-		(arg: GetRootPropsArg = {}): RootProps => ({
-			role: "presentation",
-			tabIndex: optionsRef.current.noKeyboard ? undefined : 0,
-			onClick: composeHandlers(arg.onClick, handleClick),
-			onKeyDown: composeHandlers(arg.onKeyDown, handleKeyDown),
-			onFocus: composeHandlers(arg.onFocus, handleFocus),
-			onBlur: composeHandlers(arg.onBlur, handleBlur),
-			onDragEnter: composeHandlers(arg.onDragEnter, handleDragEnter),
-			onDragOver: composeHandlers(arg.onDragOver, handleDragOver),
-			onDragLeave: composeHandlers(arg.onDragLeave, handleDragLeave),
-			onDrop: composeHandlers(arg.onDrop, handleDrop),
-		}),
+		(arg: GetRootPropsArg = {}): RootProps => {
+			const {
+				onClick,
+				onKeyDown,
+				onFocus,
+				onBlur,
+				onDragEnter,
+				onDragOver,
+				onDragLeave,
+				onDrop,
+				...rest
+			} = arg;
+			return {
+				...rest,
+				role: "presentation",
+				tabIndex: optionsRef.current.noKeyboard ? undefined : 0,
+				onClick: composeHandlers(onClick, handleClick),
+				onKeyDown: composeHandlers(onKeyDown, handleKeyDown),
+				onFocus: composeHandlers(onFocus, handleFocus),
+				onBlur: composeHandlers(onBlur, handleBlur),
+				onDragEnter: composeHandlers(onDragEnter, handleDragEnter),
+				onDragOver: composeHandlers(onDragOver, handleDragOver),
+				onDragLeave: composeHandlers(onDragLeave, handleDragLeave),
+				onDrop: composeHandlers(onDrop, handleDrop),
+			};
+		},
 		[
 			handleClick,
 			handleKeyDown,
@@ -380,17 +414,23 @@ export function useMediaDrop(
 			const accept = Array.isArray(restrictions?.accept)
 				? restrictions.accept.join(",")
 				: restrictions?.accept;
+			const { onChange, onClick, style, ...rest } = arg;
 
 			return {
+				...rest,
 				ref: (node) => {
 					inputRef.current = node;
 				},
 				type: "file",
 				multiple: restrictions?.maxFiles !== 1,
 				accept,
-				style: HIDDEN_INPUT_STYLE,
-				onChange: composeHandlers(arg.onChange, handleInputChange),
-				onClick: composeHandlers(arg.onClick, handleInputClick),
+				// A consumer-supplied `style` is merged in, but `display: none`
+				// always wins — the hidden-native-input pattern this hook is
+				// built around (see the comment above `handleInputClick`)
+				// breaks if that's overridden.
+				style: { ...style, ...HIDDEN_INPUT_STYLE },
+				onChange: composeHandlers(onChange, handleInputChange),
+				onClick: composeHandlers(onClick, handleInputClick),
 			};
 		},
 		[handleInputChange, handleInputClick],

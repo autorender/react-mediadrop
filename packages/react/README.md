@@ -46,6 +46,23 @@ separate "Choose files" button. Pass `noClick`/`noKeyboard`/`noDrag` to
 | `getRootProps(arg?)` | `() => RootProps` | Drag/drop + click/keyboard handlers, `role`, `tabIndex`. Composes with your own handlers — yours runs first, `event.stopPropagation()` opts out of the internal one. |
 | `getInputProps(arg?)` | `() => InputProps` | Hidden `<input type="file">` props. |
 
+`getRootProps`/`getInputProps` also accept and pass through any other
+HTML attribute (`aria-*`, `className`, `id`, `data-*`, ...) — handy for
+labeling the dropzone region for screen readers:
+
+```tsx
+<div
+	{...getRootProps({
+		"aria-label": "File upload dropzone",
+		"aria-describedby": "dropzone-instructions",
+		className: "dropzone",
+	})}
+>
+	<input {...getInputProps({ "aria-hidden": "true" })} />
+	<p id="dropzone-instructions">PNG or JPEG, up to 5 files.</p>
+</div>
+```
+
 Pass `transport` (plus optional `concurrency`/`retries`/`retryDelays`) and
 the hook additionally returns `uploadFile`/`uploadAll`/`cancelUpload`/
 `cancelAllUploads`/`retryUpload`, with each file's `uploadStatus`/

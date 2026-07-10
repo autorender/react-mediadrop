@@ -29,10 +29,15 @@ export function createStore<T extends object>(initialState: T): Store<T> {
 	// makes that inner call a no-op beyond updating `state`, and the
 	// `do`/`while` below detects that `state` moved again after the
 	// current pass finishes and runs one more pass so every listener still
-	// eventually observes the latest value, in order, with no listener
-	// visited twice for the same state and none skipped. Listeners are
-	// snapshotted per pass so a subscribe/unsubscribe call from inside a
-	// listener can't affect which listeners *this* pass notifies.
+	// eventually observes the latest value, in order, with none skipped.
+	// A listener already past its own turn when a reentrant update happens
+	// will see the new value immediately (since `state` is read live, not
+	// snapshotted per pass) and then may be notified again, redundantly,
+	// with that same value during the follow-up pass — listeners should be
+	// idempotent with respect to repeat delivery of an unchanged value.
+	// Listeners are snapshotted per pass so a subscribe/unsubscribe call
+	// from inside a listener can't affect which listeners *this* pass
+	// notifies.
 	function notify(): void {
 		if (isNotifying) return;
 		isNotifying = true;

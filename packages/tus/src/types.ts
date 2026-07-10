@@ -5,7 +5,6 @@ export type TusErrorCode =
 	| "head-failed"
 	| "patch-failed"
 	| "offset-mismatch"
-	| "unsupported-version"
 	| "aborted";
 
 export class TusError extends Error {

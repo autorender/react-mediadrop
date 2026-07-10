@@ -120,6 +120,42 @@ test("getRootProps/getInputProps return usable, spreadable props", () => {
 	expect(typeof inputProps.onChange).toBe("function");
 });
 
+test("getRootProps passes through arbitrary HTML attributes (aria-label, className, id)", () => {
+	const { result } = renderHook(() => useMediaDrop());
+
+	const rootProps = result.current.getRootProps({
+		"aria-label": "Drop files here",
+		className: "my-dropzone",
+		id: "dropzone-1",
+	});
+
+	expect(rootProps["aria-label"]).toBe("Drop files here");
+	expect(rootProps.className).toBe("my-dropzone");
+	expect(rootProps.id).toBe("dropzone-1");
+	// Recognized props are still composed, not clobbered by passthrough.
+	expect(typeof rootProps.onDragEnter).toBe("function");
+	expect(rootProps.role).toBe("presentation");
+});
+
+test("getInputProps passes through arbitrary HTML attributes (aria-hidden)", () => {
+	const { result } = renderHook(() => useMediaDrop());
+
+	const inputProps = result.current.getInputProps({ "aria-hidden": "true" });
+
+	expect(inputProps["aria-hidden"]).toBe("true");
+	expect(inputProps.type).toBe("file");
+});
+
+test("a consumer-supplied style on getInputProps cannot defeat the hidden-input pattern", () => {
+	const { result } = renderHook(() => useMediaDrop());
+
+	const inputProps = result.current.getInputProps({
+		style: { display: "block", color: "red" },
+	});
+
+	expect(inputProps.style).toEqual({ color: "red", display: "none" });
+});
+
 test("getInputProps sets multiple=false when maxFiles is 1", () => {
 	const { result } = renderHook(() =>
 		useMediaDrop({ restrictions: { maxFiles: 1 } }),
@@ -269,6 +305,34 @@ test("Enter/Space on a focused root opens the file dialog", () => {
 	expect(clickSpy).toHaveBeenCalledTimes(2);
 });
 
+test("keydown on a nested focusable element inside the root does not open the file dialog", () => {
+	function NestedButtonHarness(props: {
+		apiRef: { current: UseMediaDropResult | null };
+	}) {
+		const api = useMediaDrop();
+		props.apiRef.current = api;
+		return (
+			<div data-testid="root" {...api.getRootProps()}>
+				<input data-testid="input" {...api.getInputProps()} />
+				<button type="button" data-testid="nested-btn">
+					Remove
+				</button>
+			</div>
+		);
+	}
+
+	const apiRef: { current: UseMediaDropResult | null } = { current: null };
+	render(<NestedButtonHarness apiRef={apiRef} />);
+
+	const input = screen.getByTestId("input") as HTMLInputElement;
+	const clickSpy = vi.spyOn(input, "click");
+	const nestedButton = screen.getByTestId("nested-btn");
+
+	fireEvent.keyDown(nestedButton, { key: "Enter", bubbles: true });
+
+	expect(clickSpy).not.toHaveBeenCalled();
+});
+
 test("noKeyboard suppresses keyboard-to-open and tabIndex", () => {
 	const apiRef: { current: UseMediaDropResult | null } = { current: null };
 	render(<Harness apiRef={apiRef} options={{ noKeyboard: true }} />);
@@ -355,6 +419,7 @@ test("custom validator can reject files during drag preview when the browser exp
 	Object.defineProperty(event, "dataTransfer", {
 		value: {
 			items: [{ kind: "file", type: file.type, getAsFile: () => file }],
+			types: ["Files"],
 		},
 	});
 	act(() => {

@@ -45,6 +45,7 @@ type VanillaMediaDropOptions = {
 	restrictions?: MediaDropRestrictions;
 	validator?: MediaDropValidator;
 	onChange?: (state: MediaDropState) => void;
+	onDragStateChange?: (state: DragState) => void;
 };
 
 function createMediaDrop(options: VanillaMediaDropOptions): {
@@ -110,8 +111,7 @@ own beyond forwarding to `@mediadrop/core`'s queue.
 - This package does not touch validation or state logic — both live in
   `@mediadrop/core`. Don't duplicate `accept`/`maxSize`/etc. checks here;
   pass them through `restrictions`.
-- There is no built-in drag-state (`isDragActive`/`isDragAccept`/
-  `isDragReject`) surface in the vanilla API today — `onChange` only reports
-  file state. If you need visual drag feedback, use `@mediadrop/core`'s
-  `createDropzoneController` directly (advanced use) or track it yourself
-  from your own `dragenter`/`dragleave` listeners on `root`.
+- Pass `onDragStateChange` for visual drag feedback (`isDragActive`/
+  `isDragAccept`/`isDragReject`) — it fires on drag enter/leave/drop with
+  the same `DragState` shape `@mediadrop/react`'s `useMediaDrop` exposes.
+  `onChange` only reports file state, not drag state.

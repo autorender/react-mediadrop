@@ -3,7 +3,7 @@ import type {
 	UploadTransport,
 	UploadTransportResult,
 } from "@mediadrop/core";
-import { createHttpError, createStallWatchdog } from "@mediadrop/core";
+import { createHttpError, sendXhr } from "@mediadrop/core";
 import type { S3PresignedUpload } from "./types.js";
 
 export type S3UploadOptions = {
@@ -35,7 +35,7 @@ function buildPostFormData(
 	return formData;
 }
 
-function sendXhr(
+async function sendPresignedUpload(
 	presigned: S3PresignedUpload,
 	file: MediaDropFile,
 	onProgress: (loaded: number, total: number | null) => void,
@@ -43,69 +43,33 @@ function sendXhr(
 	isSuccessStatus: (status: number) => boolean,
 	stallTimeoutMs: number,
 ): Promise<UploadTransportResult> {
-	return new Promise((resolve, reject) => {
-		if (signal.aborted) {
-			reject(new Error("Upload aborted"));
-			return;
-		}
-
-		const method = presigned.method ?? "PUT";
-		const xhr = new XMLHttpRequest();
-		xhr.open(method, presigned.url, true);
-		for (const [key, value] of Object.entries(presigned.headers ?? {})) {
-			xhr.setRequestHeader(key, value);
-		}
-
-		let stalled = false;
-		const watchdog = createStallWatchdog(() => {
-			stalled = true;
-			xhr.abort();
-		}, stallTimeoutMs);
-
-		xhr.upload.onprogress = (event) => {
-			watchdog.reset();
-			onProgress(event.loaded, event.lengthComputable ? event.total : null);
-		};
-
-		xhr.onload = () => {
-			watchdog.clear();
-			if (isSuccessStatus(xhr.status)) {
-				resolve({
-					response: {
-						key: presigned.key,
-						bucket: presigned.bucket,
-						status: xhr.status,
-					},
-				});
-			} else {
-				reject(
-					createHttpError(
-						`S3 upload failed with status ${xhr.status}${xhr.statusText ? `: ${xhr.statusText}` : ""}`,
-						xhr.status,
-					),
-				);
-			}
-		};
-		xhr.onerror = () => {
-			watchdog.clear();
-			reject(new Error("S3 upload failed: network error"));
-		};
-		xhr.onabort = () => {
-			watchdog.clear();
-			reject(
-				stalled
-					? new Error(`Upload stalled: no progress for ${stallTimeoutMs}ms`)
-					: new Error("Upload aborted"),
-			);
-		};
-		signal.addEventListener("abort", () => xhr.abort(), { once: true });
-
-		if (method === "POST") {
-			xhr.send(buildPostFormData(file, presigned.fields));
-		} else {
-			xhr.send(file.file);
-		}
+	const method = presigned.method ?? "PUT";
+	const result = await sendXhr({
+		method,
+		url: presigned.url,
+		headers: presigned.headers,
+		body:
+			method === "POST" ? buildPostFormData(file, presigned.fields) : file.file,
+		signal,
+		stallTimeoutMs,
+		onUploadProgress: onProgress,
+		createNetworkError: () => new Error("S3 upload failed: network error"),
 	});
+
+	if (!isSuccessStatus(result.status)) {
+		throw createHttpError(
+			`S3 upload failed with status ${result.status}${result.statusText ? `: ${result.statusText}` : ""}`,
+			result.status,
+		);
+	}
+
+	return {
+		response: {
+			key: presigned.key,
+			bucket: presigned.bucket,
+			status: result.status,
+		},
+	};
 }
 
 /**
@@ -131,7 +95,7 @@ export function s3Upload(options: S3UploadOptions): UploadTransport {
 				throw new Error("Upload aborted");
 			}
 			const presigned = await getUploadUrl({ file });
-			return sendXhr(
+			return sendPresignedUpload(
 				presigned,
 				file,
 				(loaded, total) => onProgress({ loaded, total }),

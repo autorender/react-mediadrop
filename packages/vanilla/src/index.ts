@@ -1,4 +1,5 @@
 import type {
+	DragState,
 	MediaDropInstance,
 	MediaDropOptions,
 	MediaDropState,
@@ -33,6 +34,8 @@ export type VanillaMediaDropOptions = MediaDropOptions & {
 	root?: HTMLElement | null;
 	input?: HTMLInputElement | null;
 	onChange?: (state: MediaDropState) => void;
+	/** Called whenever the root's drag state changes (drag enter/over/leave/drop), so consumers can toggle CSS classes/attributes without reimplementing drag tracking themselves. */
+	onDragStateChange?: (state: DragState) => void;
 };
 
 export type VanillaMediaDropUploadOptions = VanillaMediaDropOptions &
@@ -89,6 +92,7 @@ export function createMediaDrop(
 		root = null,
 		input = null,
 		onChange,
+		onDragStateChange,
 		restrictions,
 		validator,
 		transport,
@@ -143,7 +147,9 @@ export function createMediaDrop(
 
 	function handleDragEnter(event: DragEvent): void {
 		event.preventDefault();
-		dropzone.handleDragEnter(event, restrictions?.accept);
+		onDragStateChange?.(
+			dropzone.handleDragEnter(event, restrictions?.accept, validator),
+		);
 	}
 
 	function handleDragOver(event: DragEvent): void {
@@ -151,12 +157,13 @@ export function createMediaDrop(
 	}
 
 	function handleDragLeave(): void {
-		dropzone.handleDragLeave();
+		onDragStateChange?.(dropzone.handleDragLeave());
 	}
 
 	function handleDrop(event: DragEvent): void {
 		event.preventDefault();
-		const { files } = dropzone.handleDrop(event);
+		const { files, state } = dropzone.handleDrop(event);
+		onDragStateChange?.(state);
 		if (files.length > 0) {
 			engine.addFiles(files);
 		}
