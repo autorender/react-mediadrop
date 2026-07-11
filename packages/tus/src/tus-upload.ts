@@ -94,7 +94,9 @@ function isValidSession(
  * page reload requires the user to reselect the same file (matched by
  * fingerprint) — nothing here persists file bytes.
  */
-export function tusUpload(options: TusUploadOptions): UploadTransport {
+export function createTusUploadTransport(
+	options: TusUploadOptions,
+): UploadTransport {
 	const {
 		endpoint,
 		chunkSize = 8 * 1024 * 1024,

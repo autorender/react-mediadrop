@@ -20,7 +20,7 @@ export type MediaDropUploadSessionStore = {
  * default, in tests, or in non-browser environments (SSR, Node scripts).
  * Never throws, never touches any browser API.
  */
-export function memoryUploadSessionStore(): MediaDropUploadSessionStore {
+export function createMemoryUploadSessionStore(): MediaDropUploadSessionStore {
 	const data = new Map<string, unknown>();
 	return {
 		async get(key) {
@@ -42,7 +42,7 @@ export type BrowserUploadSessionStoreOptions = {
 
 /**
  * `localStorage`-backed metadata persistence — this is what actually
- * survives a page reload/browser restart, unlike `memoryUploadSessionStore`.
+ * survives a page reload/browser restart, unlike `createMemoryUploadSessionStore`.
  * Named "browser", not "durable" or "persistent": `localStorage` can be
  * cleared by the user, browser storage limits, or private browsing, same
  * as any other web storage. It is metadata persistence, not a guarantee.
@@ -52,7 +52,7 @@ export type BrowserUploadSessionStoreOptions = {
  * (`get` resolves `null`, `set`/`remove` resolve without doing anything)
  * rather than a crash.
  */
-export function browserUploadSessionStore(
+export function createBrowserUploadSessionStore(
 	options: BrowserUploadSessionStoreOptions = {},
 ): MediaDropUploadSessionStore {
 	const prefix = options.prefix ?? "mediadrop:upload-session:";

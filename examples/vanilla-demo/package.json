@@ -1,0 +1,27 @@
+{
+	"name": "vanilla-demo",
+	"private": true,
+	"version": "0.0.0",
+	"description": "Manual test bed for @mediadrop/vanilla across every transport (xhr-upload, s3, tus) — not published, not part of the public API.",
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@mediadrop/core": "workspace:*",
+		"@mediadrop/s3": "workspace:*",
+		"@mediadrop/tus": "workspace:*",
+		"@mediadrop/vanilla": "workspace:*",
+		"@mediadrop/xhr-upload": "workspace:*"
+	},
+	"devDependencies": {
+		"@mediadrop/tsconfig": "workspace:*",
+		"@types/node": "^24.0.0",
+		"typescript": "catalog:",
+		"vite": "^8.1.3"
+	}
+}

@@ -6,9 +6,9 @@ or any framework without a dedicated mediadrop binding.
 ## Quickstart
 
 ```ts
-import { createMediaDrop } from "@mediadrop/vanilla";
+import { createVanillaMediaDrop } from "@mediadrop/vanilla";
 
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	root: document.querySelector("#dropzone"),
 	input: document.querySelector("#file-input"),
 	restrictions: {
@@ -48,7 +48,7 @@ type VanillaMediaDropOptions = {
 	onDragStateChange?: (state: DragState) => void;
 };
 
-function createMediaDrop(options: VanillaMediaDropOptions): {
+function createVanillaMediaDrop(options: VanillaMediaDropOptions): {
 	getState(): MediaDropState;
 	subscribe(listener: (state: MediaDropState) => void): () => void;
 	addFiles(files: FileList | File[]): void;
@@ -72,13 +72,13 @@ need to unsubscribe independently from `destroy()`.
 `transport` accepts `@mediadrop/xhr-upload`, `@mediadrop/s3`,
 `@mediadrop/tus`, or your own — this binding has no S3/tus-specific
 wrapper and never will. Example below uses `@mediadrop/xhr-upload`; swap
-in `s3Upload`/`s3MultipartUpload`/`tusUpload` the same way.
+in `createS3UploadTransport`/`createS3MultipartUploadTransport`/`createTusUploadTransport` the same way.
 
 ```ts
-import { createMediaDrop } from "@mediadrop/vanilla";
+import { createVanillaMediaDrop } from "@mediadrop/vanilla";
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
 
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	root: document.querySelector("#dropzone"),
 	input: document.querySelector("#file-input"),
 	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
@@ -106,7 +106,7 @@ own beyond forwarding to `@mediadrop/core`'s queue.
 ## Things to get right
 
 - **Always call `destroy()`** when the dropzone element is removed from the
-  DOM (route change, conditional render, teardown). `createMediaDrop`
+  DOM (route change, conditional render, teardown). `createVanillaMediaDrop`
   attaches real `addEventListener` calls; nothing removes them for you.
 - This package does not touch validation or state logic — both live in
   `@mediadrop/core`. Don't duplicate `accept`/`maxSize`/etc. checks here;

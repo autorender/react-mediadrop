@@ -2,7 +2,7 @@
 
 import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { s3Upload } from "./simple.js";
+import { createS3UploadTransport } from "./simple.js";
 
 let uninstall: () => void;
 beforeEach(() => {
@@ -20,7 +20,7 @@ async function flush(): Promise<void> {
 
 test("presigned PUT sends the raw file body to the given URL with the given headers", async () => {
 	const file = makeFile();
-	const transport = s3Upload({
+	const transport = createS3UploadTransport({
 		getUploadUrl: async () => ({
 			url: "https://bucket.s3.example/key",
 			headers: { "Content-Type": "image/png" },
@@ -50,7 +50,7 @@ test("presigned PUT sends the raw file body to the given URL with the given head
 });
 
 test("presigned POST sends a multipart form with fields, and the file field last", async () => {
-	const transport = s3Upload({
+	const transport = createS3UploadTransport({
 		getUploadUrl: async () => ({
 			url: "https://bucket.s3.example/",
 			method: "POST",
@@ -76,7 +76,7 @@ test("presigned POST sends a multipart form with fields, and the file field last
 
 test("reports upload progress", async () => {
 	const onProgress = vi.fn();
-	const transport = s3Upload({
+	const transport = createS3UploadTransport({
 		getUploadUrl: async () => ({ url: "https://bucket.s3.example/key" }),
 	});
 
@@ -93,7 +93,7 @@ test("reports upload progress", async () => {
 });
 
 test("rejects on a non-2xx status without retrying internally", async () => {
-	const transport = s3Upload({
+	const transport = createS3UploadTransport({
 		getUploadUrl: async () => ({ url: "https://bucket.s3.example/key" }),
 	});
 
@@ -111,7 +111,7 @@ test("rejects on a non-2xx status without retrying internally", async () => {
 
 test("aborting the signal cancels the request", async () => {
 	const controller = new AbortController();
-	const transport = s3Upload({
+	const transport = createS3UploadTransport({
 		getUploadUrl: async () => ({ url: "https://bucket.s3.example/key" }),
 	});
 
@@ -129,7 +129,7 @@ test("aborting the signal cancels the request", async () => {
 test("stallTimeoutMs aborts and rejects if no progress happens in time", async () => {
 	vi.useFakeTimers();
 	try {
-		const transport = s3Upload({
+		const transport = createS3UploadTransport({
 			getUploadUrl: async () => ({ url: "https://bucket.s3.example/key" }),
 			stallTimeoutMs: 1000,
 		});
@@ -154,7 +154,7 @@ test("an already-aborted signal never calls getUploadUrl or opens a request", as
 	const controller = new AbortController();
 	controller.abort();
 	const getUploadUrl = vi.fn();
-	const transport = s3Upload({ getUploadUrl });
+	const transport = createS3UploadTransport({ getUploadUrl });
 
 	await expect(
 		transport.upload(makeFile(), {

@@ -79,13 +79,13 @@ export type VanillaMediaDropUpload = VanillaMediaDrop &
  * before removing DOM listeners, so tearing this down never leaves an
  * orphaned request running in the background.
  */
-export function createMediaDrop(
+export function createVanillaMediaDrop(
 	options: VanillaMediaDropUploadOptions,
 ): VanillaMediaDropUpload;
-export function createMediaDrop(
+export function createVanillaMediaDrop(
 	options?: VanillaMediaDropOptions,
 ): VanillaMediaDrop;
-export function createMediaDrop(
+export function createVanillaMediaDrop(
 	options: VanillaMediaDropOptions & Partial<MediaDropUploadOptions> = {},
 ): VanillaMediaDrop | VanillaMediaDropUpload {
 	const {
@@ -105,7 +105,7 @@ export function createMediaDrop(
 	// `let` + `if`/`else` (not `const engine: T = transport ? A : B`) is
 	// deliberate: TypeScript's `"x" in engine` narrowing further down stops
 	// working reliably when `engine`'s declared type is inferred straight
-	// from a ternary that calls createMediaDrop's overloads, even with an
+	// from a ternary that calls createVanillaMediaDrop's overloads, even with an
 	// explicit annotation on the ternary itself. Splitting the declaration
 	// from the assignment (mirroring how @mediadrop/react threads the same
 	// value through a `useRef`'s pre-declared generic) avoids it.

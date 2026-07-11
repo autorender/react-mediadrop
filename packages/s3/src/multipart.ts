@@ -246,7 +246,7 @@ async function runWithConcurrency<T>(
  * `getPartUploadUrl`/`completeMultipartUpload`/`abortMultipartUpload`) —
  * this package never sees AWS credentials and has no AWS SDK dependency.
  */
-export function s3MultipartUpload(
+export function createS3MultipartUploadTransport(
 	options: S3MultipartUploadOptions,
 ): UploadTransport {
 	const {

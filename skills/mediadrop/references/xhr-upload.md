@@ -45,5 +45,5 @@ full option list (`method`, `fieldName`, `headers`, `withCredentials`,
   connection, that's [s3.md](s3.md) (multipart) or [tus.md](tus.md), not
   this transport.
 - It is not S3's multipart protocol. `formData: false` still sends one
-  request, one body — reach for `@mediadrop/s3`'s `s3MultipartUpload` if
+  request, one body — reach for `@mediadrop/s3`'s `createS3MultipartUploadTransport` if
   the file needs splitting into parts.

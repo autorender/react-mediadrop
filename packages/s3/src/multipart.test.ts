@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
-import { memoryUploadSessionStore } from "@mediadrop/core";
+import { createMemoryUploadSessionStore } from "@mediadrop/core";
 import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { S3_MIN_PART_SIZE, s3MultipartUpload } from "./multipart.js";
+import {
+	createS3MultipartUploadTransport,
+	S3_MIN_PART_SIZE,
+} from "./multipart.js";
 
 let uninstall: () => void;
 beforeEach(() => {
@@ -71,7 +74,7 @@ async function driveAllParts(
 test("splits a file into parts respecting the minimum part size, except the last part", async () => {
 	const fileSize = S3_MIN_PART_SIZE * 2 + 100; // 2 full parts + a small remainder
 	const partUrls: number[] = [];
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => {
 			partUrls.push(partNumber);
@@ -104,7 +107,7 @@ test("sends each part's exact byte range — no off-by-one gap or overlap at par
 	for (let i = 0; i < fileSize; i++) content[i] = i % 256;
 	const file = new File([content], "a.png", { type: "image/png" });
 
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -149,7 +152,7 @@ test("sends each part's exact byte range — no off-by-one gap or overlap at par
 
 test("uploads parts with the given concurrency, not more at once", async () => {
 	const fileSize = S3_MIN_PART_SIZE * 4;
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -180,7 +183,7 @@ test("aggregates progress across completed and in-flight parts without double-co
 	const partSize = S3_MIN_PART_SIZE;
 	const fileSize = partSize * 2;
 	const onProgress = vi.fn();
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -225,7 +228,7 @@ test("aggregates progress across completed and in-flight parts without double-co
 
 test("collects ETags and completes with sorted, complete part numbers", async () => {
 	const completeArgs: unknown[] = [];
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -261,7 +264,7 @@ test("aborts the multipart upload on cancel and never completes it", async () =>
 	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
 	const completeMultipartUpload = vi.fn();
 	const controller = new AbortController();
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -293,9 +296,9 @@ test("aborts the multipart upload on cancel and never completes it", async () =>
 
 test("aborts the multipart upload on a genuine failure too, not just cancel, and clears the session", async () => {
 	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const removeSpy = vi.spyOn(sessionStore, "remove");
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -334,9 +337,9 @@ test("aborts the multipart upload on a genuine failure too, not just cancel, and
 
 test("abortOnFailure: false leaves a genuinely failed upload's session and multipart upload alone", async () => {
 	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const removeSpy = vi.spyOn(sessionStore, "remove");
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -367,7 +370,7 @@ test("partStallTimeoutMs aborts a stalled part and retries it, without touching 
 	vi.useFakeTimers();
 	try {
 		let getPartUrlCalls = 0;
-		const transport = s3MultipartUpload({
+		const transport = createS3MultipartUploadTransport({
 			createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 			getPartUploadUrl: async ({ partNumber }) => {
 				getPartUrlCalls++;
@@ -407,7 +410,7 @@ test("partStallTimeoutMs aborts a stalled part and retries it, without touching 
 
 test("retries a failed part using the shared retry engine, not a second retry loop", async () => {
 	let getPartUrlCalls = 0;
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => {
 			getPartUrlCalls++;
@@ -440,7 +443,7 @@ test("retries a failed part using the shared retry engine, not a second retry lo
 
 test("a permanent 4xx on a part fails fast instead of burning the retry budget", async () => {
 	let getPartUrlCalls = 0;
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => {
 			getPartUrlCalls++;
@@ -469,7 +472,7 @@ test("a permanent 4xx on a part fails fast instead of burning the retry budget",
 });
 
 test("persists session metadata as parts complete, and resumes by skipping them", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 2);
 	const createMultipartUpload = vi
 		.fn()
@@ -477,7 +480,7 @@ test("persists session metadata as parts complete, and resumes by skipping them"
 	const partUrlCalls: number[] = [];
 
 	const makeTransport = () =>
-		s3MultipartUpload({
+		createS3MultipartUploadTransport({
 			createMultipartUpload,
 			getPartUploadUrl: async ({ partNumber }) => {
 				partUrlCalls.push(partNumber);
@@ -525,7 +528,7 @@ test("persists session metadata as parts complete, and resumes by skipping them"
 });
 
 test("a stored session whose fingerprint doesn't match the current file starts a fresh upload instead of resuming", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
 
 	// A session for a *different* file (deliberately wrong fingerprint) —
@@ -549,7 +552,7 @@ test("a stored session whose fingerprint doesn't match the current file starts a
 	const getPartUploadUrl = vi
 		.fn()
 		.mockResolvedValue({ url: "https://s3.example/part/1" });
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload,
 		getPartUploadUrl,
 		completeMultipartUpload: async () => ({ location: "done" }),
@@ -578,7 +581,7 @@ test("a resumed uploadId that S3 no longer recognizes (404) fails cleanly instea
 	// request against a now-gone upload ID is what actually surfaces the
 	// problem, as a normal (non-retried, since 404 is a permanent 4xx)
 	// HTTP error, not silent corruption or a hang.
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	// Exactly one part — avoids the default partConcurrency (3) opening a
 	// second, never-responded-to XHR alongside the one this test resolves.
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
@@ -597,7 +600,7 @@ test("a resumed uploadId that S3 no longer recognizes (404) fails cleanly instea
 
 	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
 	const createMultipartUpload = vi.fn();
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload,
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -644,7 +647,7 @@ test("without listUploadedParts, a stored completedParts entry inconsistent with
 	// validating a resumed session's completedParts total size against the
 	// current file's size before trusting it, falling back to a fresh
 	// upload on mismatch, when `listUploadedParts` isn't configured.
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE * 2);
 	const { createFileFingerprint } = await import("@mediadrop/core");
 	const fp = await createFileFingerprint(file.file);
@@ -667,7 +670,7 @@ test("without listUploadedParts, a stored completedParts entry inconsistent with
 		.fn()
 		.mockResolvedValue({ url: "https://s3.example/part/2" });
 	const completeArgs: unknown[] = [];
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: vi.fn(),
 		getPartUploadUrl,
 		completeMultipartUpload: async (context) => {
@@ -702,11 +705,11 @@ test("without listUploadedParts, a stored completedParts entry inconsistent with
 });
 
 test("removes the session after a successful completion", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const setSpy = vi.spyOn(sessionStore, "set");
 	const removeSpy = vi.spyOn(sessionStore, "remove");
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,
@@ -732,7 +735,7 @@ test("removes the session after a successful completion", async () => {
 });
 
 test("falls back to trusting local session metadata when listUploadedParts fails", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", S3_MIN_PART_SIZE);
 
 	// Pre-seed a session as if part 1 already completed.
@@ -755,7 +758,7 @@ test("falls back to trusting local session metadata when listUploadedParts fails
 	const completeMultipartUpload = vi
 		.fn()
 		.mockResolvedValue({ location: "done" });
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: vi.fn(),
 		getPartUploadUrl,
 		completeMultipartUpload,
@@ -799,7 +802,7 @@ test("a cancel that lands while completeMultipartUpload is in flight still rejec
 	);
 	const abortMultipartUpload = vi.fn().mockResolvedValue(undefined);
 	const controller = new AbortController();
-	const transport = s3MultipartUpload({
+	const transport = createS3MultipartUploadTransport({
 		createMultipartUpload: async () => ({ uploadId: "u1", key: "k1" }),
 		getPartUploadUrl: async ({ partNumber }) => ({
 			url: `https://s3.example/part/${partNumber}`,

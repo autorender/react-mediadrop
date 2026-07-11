@@ -52,9 +52,9 @@ for the full boundary between what's implemented and what isn't.
 | Transport | Package | Request shape | Resumable? | Backend needs to implement |
 | --- | --- | --- | --- | --- |
 | XHR | `@mediadrop/xhr-upload` | One request, whole file | No | A single upload endpoint |
-| S3 (simple) | `@mediadrop/s3` (`s3Upload`) | One presigned PUT/POST | No | Presign one URL per file |
-| S3 (multipart) | `@mediadrop/s3` (`s3MultipartUpload`) | Many presigned PUTs, one per part | Metadata-only (see below) | Create/sign-part/complete/abort multipart calls |
-| tus | `@mediadrop/tus` (`tusUpload`) | POST create, then PATCH chunks | Metadata-only (see below) | A real tus server (or tus-compatible endpoint) |
+| S3 (simple) | `@mediadrop/s3` (`createS3UploadTransport`) | One presigned PUT/POST | No | Presign one URL per file |
+| S3 (multipart) | `@mediadrop/s3` (`createS3MultipartUploadTransport`) | Many presigned PUTs, one per part | Metadata-only (see below) | Create/sign-part/complete/abort multipart calls |
+| tus | `@mediadrop/tus` (`createTusUploadTransport`) | POST create, then PATCH chunks | Metadata-only (see below) | A real tus server (or tus-compatible endpoint) |
 
 "Resumable" always means: mediadrop persists upload progress *metadata*
 (IDs, offsets, completed parts) via a `MediaDropUploadSessionStore`, keyed
@@ -82,9 +82,9 @@ See [`skills/mediadrop/references/react.md`](skills/mediadrop/references/react.m
 ### Vanilla JS
 
 ```ts
-import { createMediaDrop } from "@mediadrop/vanilla";
+import { createVanillaMediaDrop } from "@mediadrop/vanilla";
 
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	root: document.querySelector("#dropzone"),
 	input: document.querySelector("#file-input"),
 	restrictions: { accept: ["image/*"], maxFiles: 5 },
@@ -116,11 +116,11 @@ interface.
 ### S3 / tus (opt-in, Phase 3)
 
 ```ts
-import { s3MultipartUpload } from "@mediadrop/s3";
-import { tusUpload } from "@mediadrop/tus";
+import { createS3MultipartUploadTransport } from "@mediadrop/s3";
+import { createTusUploadTransport } from "@mediadrop/tus";
 
-// createMediaDrop({ transport: s3MultipartUpload({ ...your backend's signing endpoints... }) });
-// createMediaDrop({ transport: tusUpload({ endpoint: "/files" }) });
+// createMediaDrop({ transport: createS3MultipartUploadTransport({ ...your backend's signing endpoints... }) });
+// createMediaDrop({ transport: createTusUploadTransport({ endpoint: "/files" }) });
 ```
 
 Same `transport` option, same queue, same retry engine — see

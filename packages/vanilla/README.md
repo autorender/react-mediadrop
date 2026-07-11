@@ -4,9 +4,9 @@ Thin DOM binding over [`@mediadrop/core`](../core/README.md) for plain
 JS/TS projects (or any framework without a dedicated mediadrop binding).
 
 ```ts
-import { createMediaDrop } from "@mediadrop/vanilla";
+import { createVanillaMediaDrop } from "@mediadrop/vanilla";
 
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	root: document.querySelector("#dropzone"),
 	input: document.querySelector("#file-input"),
 	restrictions: { accept: ["image/*"], maxFiles: 5 },
@@ -30,7 +30,7 @@ attribute for a "drag active" affordance without reimplementing drag
 tracking yourself:
 
 ```ts
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	root: document.querySelector("#dropzone"),
 	onDragStateChange(state) {
 		root.classList.toggle("drag-active", state.isDragActive);
@@ -56,10 +56,10 @@ won't let you call it. `destroy()` cancels every queued/in-flight upload
 for you before removing DOM listeners.
 
 ```ts
-import { createMediaDrop } from "@mediadrop/vanilla";
+import { createVanillaMediaDrop } from "@mediadrop/vanilla";
 import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
 
-const uploader = createMediaDrop({
+const uploader = createVanillaMediaDrop({
 	input: document.querySelector("#file-input"),
 	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
 	concurrency: 3,

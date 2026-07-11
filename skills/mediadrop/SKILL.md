@@ -33,11 +33,11 @@ symptom-first index of common integration mistakes.
 | Situation | Import |
 |---|---|
 | React app | `@mediadrop/react` (`useMediaDrop`) |
-| Plain JS / any other framework | `@mediadrop/vanilla` (`createMediaDrop`) |
+| Plain JS / any other framework | `@mediadrop/vanilla` (`createVanillaMediaDrop`) |
 | Upload to a generic REST-ish endpoint | `@mediadrop/xhr-upload` (`createXhrUploadTransport`) |
-| Upload to S3 (presigned single request) | `@mediadrop/s3` (`s3Upload`) |
-| Upload large files to S3 (multipart, resumable) | `@mediadrop/s3` (`s3MultipartUpload`) |
-| Upload to a tus-compatible server | `@mediadrop/tus` (`tusUpload`) — **requires an actual tus server**, don't reach for this against a plain REST endpoint |
+| Upload to S3 (presigned single request) | `@mediadrop/s3` (`createS3UploadTransport`) |
+| Upload large files to S3 (multipart, resumable) | `@mediadrop/s3` (`createS3MultipartUploadTransport`) |
+| Upload to a tus-compatible server | `@mediadrop/tus` (`createTusUploadTransport`) — **requires an actual tus server**, don't reach for this against a plain REST endpoint |
 | Building an adapter, or need the raw engine | `@mediadrop/core` (advanced) |
 
 Whichever transport you pick, pass its result as `transport` to
@@ -45,7 +45,7 @@ Whichever transport you pick, pass its result as `transport` to
 Do not import `@mediadrop/core` directly in application code unless you are
 building a framework adapter or need APIs the React/vanilla bindings don't
 expose (e.g. `createStore`, `createDropzoneController`, `withRetry`,
-`createFileFingerprint`, `memoryUploadSessionStore`/`browserUploadSessionStore`
+`createFileFingerprint`, `createMemoryUploadSessionStore`/`createBrowserUploadSessionStore`
 in isolation). Both `@mediadrop/react` and `@mediadrop/vanilla` re-export the
 shared types (`MediaDropFile`, `MediaDropRestrictions`, `MediaDropError`,
 `DragState`, `UploadTransport`, `MediaDropUploadSessionStore`, etc.), so
@@ -94,10 +94,10 @@ model, store, and drag-state semantics in detail.
   browser needs AWS credentials, that's a sign the backend contract is
   missing, not something to work around by importing the AWS SDK
   client-side.
-- **Do not use `s3MultipartUpload` unless the backend actually implements
+- **Do not use `createS3MultipartUploadTransport` unless the backend actually implements
   all four callbacks** (`createMultipartUpload`/`getPartUploadUrl`/
   `completeMultipartUpload`/`abortMultipartUpload`) — don't stub one out
-  and call the integration done. Same for `tusUpload`: it needs a real
+  and call the integration done. Same for `createTusUploadTransport`: it needs a real
   tus-compatible server, not a generic REST endpoint pretending to be one.
 - **Do not claim** full resumability without the file-reselect caveat,
   S3's multipart protocol where you meant a single presigned request,

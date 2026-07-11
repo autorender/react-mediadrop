@@ -16,14 +16,14 @@ pnpm add @mediadrop/tus
 
 ```ts
 import { createMediaDrop } from "@mediadrop/core";
-import { browserUploadSessionStore } from "@mediadrop/core";
-import { tusUpload } from "@mediadrop/tus";
+import { createBrowserUploadSessionStore } from "@mediadrop/core";
+import { createTusUploadTransport } from "@mediadrop/tus";
 
 const mediadrop = createMediaDrop({
-	transport: tusUpload({
+	transport: createTusUploadTransport({
 		endpoint: "/files",
 		chunkSize: 8 * 1024 * 1024,
-		sessionStore: browserUploadSessionStore(),
+		sessionStore: createBrowserUploadSessionStore(),
 	}),
 });
 ```

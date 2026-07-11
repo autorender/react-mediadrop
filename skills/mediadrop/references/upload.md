@@ -18,13 +18,13 @@ assuming any of that exists.
 
 1. You pick a transport — a small object with one method, `upload(file, { onProgress, signal })`.
    `@mediadrop/xhr-upload`'s `createXhrUploadTransport()` is the simplest
-   reference implementation; `@mediadrop/s3`'s `s3Upload`/
-   `s3MultipartUpload` and `@mediadrop/tus`'s `tusUpload` are more capable
+   reference implementation; `@mediadrop/s3`'s `createS3UploadTransport`/
+   `createS3MultipartUploadTransport` and `@mediadrop/tus`'s `createTusUploadTransport` are more capable
    ones. You can write your own for anything else (a provider SDK, a test
    double).
 2. You pass that transport to `createMediaDrop({ transport, ... })`
    (core), `useMediaDrop({ transport, ... })` (React), or
-   `createMediaDrop({ transport, ... })` (vanilla) — the exact same
+   `createVanillaMediaDrop({ transport, ... })` (vanilla) — the exact same
    option regardless of which transport it is.
 3. **Only then** do `uploadFile`/`uploadAll`/`cancelUpload`/
    `cancelAllUploads`/`retryUpload` exist on the returned object —
@@ -55,7 +55,7 @@ retry implementation**:
   issue many requests, retry individual ones via `withRetry`, and run
   some of them concurrently (S3 multipart's `partConcurrency`), but this
   is *internal* to that one call, not a second queue.
-- React's `useMediaDrop`/vanilla's `createMediaDrop` upload methods are
+- React's `useMediaDrop`/vanilla's `createVanillaMediaDrop` upload methods are
   thin pass-throughs to the same core queue — they add no logic, no extra
   state, and no separate retry/concurrency handling, regardless of which
   transport is plugged in.
@@ -218,8 +218,8 @@ type MediaDropUploadSessionStore = {
 	remove(key: string): Promise<void>;
 };
 
-memoryUploadSessionStore(); // in-process only — gone on reload, gone between tabs
-browserUploadSessionStore({ prefix? }); // localStorage-backed, SSR-safe (no-op without `window`)
+createMemoryUploadSessionStore(); // in-process only — gone on reload, gone between tabs
+createBrowserUploadSessionStore({ prefix? }); // localStorage-backed, SSR-safe (no-op without `window`)
 
 createFileFingerprint(file: File): string; // name+size+type+lastModified, not file contents
 ```
@@ -229,7 +229,7 @@ part numbers — never file bytes.** `createFileFingerprint` is
 metadata-based on purpose: hashing file *contents* would let two
 selections of a huge file be compared reliably, but reading the whole
 file to do that is exactly the cost mediadrop avoids imposing by default.
-Both `s3MultipartUpload` and `tusUpload` accept a `fingerprint` option if
+Both `createS3MultipartUploadTransport` and `createTusUploadTransport` accept a `fingerprint` option if
 you need different matching behavior. If a task asks for
 "guaranteed unique file identification" or content-addressed matching,
 say that the default fingerprint doesn't provide that — point at the

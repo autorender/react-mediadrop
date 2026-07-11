@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { UploadTransport } from "@mediadrop/core";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { createMediaDrop } from "./index.js";
+import { createVanillaMediaDrop } from "./index.js";
 
 /** A transport whose resolution/rejection is controlled by the test. */
 function createDeferredTransport() {
@@ -77,7 +77,7 @@ function dispatchDragEvent(
 
 test("selecting a file through the input reports it via onChange", () => {
 	const onChange = vi.fn();
-	createMediaDrop({ input, onChange });
+	createVanillaMediaDrop({ input, onChange });
 
 	setInputFiles(input, [makeFile("a.png", "image/png")]);
 	input.dispatchEvent(new Event("change"));
@@ -88,7 +88,7 @@ test("selecting a file through the input reports it via onChange", () => {
 
 test("dropping files on the root reports them via onChange", () => {
 	const onChange = vi.fn();
-	createMediaDrop({ root, onChange });
+	createVanillaMediaDrop({ root, onChange });
 
 	dispatchDragEvent(root, "dragenter", [makeFile("a.png", "image/png")]);
 	dispatchDragEvent(root, "drop", [makeFile("a.png", "image/png")]);
@@ -99,7 +99,7 @@ test("dropping files on the root reports them via onChange", () => {
 
 test("onDragStateChange reports isDragActive during a drag and idle again after drop", () => {
 	const onDragStateChange = vi.fn();
-	createMediaDrop({ root, onDragStateChange });
+	createVanillaMediaDrop({ root, onDragStateChange });
 
 	dispatchDragEvent(root, "dragenter", [makeFile("a.png", "image/png")]);
 	expect(onDragStateChange).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ test("onDragStateChange reports isDragActive during a drag and idle again after 
 
 test("onDragStateChange reports idle again after dragleave", () => {
 	const onDragStateChange = vi.fn();
-	createMediaDrop({ root, onDragStateChange });
+	createVanillaMediaDrop({ root, onDragStateChange });
 
 	dispatchDragEvent(root, "dragenter", [makeFile("a.png", "image/png")]);
 	dispatchDragEvent(root, "dragleave");
@@ -130,7 +130,7 @@ test("a custom validator's rejection is reflected via onDragStateChange during t
 		file.name.includes("bad")
 			? { code: "validator-error" as const, message: "bad file" }
 			: null;
-	createMediaDrop({ root, onDragStateChange, validator });
+	createVanillaMediaDrop({ root, onDragStateChange, validator });
 
 	dispatchDragEvent(root, "dragenter", [makeFile("bad.png", "image/png")]);
 
@@ -141,7 +141,7 @@ test("a custom validator's rejection is reflected via onDragStateChange during t
 
 test("open() clicks the input", () => {
 	const clickSpy = vi.spyOn(input, "click");
-	const uploader = createMediaDrop({ input });
+	const uploader = createVanillaMediaDrop({ input });
 
 	uploader.open();
 
@@ -149,7 +149,7 @@ test("open() clicks the input", () => {
 });
 
 test("removeFile and clearFiles delegate to the core engine", () => {
-	const uploader = createMediaDrop({ input });
+	const uploader = createVanillaMediaDrop({ input });
 	setInputFiles(input, [makeFile("a.png", "image/png")]);
 	input.dispatchEvent(new Event("change"));
 
@@ -165,7 +165,7 @@ test("removeFile and clearFiles delegate to the core engine", () => {
 
 test("destroy() removes listeners so further events are ignored", () => {
 	const onChange = vi.fn();
-	const uploader = createMediaDrop({ root, input, onChange });
+	const uploader = createVanillaMediaDrop({ root, input, onChange });
 
 	uploader.destroy();
 
@@ -177,7 +177,7 @@ test("destroy() removes listeners so further events are ignored", () => {
 });
 
 test("without a transport, upload methods do not exist on the returned object", () => {
-	const uploader = createMediaDrop({ input });
+	const uploader = createVanillaMediaDrop({ input });
 
 	expect("uploadFile" in uploader).toBe(false);
 	expect("cancelUpload" in uploader).toBe(false);
@@ -185,7 +185,7 @@ test("without a transport, upload methods do not exist on the returned object", 
 
 test("with a transport, uploadFile drives a file through uploadStatus", async () => {
 	const { transport, resolve } = createDeferredTransport();
-	const uploader = createMediaDrop({ input, transport });
+	const uploader = createVanillaMediaDrop({ input, transport });
 
 	setInputFiles(input, [makeFile("a.png", "image/png")]);
 	input.dispatchEvent(new Event("change"));
@@ -215,7 +215,7 @@ test("cancelUpload aborts an in-flight upload", async () => {
 			});
 		},
 	};
-	const uploader = createMediaDrop({ input, transport });
+	const uploader = createVanillaMediaDrop({ input, transport });
 
 	setInputFiles(input, [makeFile("a.png", "image/png")]);
 	input.dispatchEvent(new Event("change"));
@@ -232,7 +232,7 @@ test("cancelUpload aborts an in-flight upload", async () => {
 
 test("retryUpload re-enqueues a failed upload", async () => {
 	const { transport, reject, resolve } = createDeferredTransport();
-	const uploader = createMediaDrop({ input, transport });
+	const uploader = createVanillaMediaDrop({ input, transport });
 
 	setInputFiles(input, [makeFile("a.png", "image/png")]);
 	input.dispatchEvent(new Event("change"));
@@ -261,7 +261,7 @@ test("uploadAll only enqueues currently accepted files", () => {
 			return new Promise(() => {});
 		},
 	};
-	const uploader = createMediaDrop({
+	const uploader = createVanillaMediaDrop({
 		input,
 		transport,
 		restrictions: { accept: ["image/png"] },
@@ -291,7 +291,7 @@ test("destroy() cancels every in-flight upload instead of leaking them", () => {
 			});
 		},
 	};
-	const uploader = createMediaDrop({ input, transport, concurrency: 2 });
+	const uploader = createVanillaMediaDrop({ input, transport, concurrency: 2 });
 
 	setInputFiles(input, [
 		makeFile("a.png", "image/png"),

@@ -1,5 +1,6 @@
 export type { DropResult, DropzoneController } from "./dropzone.js";
 export { createDropzoneController } from "./dropzone.js";
+export { createError } from "./errors.js";
 export { createFileItem } from "./file.js";
 export { createFileFingerprint } from "./fingerprint.js";
 export { createId } from "./id.js";
@@ -21,8 +22,8 @@ export type {
 	MediaDropUploadSessionStore,
 } from "./session-store.js";
 export {
-	browserUploadSessionStore,
-	memoryUploadSessionStore,
+	createBrowserUploadSessionStore,
+	createMemoryUploadSessionStore,
 } from "./session-store.js";
 export type { StallWatchdog } from "./stall-watchdog.js";
 export { createStallWatchdog } from "./stall-watchdog.js";

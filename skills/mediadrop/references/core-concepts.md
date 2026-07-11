@@ -100,7 +100,7 @@ already accepted before this batch.
 
 ## Multiple dropzones on one page
 
-Each `useMediaDrop()` call (React) or `createMediaDrop({ root, input })`
+Each `useMediaDrop()` call (React) or `createVanillaMediaDrop({ root, input })`
 call (vanilla) owns its own drag-enter/leave depth counter and only reacts
 to events that bubble to its own root element. This means:
 

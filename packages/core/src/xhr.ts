@@ -31,7 +31,7 @@ export type XhrSendResult = {
  * The one `XMLHttpRequest`-sending envelope in mediadrop: open, set headers,
  * wire `createStallWatchdog` + upload progress, resolve/reject on
  * load/error/abort, honor `signal`. Every transport that sends a request
- * over XHR (`@mediadrop/xhr-upload`, `@mediadrop/s3`'s `s3Upload`,
+ * over XHR (`@mediadrop/xhr-upload`, `@mediadrop/s3`'s `createS3UploadTransport`,
  * `@mediadrop/tus`'s protocol layer) calls this instead of each
  * hand-rolling the same open/watchdog/onload/onerror/onabort plumbing —
  * the same reasoning `withRetry` already applies to retry logic.

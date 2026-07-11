@@ -43,8 +43,8 @@ multipart integration failure — check CORS before anything else. See
 
 ## "Resuming after a page reload doesn't work"
 
-Check, in order: (1) was `sessionStore` passed to `s3MultipartUpload`/
-`tusUpload`? Resuming is off by default without one. (2) Did the user
+Check, in order: (1) was `sessionStore` passed to `createS3MultipartUploadTransport`/
+`createTusUploadTransport`? Resuming is off by default without one. (2) Did the user
 reselect the *exact same file*? Resuming is keyed by a metadata
 fingerprint (name/size/type/`lastModified`) — mediadrop cannot persist
 file bytes, so there is no way to resume without the user picking that
@@ -54,8 +54,8 @@ interruptions (reload, closed tab, dropped connection) are resumable.
 
 ## "I want to upload to my REST API but I'm using `@mediadrop/tus` / `@mediadrop/s3`"
 
-Wrong transport. `tusUpload` needs a real tus-compatible server;
-`s3MultipartUpload`/`s3Upload` need a backend that actually signs S3
+Wrong transport. `createTusUploadTransport` needs a real tus-compatible server;
+`createS3MultipartUploadTransport`/`createS3UploadTransport` need a backend that actually signs S3
 URLs. For a generic endpoint you control, use
 [`@mediadrop/xhr-upload`](xhr-upload.md) instead — don't stand up a fake
 tus/S3 backend just to reuse those packages.

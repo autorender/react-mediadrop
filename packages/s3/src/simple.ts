@@ -77,12 +77,15 @@ async function sendPresignedUpload(
  * request body) or presigned POST (S3's policy-based form upload). This
  * is `@mediadrop/xhr-upload` with S3's two presigned-request shapes
  * instead of a generic endpoint; for large files where a single request
- * isn't practical, see `s3MultipartUpload` in this package instead.
+ * isn't practical, see `createS3MultipartUploadTransport` in this package
+ * instead.
  *
  * No retry here — same as every transport in mediadrop, retry is
  * `@mediadrop/core`'s upload queue's job, not this adapter's.
  */
-export function s3Upload(options: S3UploadOptions): UploadTransport {
+export function createS3UploadTransport(
+	options: S3UploadOptions,
+): UploadTransport {
 	const {
 		getUploadUrl,
 		isSuccessStatus = (status) => status >= 200 && status < 300,

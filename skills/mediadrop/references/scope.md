@@ -35,7 +35,7 @@ See [upload.md](upload.md) for the full contract. Summary:
 - `uploadFile`/`uploadAll`/`cancelUpload`/`cancelAllUploads`/`retryUpload`
   on `createMediaDrop()`'s return value **only when `transport` is
   passed** — same in `@mediadrop/react`'s `useMediaDrop` and
-  `@mediadrop/vanilla`'s `createMediaDrop`. Without `transport`, none of
+  `@mediadrop/vanilla`'s `createVanillaMediaDrop`. Without `transport`, none of
   it exists, and TypeScript won't let you call it.
 - Per-file upload state on `MediaDropFile`: `uploadStatus`, `progress`,
   `uploadError`, `uploadResult`, `uploadAttempts` — kept separate from the
@@ -45,17 +45,17 @@ See [upload.md](upload.md) for the full contract. Summary:
 
 See [upload.md](upload.md) for the full contract. Summary:
 
-- **`@mediadrop/s3`**: `s3Upload` (single presigned PUT/POST request) and
-  `s3MultipartUpload` (part-splitting respecting S3's real constraints,
+- **`@mediadrop/s3`**: `createS3UploadTransport` (single presigned PUT/POST request) and
+  `createS3MultipartUploadTransport` (part-splitting respecting S3's real constraints,
   bounded part concurrency, aggregated progress, part-level retry via
   `withRetry`, cancel/abort). No AWS SDK; your backend signs every URL.
-- **`@mediadrop/tus`**: `tusUpload`, a small client for tus's core
+- **`@mediadrop/tus`**: `createTusUploadTransport`, a small client for tus's core
   create/`PATCH`/resume flow. No `tus-js-client` dependency. Explicitly
   does **not** implement the checksum, creation-with-upload, expiration,
   concatenation, deferred-length, or termination extensions.
 - **Resumable metadata**, shared by both: `@mediadrop/core`'s
-  `MediaDropUploadSessionStore` (`memoryUploadSessionStore()`/
-  `browserUploadSessionStore()`) persists upload IDs/offsets/completed
+  `MediaDropUploadSessionStore` (`createMemoryUploadSessionStore()`/
+  `createBrowserUploadSessionStore()`) persists upload IDs/offsets/completed
   parts — never file bytes — keyed by `createFileFingerprint()` (file
   metadata, not content hash). Resuming after a page reload requires the
   user to reselect the same file; there is no way around that.

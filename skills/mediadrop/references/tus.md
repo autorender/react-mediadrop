@@ -12,13 +12,13 @@ contract this plugs into.
 ## Quickstart
 
 ```ts
-import { tusUpload } from "@mediadrop/tus";
-import { browserUploadSessionStore } from "@mediadrop/core";
+import { createTusUploadTransport } from "@mediadrop/tus";
+import { createBrowserUploadSessionStore } from "@mediadrop/core";
 
-const transport = tusUpload({
+const transport = createTusUploadTransport({
 	endpoint: "/files", // a real tus server's creation endpoint
 	chunkSize: 8 * 1024 * 1024,
-	sessionStore: browserUploadSessionStore(),
+	sessionStore: createBrowserUploadSessionStore(),
 });
 ```
 

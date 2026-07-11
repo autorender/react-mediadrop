@@ -21,10 +21,10 @@ presigned POST (S3's policy-based form upload):
 
 ```ts
 import { createMediaDrop } from "@mediadrop/core";
-import { s3Upload } from "@mediadrop/s3";
+import { createS3UploadTransport } from "@mediadrop/s3";
 
 const mediadrop = createMediaDrop({
-	transport: s3Upload({
+	transport: createS3UploadTransport({
 		getUploadUrl: async ({ file }) => {
 			const res = await fetch("/api/s3/presign", {
 				method: "POST",
@@ -38,7 +38,7 @@ const mediadrop = createMediaDrop({
 ```
 
 No retry here, or anywhere in this package — `@mediadrop/core`'s upload
-queue owns retry (`retries` on `createMediaDrop`), and `s3MultipartUpload`
+queue owns retry (`retries` on `createMediaDrop`), and `createS3MultipartUploadTransport`
 below retries individual parts through `@mediadrop/core`'s shared
 `withRetry`, never a second, hand-rolled retry loop.
 
@@ -46,16 +46,16 @@ below retries individual parts through `@mediadrop/core`'s shared
 
 For large files. Splits the file into parts (S3's rules: parts must be
 **≥ 5 MiB except the last**, and **at most 10,000 parts**;
-`s3MultipartUpload` enforces both by adjusting your requested `partSize`
+`createS3MultipartUploadTransport` enforces both by adjusting your requested `partSize`
 up as needed), uploads them with bounded concurrency, aggregates progress
 across parts, and — with `sessionStore` — can skip already-uploaded parts
 if the same file is re-uploaded (including after a page reload):
 
 ```ts
-import { s3MultipartUpload } from "@mediadrop/s3";
-import { browserUploadSessionStore } from "@mediadrop/core";
+import { createS3MultipartUploadTransport } from "@mediadrop/s3";
+import { createBrowserUploadSessionStore } from "@mediadrop/core";
 
-const transport = s3MultipartUpload({
+const transport = createS3MultipartUploadTransport({
 	createMultipartUpload: async ({ file }) => {
 		const res = await fetch("/api/s3/multipart/create", {
 			method: "POST",
@@ -85,7 +85,7 @@ const transport = s3MultipartUpload({
 	},
 	partSize: 8 * 1024 * 1024,
 	partConcurrency: 3,
-	sessionStore: browserUploadSessionStore(),
+	sessionStore: createBrowserUploadSessionStore(),
 });
 ```
 
@@ -105,7 +105,7 @@ into the options above):
 
 **Your bucket's CORS config must expose the `ETag` response header**
 (`ExposeHeaders: ["ETag"]`) — without it, the browser can't read each
-part's ETag from the PUT response, and `s3MultipartUpload` will reject
+part's ETag from the PUT response, and `createS3MultipartUploadTransport` will reject
 with a message telling you exactly that.
 
 ### Progress, cancellation, and cleanup

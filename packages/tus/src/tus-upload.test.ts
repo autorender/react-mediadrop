@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { memoryUploadSessionStore } from "@mediadrop/core";
+import { createMemoryUploadSessionStore } from "@mediadrop/core";
 import { installMockXhr, MockXhr, makeFile } from "@mediadrop/test-utils";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { tusUpload } from "./tus-upload.js";
+import { createTusUploadTransport } from "./tus-upload.js";
 import { TusError } from "./types.js";
 
 let uninstall: () => void;
@@ -20,7 +20,7 @@ async function waitForXhrCount(count: number): Promise<void> {
 }
 
 test("creates the upload with the correct tus creation headers", async () => {
-	const transport = tusUpload({ endpoint: "/files" });
+	const transport = createTusUploadTransport({ endpoint: "/files" });
 	const file = makeFile("a.png", "image/png", 10);
 
 	const promise = transport.upload(file, {
@@ -45,7 +45,7 @@ test("creates the upload with the correct tus creation headers", async () => {
 });
 
 test("uploads the file body via PATCH with the correct offset/content-type headers", async () => {
-	const transport = tusUpload({ endpoint: "/files" });
+	const transport = createTusUploadTransport({ endpoint: "/files" });
 	const file = makeFile("a.png", "image/png", 10);
 
 	const promise = transport.upload(file, {
@@ -78,7 +78,7 @@ test("uploads the file body via PATCH with the correct offset/content-type heade
 
 test("splits large files into multiple chunks", async () => {
 	const chunkSize = 5;
-	const transport = tusUpload({ endpoint: "/files", chunkSize });
+	const transport = createTusUploadTransport({ endpoint: "/files", chunkSize });
 	const file = makeFile("a.png", "image/png", 12);
 
 	const promise = transport.upload(file, {
@@ -141,7 +141,10 @@ test("sends each chunk's exact byte range — no off-by-one gap or overlap at ch
 		status: "accepted" as const,
 		errors: [],
 	};
-	const transport = tusUpload({ endpoint: "/files", chunkSize: 5 });
+	const transport = createTusUploadTransport({
+		endpoint: "/files",
+		chunkSize: 5,
+	});
 
 	const promise = transport.upload(file, {
 		onProgress: vi.fn(),
@@ -169,7 +172,7 @@ test("sends each chunk's exact byte range — no off-by-one gap or overlap at ch
 
 test("reports progress as chunks complete", async () => {
 	const onProgress = vi.fn();
-	const transport = tusUpload({ endpoint: "/files" });
+	const transport = createTusUploadTransport({ endpoint: "/files" });
 	const file = makeFile("a.png", "image/png", 10);
 
 	const promise = transport.upload(file, {
@@ -189,7 +192,7 @@ test("reports progress as chunks complete", async () => {
 });
 
 test("resumes using the offset from a fresh HEAD request, not a stale local value", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", 10);
 	const { createFileFingerprint } = await import("@mediadrop/core");
 	const fp = createFileFingerprint(file.file);
@@ -202,7 +205,10 @@ test("resumes using the offset from a fresh HEAD request, not a stale local valu
 		updatedAt: 1,
 	});
 
-	const transport = tusUpload({ endpoint: "/files", sessionStore });
+	const transport = createTusUploadTransport({
+		endpoint: "/files",
+		sessionStore,
+	});
 	const promise = transport.upload(file, {
 		onProgress: vi.fn(),
 		signal: new AbortController().signal,
@@ -224,7 +230,7 @@ test("resumes using the offset from a fresh HEAD request, not a stale local valu
 });
 
 test("falls back to creating a new upload when the resumed URL is gone (HEAD fails)", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", 10);
 	const { createFileFingerprint } = await import("@mediadrop/core");
 	const fp = createFileFingerprint(file.file);
@@ -237,7 +243,10 @@ test("falls back to creating a new upload when the resumed URL is gone (HEAD fai
 		updatedAt: 1,
 	});
 
-	const transport = tusUpload({ endpoint: "/files", sessionStore });
+	const transport = createTusUploadTransport({
+		endpoint: "/files",
+		sessionStore,
+	});
 	const promise = transport.upload(file, {
 		onProgress: vi.fn(),
 		signal: new AbortController().signal,
@@ -259,9 +268,12 @@ test("falls back to creating a new upload when the resumed URL is gone (HEAD fai
 });
 
 test("removes the session after a successful completion", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", 10);
-	const transport = tusUpload({ endpoint: "/files", sessionStore });
+	const transport = createTusUploadTransport({
+		endpoint: "/files",
+		sessionStore,
+	});
 
 	const promise = transport.upload(file, {
 		onProgress: vi.fn(),
@@ -279,10 +291,13 @@ test("removes the session after a successful completion", async () => {
 });
 
 test("aborting the signal cancels the request and clears the session", async () => {
-	const sessionStore = memoryUploadSessionStore();
+	const sessionStore = createMemoryUploadSessionStore();
 	const file = makeFile("a.png", "image/png", 10);
 	const controller = new AbortController();
-	const transport = tusUpload({ endpoint: "/files", sessionStore });
+	const transport = createTusUploadTransport({
+		endpoint: "/files",
+		sessionStore,
+	});
 
 	const promise = transport.upload(file, {
 		onProgress: vi.fn(),
@@ -302,7 +317,7 @@ test("aborting the signal cancels the request and clears the session", async () 
 });
 
 test("retries a failed chunk using the shared retry engine", async () => {
-	const transport = tusUpload({
+	const transport = createTusUploadTransport({
 		endpoint: "/files",
 		chunkRetries: 2,
 		chunkRetryDelays: [0, 0],
@@ -329,7 +344,7 @@ test("retries a failed chunk using the shared retry engine", async () => {
 test("chunkStallTimeoutMs aborts a stalled PATCH and retries it, via the shared retry engine", async () => {
 	vi.useFakeTimers();
 	try {
-		const transport = tusUpload({
+		const transport = createTusUploadTransport({
 			endpoint: "/files",
 			chunkStallTimeoutMs: 1000,
 			chunkRetries: 1,
@@ -369,7 +384,7 @@ test("a cancel that lands right as the final chunk resolves still rejects, not r
 	// the narrow window right as the last PATCH resolves would be silently
 	// ignored and reported "done" as if nothing happened.
 	const controller = new AbortController();
-	const transport = tusUpload({ endpoint: "/files" });
+	const transport = createTusUploadTransport({ endpoint: "/files" });
 	const file = makeFile("a.png", "image/png", 10);
 
 	const promise = transport.upload(file, {
@@ -391,7 +406,7 @@ test("a cancel that lands right as the final chunk resolves still rejects, not r
 });
 
 test("throws a typed TusError when creation fails, without retrying internally", async () => {
-	const transport = tusUpload({ endpoint: "/files" });
+	const transport = createTusUploadTransport({ endpoint: "/files" });
 	const promise = transport.upload(makeFile("a.png", "image/png", 10), {
 		onProgress: vi.fn(),
 		signal: new AbortController().signal,
