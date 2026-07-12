@@ -1,8 +1,8 @@
-# Upload (Phase 2)
+# Upload
 
-Phase 2 added a real, working upload path on top of Phase 1's file
-intake: a queue, concurrency, retry, cancel, and a pluggable transport
-contract, with `react-mediadrop/xhr-upload` as the reference transport.
+Upload adds a real, working upload path on top of Core's file intake: a
+queue, concurrency, retry, cancel, and a pluggable transport contract, with
+`react-mediadrop/xhr-upload` as the reference transport.
 
 Advanced transports built on this same contract (S3 presigned/multipart,
 tus) exist on a separate branch for a future phase — not part of this
@@ -23,7 +23,7 @@ exists.
 3. **Only then** do `uploadFile`/`uploadAll`/`cancelUpload`/
    `cancelAllUploads`/`retryUpload` exist on the returned object —
    without `transport`, they are absent, and TypeScript will not let you
-   call them. This mirrors Phase 1's own restraint: no feature exists
+   call them. This mirrors Core's own restraint: no feature exists
    halfway.
 4. Every file's upload progress lives on the `MediaDropFile` itself
    (`uploadStatus`, `progress`, `uploadError`, `uploadResult`,
@@ -86,7 +86,7 @@ instead of having them all retry in lockstep.
 
 ```ts
 type MediaDropFile = {
-	// ...status, errors, etc. — unchanged from Phase 1...
+	// ...status, errors, etc. — unchanged from Core...
 	uploadStatus?: "queued" | "uploading" | "done" | "error" | "canceled";
 	progress?: { loaded: number; total: number | null };
 	uploadError?: MediaDropError; // code: "upload-error", present after a failed attempt
@@ -111,13 +111,13 @@ rejected file can never be queued.
 
 ### `status` and `uploadStatus` are separate on purpose
 
-`status` (`"idle" | "accepted" | "rejected"`) is the Phase 1 validation
+`status` (`"idle" | "accepted" | "rejected"`) is the Core validation
 verdict and is **never touched by the upload queue** — it's decided once,
 when the file is added, exactly as before. `uploadStatus` is a completely
 independent field for the upload lifecycle. This means:
 
 - `getAcceptedFiles()`/`getRejectedFiles()` behave identically whether or
-  not any upload has started, finished, or failed — Phase 1's contract
+  not any upload has started, finished, or failed — Core's contract
   holds. Do not "fix" this by making upload move a file out of
   `getAcceptedFiles()`; that would be a regression, not an improvement.
 - `maxFiles` counting (based on `status`) is unaffected by upload

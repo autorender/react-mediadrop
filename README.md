@@ -22,10 +22,10 @@ markup are always yours. There is no prebuilt widget or dashboard, in this
 phase or planned for any phase — see
 [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md).
 
-## Status: Phase 1 + Phase 2
+## Status: Core + Upload
 
-Phase 1 covers file intake, drag/drop, and validation. Phase 2 adds upload
-on top: a pluggable transport contract, a queue with concurrency/retry/cancel,
+Core covers file intake, drag/drop, and validation. Upload adds a real
+upload path on top: a pluggable transport contract, a queue with concurrency/retry/cancel,
 and a reference XHR transport. **There is still no pause/resume, no
 remote-provider import, no OAuth, no image transforms, no prebuilt widget,
 and no Autorender-specific adapter.** See

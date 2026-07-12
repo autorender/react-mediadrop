@@ -1,6 +1,6 @@
 ---
 name: mediadrop
-description: Integrate mediadrop (Phase 1 + Phase 2) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel) for React. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on react-mediadrop.
+description: Integrate mediadrop (Core + Upload) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel) for React. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on react-mediadrop.
 license: MIT
 compatibility: Requires React 18+. In Next.js App Router (or any RSC setup), the component calling useMediaDrop must be a "use client" component — the hook uses useSyncExternalStore/useEffect.
 metadata:
@@ -12,14 +12,14 @@ metadata:
   install-package: react-mediadrop
 ---
 
-# mediadrop — Phase 1 (file intake) + Phase 2 (upload)
+# mediadrop — Core (file intake) + Upload
 
 mediadrop is a lightweight, headless-first file uploader for React.
-**Phase 1** covers file selection, drag/drop, and validation via the
-`useMediaDrop` hook. **Phase 2** adds a real upload path on top: a
+**Core** covers file selection, drag/drop, and validation via the
+`useMediaDrop` hook. **Upload** adds a real upload path on top: a
 pluggable transport contract, a queue with concurrency/retry/cancel, and
 a reference `react-mediadrop/xhr-upload` transport. Upload is **opt-in**
-— pass `transport` to get it; without it, nothing about Phase 1's behavior
+— pass `transport` to get it; without it, nothing about Core's behavior
 changes at all. mediadrop is headless-first with no exceptions right now
 — there is no prebuilt widget/dashboard package; you own all markup.
 
@@ -82,7 +82,7 @@ common integration mistake — if a task target is a Next.js app, add
    and each file additionally tracks
    `uploadStatus`/`progress`/`uploadError`/`uploadResult` — see
    [references/upload.md](references/upload.md). This never changes
-   `status`/`errors`, which stay exactly what Phase 1 defined.
+   `status`/`errors`, which stay exactly what Core defined.
 
 See [references/core-concepts.md](references/core-concepts.md) for the file
 model, store, and drag-state semantics in detail.

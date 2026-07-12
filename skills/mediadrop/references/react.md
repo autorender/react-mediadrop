@@ -146,7 +146,7 @@ the root, or the root's click-to-open will fire a second time:
 This is the same reason `getInputProps()`'s own `onClick` already stops
 propagation internally — the input lives inside the root too.
 
-## Upload (Phase 2, opt-in)
+## Upload (opt-in)
 
 Passing `transport` adds upload orchestration to the returned object —
 without it, none of this exists, and TypeScript won't let you call it:

@@ -1,10 +1,11 @@
 # Scope: what's real and what isn't
 
-mediadrop is built in phases. This document is the authoritative "what's
-real today" list — if something isn't listed under "Implemented," treat it
-as not existing, even if it sounds like an obvious next step.
+mediadrop's feature set has two layers: Core and Upload. This document is
+the authoritative "what's real today" list — if something isn't listed
+under "Implemented," treat it as not existing, even if it sounds like an
+obvious next step.
 
-## Implemented (Phase 1 — file intake, drag/drop, validation)
+## Implemented (Core — file intake, drag/drop, validation)
 
 - File intake from a picker (`<input type="file">`) or drag/drop.
 - Validation against `restrictions` (`accept`, `maxFiles`, `minSize`,
@@ -22,7 +23,7 @@ as not existing, even if it sounds like an obvious next step.
   (the underlying engine) is bundled directly into `react-mediadrop`'s
   published package, not published or imported separately.
 
-## Implemented (Phase 2 — upload)
+## Implemented (Upload)
 
 See [upload.md](upload.md) for the full contract. Summary:
 
@@ -40,7 +41,7 @@ See [upload.md](upload.md) for the full contract. Summary:
   let you call it.
 - Per-file upload state on `MediaDropFile`: `uploadStatus`, `progress`,
   `uploadError`, `uploadResult`, `uploadAttempts` — kept separate from the
-  Phase 1 `status`/`errors` fields, which upload never touches.
+  Core `status`/`errors` fields, which upload never touches.
 
 ## Previously implemented, currently removed (S3, tus)
 
@@ -79,8 +80,8 @@ improvising a stand-in inside mediadrop's public API:
 
 ## If asked to add one of these
 
-Tell the user/requestor it's out of scope for the current phase, and — if
-they want it anyway — treat it as new work outside this skill's guidance,
+Tell the user/requestor it's out of scope for what's implemented today, and
+— if they want it anyway — treat it as new work outside this skill's guidance,
 not as "using mediadrop correctly." Don't bolt a `fetch` call onto
 `onChange` and call it an upload feature; don't claim "fully resumable"
 without the file-reselect caveat.

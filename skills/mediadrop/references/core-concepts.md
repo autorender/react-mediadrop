@@ -2,8 +2,8 @@
 
 These concepts underlie `react-mediadrop` (which bundles `@mediadrop/core`
 internally — core isn't published or imported separately). This doc
-describes what's implemented in Phase 1
-(file intake/validation/drag-drop) and Phase 2 (upload). See
+describes what's implemented in Core
+(file intake/validation/drag-drop) and Upload. See
 [upload.md](upload.md) for the upload-specific queue/retry/cancel contract.
 
 ## The file model
@@ -21,7 +21,7 @@ type MediaDropFile = {
 	status: "idle" | "accepted" | "rejected";
 	errors: MediaDropError[]; // always an array, even when empty
 
-	// Phase 2, only ever set once an upload is requested for this file:
+	// Upload fields, only ever set once an upload is requested for this file:
 	uploadStatus?: "queued" | "uploading" | "done" | "error" | "canceled";
 	progress?: { loaded: number; total: number | null };
 	uploadError?: MediaDropError; // present after a failed/canceled attempt
@@ -109,5 +109,5 @@ only reacts to events that bubble to its own root element. This means:
 - Moving the pointer across child elements inside one dropzone does not
   cause `isDragActive` to flicker (a counter, not a boolean flip, tracks
   enter/leave).
-- Overlapping/nested dropzones are **not** specially coordinated in Phase 1
+- Overlapping/nested dropzones are **not** specially coordinated in Core
   — this is a known limitation, not an oversight to silently patch over.

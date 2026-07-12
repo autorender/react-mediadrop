@@ -48,7 +48,7 @@ codes (plus whatever code your custom validator assigns — see below). Switch
 on `code`, not on `message` — messages are for display, not branching logic.
 `status`/`sourceCode` are only ever populated on upload errors (see
 [upload.md](upload.md#mediadropfiles-upload-fields)) — always absent on a
-Phase 1 validation error.
+Core validation error.
 
 ## Custom validators
 
@@ -87,7 +87,7 @@ drop; when it doesn't, the preview silently falls back to accept-only
 evaluation. Don't rely on this for correctness — the authoritative
 accept/reject decision is always the one made at drop time in `addFiles`.
 
-## What validation does not do (Phase 1)
+## What validation does not do (Core)
 
 - No async validators. The validator runs synchronously against the `File`
   object (name/size/type only) — it cannot read file contents or await a
