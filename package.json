@@ -6,13 +6,6 @@
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@11.10.0",
-	"devEngines": {
-		"packageManager": {
-			"name": "pnpm",
-			"version": "11.10.0",
-			"onFail": "download"
-		}
-	},
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
