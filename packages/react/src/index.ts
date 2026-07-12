@@ -1,5 +1,7 @@
 export type {
+	BrowserUploadSessionStoreOptions,
 	DragState,
+	HttpError,
 	MediaDropError,
 	MediaDropErrorCode,
 	MediaDropFile,
@@ -11,9 +13,18 @@ export type {
 	MediaDropUploadSessionStore,
 	MediaDropUploadStatus,
 	MediaDropValidator,
+	RetryOptions,
 	UploadTransport,
 	UploadTransportContext,
 	UploadTransportResult,
+} from "@mediadrop/core";
+export {
+	createBrowserUploadSessionStore,
+	createFileFingerprint,
+	createHttpError,
+	createMemoryUploadSessionStore,
+	defaultShouldRetry,
+	withRetry,
 } from "@mediadrop/core";
 export type {
 	GetInputPropsArg,

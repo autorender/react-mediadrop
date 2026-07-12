@@ -9,8 +9,8 @@
  * exactly the kind of cost this library avoids imposing by default. This
  * is "looks like the same file," not a content-addressed guarantee — two
  * different files with identical name/size/type/mtime would collide. If
- * that matters for your use case, pass your own `fingerprint` function
- * (accepted by `@mediadrop/s3` and `@mediadrop/tus`) instead of this one.
+ * that matters for your use case, a custom resumable transport can accept
+ * its own `fingerprint` function instead of this one.
  */
 export function createFileFingerprint(file: File): string {
 	const relativePath =

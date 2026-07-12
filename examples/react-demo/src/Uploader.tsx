@@ -1,4 +1,4 @@
-import { useMediaDrop } from "@mediadrop/react";
+import { useMediaDrop } from "react-mediadrop";
 import { useMemo } from "react";
 import { MAX_SIZE, TRANSPORTS, type TransportKey } from "./transports.js";
 

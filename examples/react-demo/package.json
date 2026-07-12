@@ -2,7 +2,7 @@
 	"name": "react-demo",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Manual test bed for @mediadrop/react across every transport (xhr-upload, s3, tus) — not published, not part of the public API.",
+	"description": "Manual test bed for react-mediadrop's xhr-upload transport — not published, not part of the public API.",
 	"license": "MIT",
 	"type": "module",
 	"scripts": {
@@ -12,11 +12,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@mediadrop/core": "workspace:*",
-		"@mediadrop/react": "workspace:*",
-		"@mediadrop/s3": "workspace:*",
-		"@mediadrop/tus": "workspace:*",
-		"@mediadrop/xhr-upload": "workspace:*",
+		"react-mediadrop": "workspace:*",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0"
 	},

@@ -8,7 +8,7 @@ assignees: ""
 
 ## Which package(s)
 
-<!-- e.g. @mediadrop/core, @mediadrop/react, @mediadrop/s3, ... -->
+<!-- e.g. react-mediadrop -->
 
 ## Describe the bug
 

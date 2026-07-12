@@ -1,31 +1,25 @@
-# Upload (Phase 2 + Phase 3)
+# Upload (Phase 2)
 
 Phase 2 added a real, working upload path on top of Phase 1's file
 intake: a queue, concurrency, retry, cancel, and a pluggable transport
-contract, with `@mediadrop/xhr-upload` as the reference transport. Phase
-3 adds advanced transports on the *same* contract — `@mediadrop/s3`
-(presigned single-request + multipart, with resumable metadata) and
-`@mediadrop/tus` (a small tus client) — plus the shared utilities that
-make resumability possible without every transport reinventing retry:
-`withRetry`'s `shouldRetry`/`jitter`, session stores, and file
-fingerprinting.
+contract, with `react-mediadrop/xhr-upload` as the reference transport.
 
-It still does **not** add pause/resume, the full tus extension suite, a
-remote-provider/OAuth story, or a widget — see [scope.md](scope.md) before
-assuming any of that exists.
+Advanced transports built on this same contract (S3 presigned/multipart,
+tus) exist on a separate branch for a future phase — not part of this
+codebase right now.
+
+This still does **not** add pause/resume, a remote-provider/OAuth story,
+or a widget — see [scope.md](scope.md) before assuming any of that
+exists.
 
 ## The mental model
 
 1. You pick a transport — a small object with one method, `upload(file, { onProgress, signal })`.
-   `@mediadrop/xhr-upload`'s `createXhrUploadTransport()` is the simplest
-   reference implementation; `@mediadrop/s3`'s `createS3UploadTransport`/
-   `createS3MultipartUploadTransport` and `@mediadrop/tus`'s `createTusUploadTransport` are more capable
-   ones. You can write your own for anything else (a provider SDK, a test
-   double).
-2. You pass that transport to `createMediaDrop({ transport, ... })`
-   (core), `useMediaDrop({ transport, ... })` (React), or
-   `createVanillaMediaDrop({ transport, ... })` (vanilla) — the exact same
-   option regardless of which transport it is.
+   `react-mediadrop/xhr-upload`'s `createXhrUploadTransport()` is the
+   reference implementation. You can write your own for anything else (a
+   provider SDK, a test double, a more advanced resumable protocol).
+2. You pass that transport to `useMediaDrop({ transport, ... })` — the
+   exact same option regardless of which transport it is.
 3. **Only then** do `uploadFile`/`uploadAll`/`cancelUpload`/
    `cancelAllUploads`/`retryUpload` exist on the returned object —
    without `transport`, they are absent, and TypeScript will not let you
@@ -38,30 +32,24 @@ assuming any of that exists.
 
 ## Where the logic actually lives
 
-**`@mediadrop/core` owns all upload orchestration.** For a simple
-transport (`@mediadrop/xhr-upload`) that means the queue's file-level
-concurrency limit and retry/backoff entirely. For a multi-request
-transport (`@mediadrop/s3`'s multipart, `@mediadrop/tus`'s chunking) it
-means the file-level queue *plus* that transport calling `@mediadrop/core`'s
-exported `withRetry` again, itself, for its own finer-grained retry
-(one failed S3 part, one failed tus chunk) — **never a second, hand-rolled
-retry implementation**:
+**`react-mediadrop` owns all upload orchestration.** For a simple
+transport (`react-mediadrop/xhr-upload`) that means the queue's file-level
+concurrency limit and retry/backoff entirely. A multi-request transport
+(splitting one file into several requests) would still be "one file, one
+`upload()` call" from the queue's point of view — internally it may issue
+many requests and retry individual ones via the shared
+`withRetry`, called again for that finer-grained retry — **never a
+second, hand-rolled retry implementation**:
 
 - A simple transport's job is exactly one thing: send one file, once,
   report progress, resolve or reject. It has no retry loop and no
   concurrency limit of its own.
-- A multi-request transport (S3 multipart, tus) is still "one file, one
-  `upload()` call" from the queue's point of view — internally it may
-  issue many requests, retry individual ones via `withRetry`, and run
-  some of them concurrently (S3 multipart's `partConcurrency`), but this
-  is *internal* to that one call, not a second queue.
-- React's `useMediaDrop`/vanilla's `createVanillaMediaDrop` upload methods are
-  thin pass-throughs to the same core queue — they add no logic, no extra
-  state, and no separate retry/concurrency handling, regardless of which
-  transport is plugged in.
+- `useMediaDrop`'s upload methods are thin pass-throughs to the same
+  queue — they add no logic, no extra state, and no separate
+  retry/concurrency handling, regardless of which transport is plugged in.
 
 If you're asked to add retry, backoff, or concurrency logic anywhere
-*other than* calling `@mediadrop/core`'s `withRetry` (e.g. "add a retry
+*other than* calling the shared `withRetry` (e.g. "add a retry
 loop inside the transport" or "have the React hook retry failed uploads
 itself"), that's almost certainly wrong — say so and point at `withRetry`
 instead of adding a second copy of this logic. This is a direct reaction
@@ -73,8 +61,9 @@ has that centralized place; use it.
 
 ### The shared retry engine
 
-`withRetry(attempt, options, signal)` (from `@mediadrop/core`) is the one
-retry engine, used by the queue and by `@mediadrop/s3`/`@mediadrop/tus`:
+`withRetry(attempt, options, signal)` (re-exported from `react-mediadrop`) is the one
+retry engine, used by the queue and available to any transport that
+needs finer-grained retry of its own:
 
 ```ts
 type RetryOptions = {
@@ -110,11 +99,10 @@ type MediaDropFile = {
 every consumer can rely on regardless of transport. `uploadError.status`
 (HTTP status, e.g. from a rejected/aborted request) and
 `uploadError.sourceCode` (a transport's own finer-grained error
-classification, e.g. `@mediadrop/tus`'s `TusError.code` such as
-`"offset-mismatch"`) are both optional — present only when the failing
-transport attached that information, omitted otherwise. Don't `switch`
-exhaustively on `sourceCode`; it's transport-specific and open-ended, not
-a closed union like `MediaDropErrorCode`.
+classification, if it attaches one) are both optional — present only
+when the failing transport attached that information, omitted otherwise.
+Don't `switch` exhaustively on `sourceCode`; it's transport-specific and
+open-ended, not a closed union like `MediaDropErrorCode`.
 
 `uploadStatus` is **`undefined` until an upload is requested** for that
 file — a freshly-accepted file has no `uploadStatus` at all, not
@@ -139,7 +127,7 @@ independent field for the upload lifecycle. This means:
 ## The queue: concurrency, retry, cancel
 
 ```ts
-createMediaDrop({
+useMediaDrop({
 	transport,
 	concurrency: 3, // max uploads in flight at once. Default 1 (sequential).
 	retries: 2, // retries *after* the first attempt, shared for every file. Default 0.
@@ -191,7 +179,7 @@ type UploadTransport = {
 };
 ```
 
-Writing your own transport (instead of `@mediadrop/xhr-upload`) means
+Writing your own transport (instead of `react-mediadrop/xhr-upload`) means
 implementing exactly this — one method, one file, one attempt:
 
 - Call `onProgress` as the upload progresses. `total: null` when the
@@ -202,14 +190,17 @@ implementing exactly this — one method, one file, one attempt:
   server's parsed JSON body) on success. Reject on failure — the queue
   decides whether to retry, you don't.
 - **Do not implement your own retry or backoff inside a transport.** Use
-  `@mediadrop/core`'s `withRetry` for any finer-grained retry the
+  the shared `withRetry` for any finer-grained retry the
   transport itself needs — see "Where the logic actually lives" above.
 
 ## Session persistence and file fingerprinting
 
-Two shared `@mediadrop/core` utilities exist specifically so resumable
-transports (`@mediadrop/s3`'s multipart, `@mediadrop/tus`) don't each
-invent their own metadata storage or "is this the same file" check:
+`react-mediadrop` still exports the metadata-persistence utilities built
+for resumable transports, even though no transport in this codebase
+currently uses them (S3/tus, the transports that did, are on a separate
+branch). If you write a custom resumable transport, these exist so you
+don't have to invent your own metadata storage or "is this the same
+file" check:
 
 ```ts
 type MediaDropUploadSessionStore = {
@@ -229,30 +220,20 @@ part numbers — never file bytes.** `createFileFingerprint` is
 metadata-based on purpose: hashing file *contents* would let two
 selections of a huge file be compared reliably, but reading the whole
 file to do that is exactly the cost mediadrop avoids imposing by default.
-Both `createS3MultipartUploadTransport` and `createTusUploadTransport` accept a `fingerprint` option if
-you need different matching behavior. If a task asks for
-"guaranteed unique file identification" or content-addressed matching,
-say that the default fingerprint doesn't provide that — point at the
-`fingerprint` override rather than quietly hashing file contents inside
+If a task asks for "guaranteed unique file identification" or
+content-addressed matching, say that the default fingerprint doesn't
+provide that — a custom resumable transport can accept its own
+`fingerprint` option rather than quietly hashing file contents inside
 core.
 
-## Transport-specific guides
-
-The three sections that used to live here now have their own docs, since
-each transport has its own backend contract and gotchas:
+## Transport guide
 
 - [xhr-upload.md](xhr-upload.md) — the reference transport, generic REST-ish endpoints
-- [s3.md](s3.md) — presigned single-request and multipart, resumable metadata
-- [tus.md](tus.md) — the tus protocol client, resumable metadata
-
-All three plug into the exact same `transport` option and the same queue
-described above — nothing in this doc changes depending on which one you
-pick.
 
 ## What's still not implemented — do not build around it, do not fake it
 
 See [scope.md](scope.md) for the authoritative, up-to-date list. In short:
-pause/resume, persistence of file *bytes* across a reload, the full tus
-extension suite, remote-provider import, OAuth, image transforms, and any
+pause/resume, S3/tus transports, persistence of file *bytes* across a
+reload, remote-provider import, OAuth, image transforms, and any
 Autorender-specific adapter are all out of scope — don't improvise a
 stand-in for any of them inside mediadrop's public API.

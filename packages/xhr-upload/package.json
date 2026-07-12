@@ -2,7 +2,7 @@
 	"name": "@mediadrop/xhr-upload",
 	"private": true,
 	"version": "0.0.0",
-	"description": "Reference XMLHttpRequest transport adapter for @mediadrop/core's pluggable upload queue.",
+	"description": "Reference XMLHttpRequest transport adapter for react-mediadrop's pluggable upload queue.",
 	"license": "MIT",
 	"sideEffects": false,
 	"type": "module",
@@ -25,12 +25,10 @@
 		"size": "node ../../scripts/check-bundle-size.mjs"
 	},
 	"sizeLimit": {
-		"dist/index.mjs": "2 KB"
-	},
-	"dependencies": {
-		"@mediadrop/core": "workspace:*"
+		"dist/index.mjs": "3 KB"
 	},
 	"devDependencies": {
+		"@mediadrop/core": "workspace:*",
 		"@mediadrop/test-utils": "workspace:*",
 		"@mediadrop/tsconfig": "workspace:*",
 		"jsdom": "catalog:",

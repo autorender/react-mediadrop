@@ -10,15 +10,15 @@ contract this plugs into — this transport adds none of that itself.
 ## Quickstart
 
 ```ts
-import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
 const transport = createXhrUploadTransport({
 	endpoint: "/api/upload", // or (file) => `/api/upload/${file.id}` for a per-file URL
 	fields: { folder: "avatars" }, // extra multipart fields
 });
 
-const mediadrop = createMediaDrop({ transport, concurrency: 3, retries: 2 });
+const { files } = useMediaDrop({ transport, concurrency: 3, retries: 2 });
 ```
 
 See [the package README](../../../packages/xhr-upload/README.md) for the
@@ -41,9 +41,8 @@ full option list (`method`, `fieldName`, `headers`, `withCredentials`,
   (`0`) by default; set it if a task needs "don't hang forever on a dead
   connection."
 - It has **no resumability** — a failed or canceled upload restarts from
-  byte zero. If a task needs resuming a large upload after a dropped
-  connection, that's [s3.md](s3.md) (multipart) or [tus.md](tus.md), not
-  this transport.
-- It is not S3's multipart protocol. `formData: false` still sends one
-  request, one body — reach for `@mediadrop/s3`'s `createS3MultipartUploadTransport` if
-  the file needs splitting into parts.
+  byte zero. Resumable, multi-request transports (S3 multipart, tus)
+  currently live on a separate branch, not in this codebase — see
+  [scope.md](scope.md).
+- `formData: false` still sends one request, one body — it does not
+  split a file into parts.

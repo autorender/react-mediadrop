@@ -2,18 +2,16 @@
 
 Framework-free file intake, validation, and drag/drop primitives for
 mediadrop. **Zero runtime dependencies** — this package never touches
-`window`/`document`; all browser wiring lives in the bindings.
+`window`/`document`; all browser wiring lives in the framework bindings.
 
-Most apps should use [`@mediadrop/react`](../react/README.md) or
-[`@mediadrop/vanilla`](../vanilla/README.md) instead — import this package
-directly only when building a new framework binding or an advanced
-integration.
-
-## Install
-
-```sh
-pnpm add @mediadrop/core
-```
+**Internal, not published.** This package is a workspace-only source
+package — [`react-mediadrop`](../react/README.md) bundles its code (and
+re-exports its public API, including `withRetry`, the session-store
+helpers, and `createFileFingerprint`) directly into its own dist at build
+time, so consumers only ever install `react-mediadrop`. Future framework
+bindings will follow the same pattern: their own source package, bundling
+this one in. Import from here directly only when working on core itself
+or adding a new framework binding.
 
 ## Quickstart
 
@@ -39,10 +37,10 @@ mediadrop.subscribe((state) => console.log(state.files));
 | `isAcceptedType(candidate, accept)` / `normalizeAccept(accept)` | The `accept` token matching logic, exposed for building custom UI (e.g. previewing whether a type would pass before the user picks a file). |
 | `createFileItem(file)` / `createId()` | Lower-level helpers `createMediaDrop` uses to build a `MediaDropFile`. |
 | `createUploadQueue(options, store)` | The queue/concurrency/retry engine `createMediaDrop` wires up internally. Only useful directly if you're building a new binding. |
-| `withRetry(attempt, options, signal)` | The one retry/backoff engine in mediadrop — used by the upload queue, and by `@mediadrop/s3`/`@mediadrop/tus` for part/chunk-level retry. Supports `shouldRetry` (skip retrying errors that will never succeed) and `jitter` (randomize backoff to avoid many clients retrying in lockstep). Nobody hand-rolls a second retry loop. Defaults to `defaultShouldRetry` if you don't pass your own. |
+| `withRetry(attempt, options, signal)` | The one retry/backoff engine in mediadrop — used by the upload queue, and available to any transport that needs its own finer-grained retry. Supports `shouldRetry` (skip retrying errors that will never succeed) and `jitter` (randomize backoff to avoid many clients retrying in lockstep). Nobody hand-rolls a second retry loop. Defaults to `defaultShouldRetry` if you don't pass your own. |
 | `createHttpError(message, status?)` / `defaultShouldRetry(error)` | Every built-in transport throws HTTP failures through `createHttpError` so `.status` is inspectable; `defaultShouldRetry` reads that status to skip retrying permanent 4xx responses (retries 408/429/5xx and anything without a recognizable status). |
 | `createStallWatchdog(onStall, ms)` | Fires `onStall` if `reset()` isn't called again within `ms` — a *stall* timeout, not a flat total-duration one, so a large file on a slow-but-healthy connection is never falsely aborted. Every built-in transport that streams bytes over `XMLHttpRequest` uses this for its opt-in `stallTimeoutMs`-style option; `ms <= 0` disables it. |
-| `createMemoryUploadSessionStore()` / `createBrowserUploadSessionStore(options?)` | Metadata persistence for resumable transports (`@mediadrop/s3`'s multipart, `@mediadrop/tus`) — upload IDs, offsets, completed parts, never file bytes. The browser one is `localStorage`-backed and SSR-safe (a no-op without `window`); the memory one is in-process only. |
+| `createMemoryUploadSessionStore()` / `createBrowserUploadSessionStore(options?)` | Metadata persistence for resumable transports — upload IDs, offsets, completed parts, never file bytes. Not used by any transport currently shipped in this repo (S3/tus, which did use these, are on a separate branch); available for a custom resumable transport. The browser one is `localStorage`-backed and SSR-safe (a no-op without `window`); the memory one is in-process only. |
 | `createFileFingerprint(file)` | A fast, synchronous, metadata-based (not content-hashed) "looks like the same file" key, used by resumable transports to match a freshly-selected file against a persisted session. |
 | Types: `MediaDropFile`, `MediaDropState`, `MediaDropRestrictions`, `MediaDropValidator`, `MediaDropError`, `MediaDropErrorCode`, `DragState`, `UploadTransport`, `MediaDropUploadOptions`, `MediaDropUploadSessionStore` | Shared shapes, re-exported by both bindings — you rarely need to import them from here directly. |
 
@@ -57,9 +55,7 @@ full restrictions/validator contract.
 `transport` and it *also* orchestrates uploading them — a queue,
 concurrency limit, shared retry/backoff, and cancel — through whatever
 transport you give it: [`@mediadrop/xhr-upload`](../xhr-upload/README.md)
-for a generic endpoint, [`@mediadrop/s3`](../s3/README.md) for S3
-presigned/multipart, or [`@mediadrop/tus`](../tus/README.md) for a
-tus-compatible server. Without `transport`, nothing sends anything over
+for a generic endpoint, or your own. Without `transport`, nothing sends anything over
 the network, same as before. See
 [`skills/mediadrop/references/upload.md`](../../skills/mediadrop/references/upload.md)
 for the full contract, and [`scope.md`](../../skills/mediadrop/references/scope.md)

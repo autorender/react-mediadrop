@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="mediadrop logo" width="120" />
+</p>
+
 # mediadrop-internal
 
 Private battle-test workspace for **mediadrop** — OSS file-uploader (`@mediadrop/*`).
@@ -8,69 +12,69 @@ fresh `autorenderhq/mediadrop` repo gets created at launch. See
 
 ## What is mediadrop, and why headless-first?
 
-mediadrop is a file intake/validation/upload engine you can drop into any
-JS project — plain DOM, React, or nothing at all. The core package owns
-everything that's easy to get subtly wrong (drag/drop event quirks,
-upload concurrency, retry/backoff, cancel races, resumable metadata):
-one implementation, shared by every binding.
+mediadrop is a file intake/validation/upload engine for React. `react-mediadrop`
+owns everything that's easy to get subtly wrong (drag/drop event quirks, upload
+concurrency, retry/backoff, cancel races) — the underlying engine
+(`@mediadrop/core`) is bundled directly into `react-mediadrop`'s published
+package, so you only ever install one package.
 
 **Headless-first** means the engine never assumes it owns your markup.
-`@mediadrop/react` and `@mediadrop/vanilla` are thin wiring, not a UI —
-`getRootProps`/`getInputProps` (React) or the DOM elements you pass in
-(vanilla) return plain props/hooks; style and markup are always yours.
-There is no prebuilt widget or dashboard, in this phase or planned for
-any phase — see
+`getRootProps`/`getInputProps` return plain props for a hook — style and
+markup are always yours. There is no prebuilt widget or dashboard, in this
+phase or planned for any phase — see
 [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md).
 
-## Status: Phase 1 + Phase 2 + Phase 3
+## Status: Phase 1 + Phase 2
 
-Phase 1 covers file intake, drag/drop, validation, a vanilla JS binding, and
-a React hook. Phase 2 adds upload on top: a pluggable transport contract,
-a queue with concurrency/retry/cancel (owned by `@mediadrop/core`, not
-duplicated per transport or binding), and a reference XHR transport. Phase 3
-adds advanced transports on the same contract: S3 (presigned + multipart,
-with resumable metadata) and a small tus client — both retry through
-`@mediadrop/core`'s shared `withRetry`, never their own copy. **There is
-still no pause/resume, no remote-provider import, no OAuth, no image
-transforms, no prebuilt widget, and no Autorender-specific adapter.** See
+Phase 1 covers file intake, drag/drop, and validation. Phase 2 adds upload
+on top: a pluggable transport contract, a queue with concurrency/retry/cancel,
+and a reference XHR transport. **There is still no pause/resume, no
+remote-provider import, no OAuth, no image transforms, no prebuilt widget,
+and no Autorender-specific adapter.** See
 [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
 for the full boundary between what's implemented and what isn't.
 
+A vanilla JS/DOM binding and S3 (presigned + multipart)/tus transports were
+previously built on this same contract and are on a separate branch for a
+future phase — not part of this codebase right now. This workspace is
+React-only for now.
+
 ## Packages
 
-- `packages/core` — framework-free file intake, validation, drag/drop, upload-queue, retry, session-store, and fingerprint primitives
-- `packages/vanilla` — thin DOM binding over `@mediadrop/core`, for plain JS/TS
-- `packages/react` — headless `useMediaDrop` hook over `@mediadrop/core`
-- `packages/xhr-upload` — reference `XMLHttpRequest` upload transport, no third-party runtime dependency
-- `packages/s3` — S3 presigned/multipart upload transport, no AWS SDK
-- `packages/tus` — a small tus protocol client transport, no `tus-js-client` dependency
+Only **`react-mediadrop`** is published. `@mediadrop/core` and
+`@mediadrop/xhr-upload` are internal workspace-only source packages — each
+is bundled directly into its own dist file inside `react-mediadrop` at
+build time (see `packages/react/tsdown.config.ts`), so a consumer only
+ever installs one package.
+
+`react-mediadrop` ships two independent entry points so unused code is
+never bundled:
+
+- `react-mediadrop` — the `useMediaDrop` hook, with `@mediadrop/core` bundled in.
+- `react-mediadrop/xhr-upload` — `createXhrUploadTransport`, with `@mediadrop/core` bundled in separately. A consumer who never imports this subpath never bundles it — verified with a real Vite build + `vite-bundle-analyzer`, see [`packages/react/README.md`](packages/react/README.md#entry-points).
+
+- `packages/core` *(internal, not published)* — file intake, validation, drag/drop, upload-queue/retry/session primitives
+- `packages/react` *(published as `react-mediadrop`)* — headless `useMediaDrop` hook + the `xhr-upload` subpath, both bundling `@mediadrop/core`
+- `packages/xhr-upload` *(internal, not published)* — reference `XMLHttpRequest` upload transport, source-only, bundled into `react-mediadrop/xhr-upload`
 - `packages/tsconfig` — shared TypeScript config
 - `skills/mediadrop` — integration guide for coding agents working with mediadrop
 
 ## Which transport should I use?
 
-| Transport | Package | Request shape | Resumable? | Backend needs to implement |
+| Transport | Import | Request shape | Resumable? | Backend needs to implement |
 | --- | --- | --- | --- | --- |
-| XHR | `@mediadrop/xhr-upload` | One request, whole file | No | A single upload endpoint |
-| S3 (simple) | `@mediadrop/s3` (`createS3UploadTransport`) | One presigned PUT/POST | No | Presign one URL per file |
-| S3 (multipart) | `@mediadrop/s3` (`createS3MultipartUploadTransport`) | Many presigned PUTs, one per part | Metadata-only (see below) | Create/sign-part/complete/abort multipart calls |
-| tus | `@mediadrop/tus` (`createTusUploadTransport`) | POST create, then PATCH chunks | Metadata-only (see below) | A real tus server (or tus-compatible endpoint) |
+| XHR | `react-mediadrop/xhr-upload` | One request, whole file | No | A single upload endpoint |
 
-"Resumable" always means: mediadrop persists upload progress *metadata*
-(IDs, offsets, completed parts) via a `MediaDropUploadSessionStore`, keyed
-by a metadata fingerprint of the file — never the file's bytes. Resuming
-after a page reload requires the user to reselect the exact same file;
-there is no way to continue an upload mediadrop can no longer read from
-disk. If your files are small enough that a dropped connection losing all
-progress is acceptable, start with plain XHR; reach for S3 multipart/tus
-when they aren't.
+If your files are small enough that a dropped connection losing all
+progress is acceptable, plain XHR covers it. Resumable transports (S3
+multipart, tus) are on a separate branch for a future phase.
 
 ## Quickstart
 
 ### React
 
 ```tsx
-import { useMediaDrop } from "@mediadrop/react";
+import { useMediaDrop } from "react-mediadrop";
 
 const { getRootProps, getInputProps, files } = useMediaDrop({
 	restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
@@ -79,30 +83,13 @@ const { getRootProps, getInputProps, files } = useMediaDrop({
 
 See [`skills/mediadrop/references/react.md`](skills/mediadrop/references/react.md).
 
-### Vanilla JS
-
-```ts
-import { createVanillaMediaDrop } from "@mediadrop/vanilla";
-
-const uploader = createVanillaMediaDrop({
-	root: document.querySelector("#dropzone"),
-	input: document.querySelector("#file-input"),
-	restrictions: { accept: ["image/*"], maxFiles: 5 },
-	onChange(state) {
-		console.log(state.files);
-	},
-});
-```
-
-See [`skills/mediadrop/references/vanilla.md`](skills/mediadrop/references/vanilla.md).
-
 ### Upload (opt-in)
 
 ```ts
-import { createMediaDrop } from "@mediadrop/core"; // or @mediadrop/react, @mediadrop/vanilla
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
-const mediadrop = createMediaDrop({
+const { files, uploadAll } = useMediaDrop({
 	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
 	concurrency: 3,
 	retries: 2,
@@ -113,33 +100,20 @@ See [`skills/mediadrop/references/upload.md`](skills/mediadrop/references/upload
 for the full queue/concurrency/retry/cancel contract and the transport
 interface.
 
-### S3 / tus (opt-in, Phase 3)
-
-```ts
-import { createS3MultipartUploadTransport } from "@mediadrop/s3";
-import { createTusUploadTransport } from "@mediadrop/tus";
-
-// createMediaDrop({ transport: createS3MultipartUploadTransport({ ...your backend's signing endpoints... }) });
-// createMediaDrop({ transport: createTusUploadTransport({ endpoint: "/files" }) });
-```
-
-Same `transport` option, same queue, same retry engine — see
-[`packages/s3/README.md`](packages/s3/README.md) and
-[`packages/tus/README.md`](packages/tus/README.md) for the full backend
-contract each expects, and exactly what resuming does and doesn't mean.
-
 ## Supported / not supported
 
 **Supported today:** drag/drop and picker intake, sync validation
-(accept/size/count + custom validator), React and vanilla bindings,
-upload with concurrency/retry/cancel via any of four transports (XHR, S3
-simple, S3 multipart, tus), and resumable *metadata* (never file bytes)
-for S3 multipart and tus.
+(accept/size/count + custom validator), the `react-mediadrop` hook, and
+upload with concurrency/retry/cancel via `react-mediadrop/xhr-upload`.
 
 **Not supported, anywhere in this codebase:**
 
 - Pause/resume as a concept distinct from cancel.
-- Persistence of file bytes across a page reload — only metadata persists.
+- A vanilla JS/DOM binding — built previously, currently on a separate
+  branch, not in this codebase. This workspace is React-only for now.
+- Resumable transports (S3 multipart, tus) — built previously, currently
+  on a separate branch for a future phase, not in this codebase.
+- Persistence of file bytes across a page reload.
 - Remote-provider import (Google Drive/Dropbox/URL-import pickers, an
   Uppy-Companion-equivalent server) or any OAuth flow.
 - Image transforms (compression, resizing, format conversion, cropping)
@@ -147,8 +121,6 @@ for S3 multipart and tus.
 - A prebuilt widget, dashboard, or progress UI — you own all markup.
 - A hosted upload service — mediadrop is a client library; you provide
   and own the backend.
-- AWS SigV4 signing in the browser — `@mediadrop/s3` never signs
-  anything itself; your backend does.
 - Any Autorender-specific or Cloudinary-specific adapter.
 
 See [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
@@ -156,11 +128,10 @@ for the complete, authoritative list.
 
 ## Example
 
-`examples/react-demo` (`pnpm --filter react-demo dev`) exercises every
-transport (XHR, S3 simple, S3 multipart, tus) from one React app, with a
-tab switcher to pick which `UploadTransport` the dropzone uses. It talks
-to a real backend — see `test-server/` (local-only, git-ignored, not part
-of the workspace) — rather than a faked dev-server mock.
+`examples/react-demo` (`pnpm --filter react-demo dev`) exercises
+`react-mediadrop` + `react-mediadrop/xhr-upload` against a real
+backend — see `examples/test-server/` — rather than a faked dev-server
+mock.
 
 ## Commands
 
@@ -170,5 +141,5 @@ pnpm build
 pnpm test
 pnpm typecheck
 pnpm lint
-pnpm size    # checks each package's gzipped dist against its sizeLimit budget
+pnpm size    # checks each package's gzipped dist (published or internal/bundled-in) against its sizeLimit budget
 ```

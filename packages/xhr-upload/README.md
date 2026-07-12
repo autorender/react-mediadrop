@@ -1,35 +1,39 @@
 # @mediadrop/xhr-upload
 
-A reference `UploadTransport` (see [`@mediadrop/core`](../core/README.md))
-that sends a file with `XMLHttpRequest`. Its only dependency is
-`@mediadrop/core` itself (for `createHttpError`, so a failed upload's
-`.status` is inspectable the same way as every other transport) — no
-third-party runtime dependency.
+A reference `UploadTransport` that sends a file with `XMLHttpRequest`. Its
+only dependency is `@mediadrop/core` itself (for `createHttpError`, so a
+failed upload's `.status` is inspectable the same way as every other
+transport) — no third-party runtime dependency.
 
 XHR, not `fetch`, is deliberate: `fetch` still has no cross-browser
 upload-progress API, while `XMLHttpRequest.upload.onprogress` does. Works
-as `transport` in `@mediadrop/react` and `@mediadrop/vanilla` identically.
+as `transport` in `react-mediadrop`.
+
+**Internal, not published.** Like `@mediadrop/core`, this is a
+workspace-only source package — `react-mediadrop` bundles it into its own
+`react-mediadrop/xhr-upload` subpath at build time. There's nothing to
+install beyond `react-mediadrop` itself, and a bundler that never imports
+the `/xhr-upload` subpath never bundles this code (see
+[`skills/mediadrop/references/xhr-upload.md`](../../skills/mediadrop/references/xhr-upload.md)).
 
 ## Install
 
 ```sh
-pnpm add @mediadrop/xhr-upload
+pnpm add react-mediadrop
 ```
 
 ## Quickstart
 
-```ts
-import { createMediaDrop } from "@mediadrop/core";
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
-const mediadrop = createMediaDrop({
-	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
+const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
+const { getRootProps, getInputProps, uploadAll } = useMediaDrop({
+	transport,
 	concurrency: 3,
 	retries: 2,
 });
-
-const [item] = mediadrop.addFiles(fileListOrArray);
-mediadrop.uploadFile(item.id);
 ```
 
 See [`skills/mediadrop/references/upload.md`](../../skills/mediadrop/references/upload.md)

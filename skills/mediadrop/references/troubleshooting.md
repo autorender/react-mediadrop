@@ -33,43 +33,23 @@ see this, something outside mediadrop's public API is mutating file state
 — don't "fix" it by making upload move files between `status` buckets;
 that would be a regression, not a fix.
 
-## "S3 multipart part uploads fail with a message about the ETag header"
+## "I want S3 or tus support"
 
-Your bucket's CORS config is missing `ExposeHeaders: ["ETag"]`. Without
-it, the browser can't read the `ETag` response header from the part PUT,
-even though the upload itself succeeded. This is the most common S3
-multipart integration failure — check CORS before anything else. See
-[s3.md](s3.md).
-
-## "Resuming after a page reload doesn't work"
-
-Check, in order: (1) was `sessionStore` passed to `createS3MultipartUploadTransport`/
-`createTusUploadTransport`? Resuming is off by default without one. (2) Did the user
-reselect the *exact same file*? Resuming is keyed by a metadata
-fingerprint (name/size/type/`lastModified`) — mediadrop cannot persist
-file bytes, so there is no way to resume without the user picking that
-file again. (3) Was the upload *canceled* rather than interrupted?
-Canceling always discards the resume session — only unplanned
-interruptions (reload, closed tab, dropped connection) are resumable.
-
-## "I want to upload to my REST API but I'm using `@mediadrop/tus` / `@mediadrop/s3`"
-
-Wrong transport. `createTusUploadTransport` needs a real tus-compatible server;
-`createS3MultipartUploadTransport`/`createS3UploadTransport` need a backend that actually signs S3
-URLs. For a generic endpoint you control, use
-[`@mediadrop/xhr-upload`](xhr-upload.md) instead — don't stand up a fake
-tus/S3 backend just to reuse those packages.
+Not in this codebase right now — `@mediadrop/s3`/`@mediadrop/tus`
+existed on the same transport contract but currently live on a separate
+branch for a future phase. See [scope.md](scope.md). Don't stand up a
+fake tus/S3 backend to work around this; for a generic endpoint you
+control today, use the bundled [xhr-upload transport](xhr-upload.md)
+(`react-mediadrop/xhr-upload`).
 
 ## "An upload kept running after I removed/tore down its component"
 
-`removeFile`/`clearFiles` on `@mediadrop/core` (and therefore every
-binding) cancel any in-flight upload for the files they remove — this is
-handled for you. If you're writing new binding/wrapper code (not just
-using an existing one) and tearing it down doesn't stop in-flight
-uploads, that's a bug in the new code: call `cancelAllUploads()` (if
-`transport` was passed) as part of teardown, the same way
-`@mediadrop/vanilla`'s `destroy()` and `@mediadrop/react`'s unmount
-cleanup do.
+`removeFile`/`clearFiles` cancel any in-flight upload for the files they
+remove — this is handled for you. If you're writing new wrapper code
+around `useMediaDrop` (not just using it) and tearing it down doesn't
+stop in-flight uploads, that's a bug in the new code: call
+`cancelAllUploads()` (if `transport` was passed) as part of teardown, the
+same way `react-mediadrop`'s own unmount cleanup does.
 
 ## "Drag-over styling doesn't reflect the right accept/reject state"
 
@@ -80,9 +60,3 @@ MIME-based rules (`"image/png"`, `"image/*"`) do work during drag. This is
 documented, expected behavior, not a bug — see
 [core-concepts.md](core-concepts.md#drag-state). The authoritative
 accept/reject decision always happens at drop time.
-
-## "I need page-wide drag detection but I'm not using React"
-
-`isDragGlobal` is a `@mediadrop/react`-only convenience — there's no core
-or vanilla equivalent. Wire your own `dragenter`/`dragleave`/`dragend`/
-`drop` listeners on `document` if you need the same thing outside React.

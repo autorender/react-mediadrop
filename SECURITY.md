@@ -30,6 +30,8 @@ disclosed and credited to the reporter (unless anonymity is requested).
 ## Scope
 
 This covers the `@mediadrop/*` packages published from this repository
-(`core`, `react`, `vanilla`, `xhr-upload`, `s3`, `tus`). It does not cover
-`examples/react-demo` or the local `test-server/` used for manual testing —
-neither is published or intended for production use.
+(`react`, `xhr-upload`). `@mediadrop/core` is an internal, unpublished
+source package bundled into `react`'s dist — a core vulnerability is a
+`react` vulnerability and should be reported the same way. It does not
+cover `examples/react-demo` or the local `test-server/` used for manual
+testing — neither is published or intended for production use.

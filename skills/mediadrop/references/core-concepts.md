@@ -1,7 +1,8 @@
 # Core concepts
 
-These concepts are shared across `@mediadrop/core`, `@mediadrop/vanilla`,
-and `@mediadrop/react`. This doc describes what's implemented in Phase 1
+These concepts underlie `react-mediadrop` (which bundles `@mediadrop/core`
+internally — core isn't published or imported separately). This doc
+describes what's implemented in Phase 1
 (file intake/validation/drag-drop) and Phase 2 (upload). See
 [upload.md](upload.md) for the upload-specific queue/retry/cancel contract.
 
@@ -47,7 +48,7 @@ mediadrop.subscribe(listener); // full-state subscription
 mediadrop.subscribe(selector, listener); // fires only when selector's result changes
 ```
 
-`@mediadrop/react` wraps this with `useSyncExternalStore` internally — you
+`react-mediadrop` wraps this with `useSyncExternalStore` internally — you
 don't call `subscribe` yourself in React, you just read the hook's return
 value.
 
@@ -77,14 +78,14 @@ validator is silently skipped for the preview — it still runs for real at
 drop time either way. Don't assume the validator ran during drag; treat it
 as a bonus, not a guarantee.
 
-`isDragActive`/`isDragAccept`/`isDragReject` are per-dropzone — core and
-`@mediadrop/vanilla` have no page-wide equivalent. `@mediadrop/react`'s
-`useMediaDrop` additionally returns `isDragGlobal`: true while a file drag
-is anywhere on the document, tracked via its own `dragenter`/`dragleave`/
-`dragend`/`drop` listeners on `document` (cleaned up on unmount). It's a
-React-hook-only convenience for "show a hint when something is being
-dragged anywhere on the page" — don't reach for it from vanilla or core;
-wire your own `document` listeners there if you need the same thing.
+`isDragActive`/`isDragAccept`/`isDragReject` are per-dropzone — there's no
+page-wide equivalent by default. `useMediaDrop` additionally returns
+`isDragGlobal`: true while a file drag is anywhere on the document,
+tracked via its own `dragenter`/`dragleave`/`dragend`/`drop` listeners on
+`document` (cleaned up on unmount). This is a specific convenience for
+"show a hint when something is being dragged anywhere on the page" — don't
+assume an equivalent exists outside of it; wire your own `document`
+listeners if you need the same thing somewhere else.
 
 ## `maxFiles` is an aggregate rule
 
@@ -100,9 +101,8 @@ already accepted before this batch.
 
 ## Multiple dropzones on one page
 
-Each `useMediaDrop()` call (React) or `createVanillaMediaDrop({ root, input })`
-call (vanilla) owns its own drag-enter/leave depth counter and only reacts
-to events that bubble to its own root element. This means:
+Each `useMediaDrop()` call owns its own drag-enter/leave depth counter and
+only reacts to events that bubble to its own root element. This means:
 
 - Multiple independent dropzones on one page do not interfere with each
   other — each only activates for drags over its own subtree.

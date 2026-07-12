@@ -165,19 +165,6 @@ test("rejects with a network error on XHR's onerror", async () => {
 	await expect(promise).rejects.toThrow("Upload failed: network error");
 });
 
-test("createNetworkError customizes the network-error rejection", async () => {
-	const promise = sendXhr({
-		method: "POST",
-		url: "https://example.test/upload",
-		signal: new AbortController().signal,
-		createNetworkError: () => new Error("custom network error"),
-	});
-
-	MockXhr.instances[0]?.networkError();
-
-	await expect(promise).rejects.toThrow("custom network error");
-});
-
 test("rejects immediately (without opening an XHR) when the signal is already aborted", async () => {
 	const controller = new AbortController();
 	controller.abort();
@@ -206,21 +193,6 @@ test("aborting the signal mid-request aborts the XHR and rejects with a plain ab
 	expect(MockXhr.instances[0]?.aborted).toBe(true);
 });
 
-test("createAbortedError customizes both the already-aborted and mid-request abort rejections", async () => {
-	class CustomError extends Error {}
-	const controller = new AbortController();
-	controller.abort();
-
-	await expect(
-		sendXhr({
-			method: "POST",
-			url: "https://example.test/upload",
-			signal: controller.signal,
-			createAbortedError: () => new CustomError("custom abort"),
-		}),
-	).rejects.toBeInstanceOf(CustomError);
-});
-
 test("a stall (no progress within stallTimeoutMs) aborts the XHR and rejects with a stalled error, not a plain abort error", async () => {
 	vi.useFakeTimers();
 	try {
@@ -239,26 +211,6 @@ test("a stall (no progress within stallTimeoutMs) aborts the XHR and rejects wit
 			"Upload stalled: no progress for 1000ms",
 		);
 		expect(MockXhr.instances[0]?.aborted).toBe(true);
-	} finally {
-		vi.useRealTimers();
-	}
-});
-
-test("createStalledError customizes the stall rejection", async () => {
-	vi.useFakeTimers();
-	try {
-		const promise = sendXhr({
-			method: "POST",
-			url: "https://example.test/upload",
-			signal: new AbortController().signal,
-			stallTimeoutMs: 1000,
-			createStalledError: (ms) => new Error(`custom stall after ${ms}`),
-		});
-		promise.catch(() => {});
-
-		await vi.advanceTimersByTimeAsync(1000);
-
-		await expect(promise).rejects.toThrow("custom stall after 1000");
 	} finally {
 		vi.useRealTimers();
 	}

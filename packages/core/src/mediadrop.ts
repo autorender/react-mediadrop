@@ -22,7 +22,7 @@ export type MediaDropInstance = {
 };
 
 export type MediaDropUploadOptions = {
-	/** Pluggable transport (e.g. from `@mediadrop/xhr-upload`). Upload methods only exist on the returned instance when this is set. */
+	/** Pluggable transport (e.g. the built-in xhr transport). Upload methods only exist on the returned instance when this is set. */
 	transport: UploadTransport;
 	/** Max uploads in flight at once. Default `1` (sequential). */
 	concurrency?: number;

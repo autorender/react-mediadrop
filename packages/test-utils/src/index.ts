@@ -7,11 +7,12 @@ import type { MediaDropFile } from "@mediadrop/core";
  * control over every event a transport listens to, and lets tests assert
  * exactly which method/headers/body were sent.
  *
- * This is the union of what `@mediadrop/s3`, `@mediadrop/tus`, and
- * `@mediadrop/xhr-upload`'s tests each independently needed before they
- * shared this one double — see plan 014 in `plans/` for why three
- * near-identical, independently-drifted copies existed and were merged
- * into this one.
+ * This shape is a union of what `@mediadrop/xhr-upload` and (previously)
+ * two other now-removed transport packages' tests each independently
+ * needed before they shared this one double — see plan 014 in `plans/`
+ * for why three near-identical, independently-drifted copies existed and
+ * were merged into this one. Kept as a superset rather than trimmed down,
+ * so a future transport's tests don't have to widen it again.
  */
 export class MockXhr {
 	static instances: MockXhr[] = [];
@@ -40,7 +41,6 @@ export class MockXhr {
 	};
 	onload: (() => void) | null = null;
 	onerror: (() => void) | null = null;
-	ontimeout: (() => void) | null = null;
 	onabort: (() => void) | null = null;
 
 	constructor() {

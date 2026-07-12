@@ -1,11 +1,11 @@
-# `@mediadrop/react`
+# `react-mediadrop`
 
 Headless `useMediaDrop` hook. No prebuilt component — you own the markup.
 
 ## Quickstart
 
 ```tsx
-import { useMediaDrop } from "@mediadrop/react";
+import { useMediaDrop } from "react-mediadrop";
 
 export function UploadBox() {
 	const {
@@ -152,8 +152,8 @@ Passing `transport` adds upload orchestration to the returned object —
 without it, none of this exists, and TypeScript won't let you call it:
 
 ```tsx
-import { useMediaDrop } from "@mediadrop/react";
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
 const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
 
@@ -203,14 +203,12 @@ export function UploadBox() {
 `files`/`acceptedFiles`/`rejectedFiles` already carry the upload state —
 there's no separate upload-specific list. Read `item.uploadStatus`/
 `item.progress`/`item.uploadError`/`item.uploadResult` directly off each
-`MediaDropFile`. `transport` accepts `@mediadrop/xhr-upload`,
-`@mediadrop/s3`, `@mediadrop/tus`, or your own — this hook has no
-S3/tus-specific API and never will (see "Bad" examples in `SKILL.md`).
-See [upload.md](upload.md) for the full queue/retry/cancel contract and
-the transport interface: no transport implements its own retry loop (S3
-multipart and tus both call `@mediadrop/core`'s shared `withRetry`
-instead), and this hook adds no logic beyond forwarding to that queue —
-not a second implementation of any of it.
+`MediaDropFile`. `transport` accepts `react-mediadrop/xhr-upload`, or your
+own — this hook has no transport-specific API and never will (see "Bad"
+examples in `SKILL.md`). See [upload.md](upload.md) for the full
+queue/retry/cancel contract and the transport interface: no transport
+implements its own retry loop, and this hook adds no logic beyond
+forwarding to the queue — not a second implementation of any of it.
 
 Whether a given `useMediaDrop()` call has upload methods is decided once,
 the same way `restrictions`/`validator` are baked in once — from whether

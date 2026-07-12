@@ -8,12 +8,12 @@ export function App() {
 
 	return (
 		<main className="page">
-			<h1>@mediadrop/react demo</h1>
+			<h1>react-mediadrop demo</h1>
 			<p className="subtitle">
-				One React app, every transport mediadrop ships — switch below to
-				re-mount the dropzone against a different <code>UploadTransport</code>.
-				Accepts PNG/JPEG/WebP, up to 5 files, 5 MB each. Needs{" "}
-				<code>../test-server</code> running locally to actually upload anything.
+				One React app driving <code>react-mediadrop/xhr-upload</code> against a real
+				local backend. Accepts PNG/JPEG/WebP, up to 5 files, 5 MB each. Needs{" "}
+				<code>examples/test-server</code> running locally to actually upload
+				anything.
 			</p>
 
 			<div className="transport-picker">
@@ -29,13 +29,6 @@ export function App() {
 				))}
 			</div>
 			<p className="transport-description">{activeTransport.description}</p>
-			{activeTransport.requiresAwsSetup ? (
-				<p className="hint hint--setup">
-					Needs <code>AWS_S3_BUCKET</code>/<code>AWS_REGION</code> set in{" "}
-					<code>test-server/.env</code> — see <code>test-server/README.md</code>
-					.
-				</p>
-			) : null}
 
 			<Uploader key={selected} transportKey={selected} />
 		</main>

@@ -1,13 +1,13 @@
 /**
- * Metadata persistence for resumable transports (S3 multipart, tus). This
- * stores small JSON-serializable objects — upload IDs, completed part
- * numbers, byte offsets — never file bytes. A browser reload can lose the
- * user's in-memory `File` object regardless of what's persisted here; see
+ * Metadata persistence for resumable transports. This stores small
+ * JSON-serializable objects — upload IDs, completed part numbers, byte
+ * offsets — never file bytes. A browser reload can lose the user's
+ * in-memory `File` object regardless of what's persisted here; see
  * `skills/mediadrop/references/upload.md` for what resuming across a
  * reload actually requires (the user reselecting the same file).
  *
- * Core defines the interface and two implementations; `@mediadrop/s3` and
- * `@mediadrop/tus` consume it without knowing which one you picked.
+ * Core defines the interface and two implementations; a resumable
+ * transport consumes it without knowing which one you picked.
  */
 export type MediaDropUploadSessionStore = {
 	get(key: string): Promise<unknown | null>;

@@ -47,11 +47,11 @@ export type UploadQueue = {
 function toUploadError(error: unknown): MediaDropError {
 	const message = error instanceof Error ? error.message : String(error);
 
-	// `createHttpError` (retry.ts) attaches `status`; `@mediadrop/tus`'s
-	// `TusError` attaches `code`. Neither is a class this module imports —
-	// both are duck-typed here so any current or future transport's own
-	// error-tagging convention is picked up without core needing to know
-	// about it by name.
+	// `createHttpError` (retry.ts) attaches `status`; a transport's own
+	// error type might attach `code`. Neither is a class this module
+	// imports — both are duck-typed here so any current or future
+	// transport's own error-tagging convention is picked up without core
+	// needing to know about it by name.
 	const tagged = error as { status?: unknown; code?: unknown } | null;
 	const status =
 		error instanceof Error && typeof tagged?.status === "number"

@@ -22,7 +22,7 @@ export type UploadTransportContext = {
  * transports do not own retry (the queue's shared retry engine does, see
  * `retry.ts`) or concurrency (the queue does) — a transport is just "send
  * this one file, once, and report progress." Keeping the contract this
- * thin is what lets `@mediadrop/xhr-upload` (or any other adapter) stay a
+ * thin is what lets the xhr transport (or any other adapter) stay a
  * few dozen lines with no retry/backoff logic of its own to get wrong.
  */
 export type UploadTransport = {

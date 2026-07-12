@@ -1,7 +1,6 @@
 # Validation and restrictions
 
-Shared by `@mediadrop/core`, `@mediadrop/vanilla`, and `@mediadrop/react` —
-pass the same `restrictions`/`validator` shape to any of them.
+Pass the same `restrictions`/`validator` shape to `useMediaDrop`.
 
 ## Restrictions
 

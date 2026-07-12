@@ -13,12 +13,11 @@ export type MediaDropError = {
 	status?: number;
 	/**
 	 * The original error's own classification code, when it had one distinct
-	 * from `MediaDropErrorCode` — e.g. `@mediadrop/tus`'s `TusError.code`
-	 * (`"offset-mismatch"`, `"head-failed"`, ...). `code` on this type stays
-	 * `"upload-error"` for every upload failure (a stable, small union every
-	 * consumer can switch over); `sourceCode` is the finer-grained detail a
-	 * transport attached, preserved instead of discarded — omitted when the
-	 * original error didn't have one.
+	 * from `MediaDropErrorCode` (a transport-specific error code). `code`
+	 * on this type stays `"upload-error"` for every upload failure (a
+	 * stable, small union every consumer can switch over); `sourceCode` is
+	 * the finer-grained detail a transport attached, preserved instead of
+	 * discarded — omitted when the original error didn't have one.
 	 */
 	sourceCode?: string;
 };

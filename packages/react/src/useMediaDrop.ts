@@ -157,7 +157,7 @@ export type UseMediaDropUploadResult = UseMediaDropResult &
 	UseMediaDropUploadMethods;
 
 /**
- * Headless file intake + drag/drop hook over `@mediadrop/core`.
+ * Headless file intake + drag/drop hook over the core engine.
  *
  * The intake engine and drag/drop controller are created once for the
  * lifetime of the hook. Changing `restrictions`/`validator` after mount does
@@ -168,7 +168,7 @@ export type UseMediaDropUploadResult = UseMediaDropResult &
  *
  * Passing `transport` additionally returns upload orchestration
  * (`uploadFile`/`uploadAll`/`cancelUpload`/`cancelAllUploads`/`retryUpload`)
- * — a thin pass-through to `@mediadrop/core`'s upload queue, which owns all
+ * — a thin pass-through to the core engine's upload queue, which owns all
  * concurrency/retry/cancel logic. Without `transport`, none of that exists
  * on the returned object, and TypeScript won't let you call it — same
  * contract as `createMediaDrop` itself. Whether a given hook instance has

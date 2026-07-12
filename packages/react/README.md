@@ -1,4 +1,4 @@
-# @mediadrop/react
+# react-mediadrop
 
 Headless `useMediaDrop` hook over [`@mediadrop/core`](../core/README.md).
 No prebuilt component — you own the markup.
@@ -6,13 +6,13 @@ No prebuilt component — you own the markup.
 ## Install
 
 ```sh
-pnpm add @mediadrop/react
+pnpm add react-mediadrop
 ```
 
 ## Quickstart
 
 ```tsx
-import { useMediaDrop } from "@mediadrop/react";
+import { useMediaDrop } from "react-mediadrop";
 
 function UploadBox() {
 	const { getRootProps, getInputProps, files, isDragActive } = useMediaDrop({
@@ -32,6 +32,13 @@ function UploadBox() {
 (Space/Enter opens the file picker), so the example above needs no
 separate "Choose files" button. Pass `noClick`/`noKeyboard`/`noDrag` to
 `useMediaDrop()` to opt out of any of that.
+
+## Entry points
+
+| Import | What it is |
+|---|---|
+| `react-mediadrop` | `useMediaDrop` and everything in the table below. `@mediadrop/core` is bundled directly into this entry's own dist file. |
+| `react-mediadrop/xhr-upload` | `createXhrUploadTransport` (see [`@mediadrop/xhr-upload`](../xhr-upload/README.md)) — a separate dist file, bundled independently. Not imported by the main entry, so a bundler never includes it unless you import from this subpath yourself. |
 
 ## What the hook returns
 
@@ -71,19 +78,18 @@ the hook additionally returns `uploadFile`/`uploadAll`/`cancelUpload`/
 that exists on the returned object, and TypeScript won't let you call it.
 
 ```tsx
-import { useMediaDrop } from "@mediadrop/react";
-import { createXhrUploadTransport } from "@mediadrop/xhr-upload";
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
 const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
 const { files, uploadAll } = useMediaDrop({ transport, concurrency: 3 });
 ```
 
-`transport` accepts **any** `UploadTransport` — `@mediadrop/xhr-upload`,
-[`@mediadrop/s3`](../s3/README.md) (presigned/multipart),
-[`@mediadrop/tus`](../tus/README.md), or your own. There is no
-`useMediaDropS3`/`useMediaDropTus` and there won't be — this hook stays a
-thin pass-through to whatever transport you plug in, the same one prop
-either way.
+`transport` accepts **any** `UploadTransport` — the bundled
+`react-mediadrop/xhr-upload` subpath, or your own. This hook stays a thin
+pass-through to whatever transport you plug in, the same one prop either
+way. `/xhr-upload` is a separate entry point precisely so a bundler never
+includes it unless you actually import from it.
 
 See [`skills/mediadrop/references/react.md`](../../skills/mediadrop/references/react.md)
 for the full API, handler composition rules, click/keyboard details, and
