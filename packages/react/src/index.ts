@@ -1,1 +1,40 @@
-export { VERSION } from "@mediadrop/core";
+export type {
+	BrowserUploadSessionStoreOptions,
+	DragState,
+	HttpError,
+	MediaDropError,
+	MediaDropErrorCode,
+	MediaDropFile,
+	MediaDropFileStatus,
+	MediaDropRestrictions,
+	MediaDropState,
+	MediaDropUploadOptions,
+	MediaDropUploadProgress,
+	MediaDropUploadSessionStore,
+	MediaDropUploadStatus,
+	MediaDropValidator,
+	RetryOptions,
+	UploadTransport,
+	UploadTransportContext,
+	UploadTransportResult,
+} from "@mediadrop/core";
+export {
+	createBrowserUploadSessionStore,
+	createFileFingerprint,
+	createHttpError,
+	createMemoryUploadSessionStore,
+	defaultShouldRetry,
+	withRetry,
+} from "@mediadrop/core";
+export type {
+	GetInputPropsArg,
+	GetRootPropsArg,
+	InputProps,
+	RootProps,
+	UseMediaDropOptions,
+	UseMediaDropResult,
+	UseMediaDropUploadMethods,
+	UseMediaDropUploadOptions,
+	UseMediaDropUploadResult,
+} from "./useMediaDrop.js";
+export { useMediaDrop } from "./useMediaDrop.js";

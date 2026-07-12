@@ -1,0 +1,113 @@
+# Core concepts
+
+These concepts underlie `react-mediadrop` (which bundles `@mediadrop/core`
+internally — core isn't published or imported separately). This doc
+describes what's implemented in Core
+(file intake/validation/drag-drop) and Upload. See
+[upload.md](upload.md) for the upload-specific queue/retry/cancel contract.
+
+## The file model
+
+Every file you add becomes a `MediaDropFile`:
+
+```ts
+type MediaDropFile = {
+	id: string; // generated, not the browser File's name
+	file: File; // the original browser File
+	name: string;
+	size: number;
+	type: string;
+	lastModified?: number;
+	status: "idle" | "accepted" | "rejected";
+	errors: MediaDropError[]; // always an array, even when empty
+
+	// Upload fields, only ever set once an upload is requested for this file:
+	uploadStatus?: "queued" | "uploading" | "done" | "error" | "canceled";
+	progress?: { loaded: number; total: number | null };
+	uploadError?: MediaDropError; // present after a failed/canceled attempt
+	uploadResult?: unknown; // whatever the transport resolved with
+	uploadAttempts?: number;
+};
+```
+
+A file's `status` is decided once, when it's added — there's no
+re-validation pass later, and **uploading never changes it**. `status`
+(validation) and `uploadStatus` (upload lifecycle) are deliberately
+separate fields: `getAcceptedFiles()`/`getRejectedFiles()` and `maxFiles`
+counting are all based on `status` alone and are completely unaffected by
+whether a file has started, finished, or failed uploading. See
+[upload.md](upload.md#status-and-uploadstatus-are-separate-on-purpose).
+
+## The store
+
+`createMediaDrop()` (core) returns an object backed by a small store:
+
+```ts
+mediadrop.getState(); // { files: MediaDropFile[] }
+mediadrop.subscribe(listener); // full-state subscription
+mediadrop.subscribe(selector, listener); // fires only when selector's result changes
+```
+
+`react-mediadrop` wraps this with `useSyncExternalStore` internally — you
+don't call `subscribe` yourself in React, you just read the hook's return
+value.
+
+## Drag state
+
+```ts
+type DragState = {
+	isDragActive: boolean; // a drag payload is over this dropzone right now
+	isDragAccept: boolean; // best-effort: payload looks acceptable
+	isDragReject: boolean; // best-effort: payload looks unacceptable
+};
+```
+
+`isDragAccept`/`isDragReject` are evaluated from `DataTransferItem.type`
+during `dragenter`. Browsers do **not** expose the file name while dragging
+(only after drop), so an `accept` restriction like `[".png"]` (an
+extension) cannot be evaluated mid-drag — both flags stay `false` in that
+case. MIME-based restrictions (`"image/png"`, `"image/*"`) work during drag.
+This is intentional and documented, not a bug — don't try to "fix" it by
+guessing the extension from partial data.
+
+A custom `validator` also participates in this preview, but only as far as
+the browser lets it: some browsers hand back a real (if empty/unreadable)
+`File` from `DataTransferItem.getAsFile()` mid-drag, and when that happens
+the validator runs against it. When the browser doesn't expose that, the
+validator is silently skipped for the preview — it still runs for real at
+drop time either way. Don't assume the validator ran during drag; treat it
+as a bonus, not a guarantee.
+
+`isDragActive`/`isDragAccept`/`isDragReject` are per-dropzone — there's no
+page-wide equivalent by default. `useMediaDrop` additionally returns
+`isDragGlobal`: true while a file drag is anywhere on the document,
+tracked via its own `dragenter`/`dragleave`/`dragend`/`drop` listeners on
+`document` (cleaned up on unmount). This is a specific convenience for
+"show a hint when something is being dragged anywhere on the page" — don't
+assume an equivalent exists outside of it; wire your own `document`
+listeners if you need the same thing somewhere else.
+
+## `maxFiles` is an aggregate rule
+
+Individual restrictions (`accept`, `minSize`, `maxSize`) are evaluated per
+file — one bad file never blocks the others in the same batch.
+
+`maxFiles` is different: it's evaluated across the whole file list. When you
+call `addFiles` with a batch that would exceed the remaining slots, files
+fill the remaining slots **in order** and the overflow is rejected with
+`too-many-files`. It does not reject the entire batch. If you see fewer
+accepted files than expected, check `maxFiles` and how many files were
+already accepted before this batch.
+
+## Multiple dropzones on one page
+
+Each `useMediaDrop()` call owns its own drag-enter/leave depth counter and
+only reacts to events that bubble to its own root element. This means:
+
+- Multiple independent dropzones on one page do not interfere with each
+  other — each only activates for drags over its own subtree.
+- Moving the pointer across child elements inside one dropzone does not
+  cause `isDragActive` to flicker (a counter, not a boolean flip, tracks
+  enter/leave).
+- Overlapping/nested dropzones are **not** specially coordinated in Core
+  — this is a known limitation, not an oversight to silently patch over.

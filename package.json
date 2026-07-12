@@ -1,31 +1,34 @@
 {
-	"name": "mediadrop-internal",
+	"name": "react-mediadrop-monorepo",
 	"private": true,
-	"version": "0.0.0",
-	"description": "Battle-test workspace for mediadrop. Not the public repo — see docs/uppy-oss-research.md §22.",
+	"version": "0.1.0",
+	"description": "Monorepo for react-mediadrop — a lightweight, headless-first file uploader for React.",
 	"license": "MIT",
 	"type": "module",
+	"packageManager": "pnpm@11.10.0",
 	"devEngines": {
 		"packageManager": {
 			"name": "pnpm",
-			"version": "^11.8.0",
+			"version": "11.10.0",
 			"onFail": "download"
 		}
 	},
 	"scripts": {
 		"build": "turbo run build",
+		"dev": "turbo run dev",
 		"test": "turbo run test",
 		"lint": "biome check .",
 		"format": "biome format --write .",
 		"typecheck": "turbo run typecheck",
+		"size": "turbo run size",
 		"changeset": "changeset"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2",
 		"@changesets/cli": "^2.31.0",
-		"tsdown": "^0.22.3",
+		"tsdown": "catalog:",
 		"turbo": "^2.10.3",
 		"typescript": "catalog:",
-		"vitest": "^4.1.9"
+		"vitest": "catalog:"
 	}
 }

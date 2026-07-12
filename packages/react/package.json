@@ -1,9 +1,30 @@
 {
-	"name": "@mediadrop/react",
-	"private": true,
-	"version": "0.0.0",
-	"description": "React hooks over @mediadrop/core.",
+	"name": "react-mediadrop",
+	"version": "0.1.0",
+	"description": "Headless React hook (useMediaDrop) for file intake, validation, drag/drop, and upload — @mediadrop/core is bundled in, no separate install needed. The xhr-upload transport is a separate, tree-shakeable \"react-mediadrop/xhr-upload\" subpath.",
 	"license": "MIT",
+	"author": "Autorender",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/autorender/react-mediadrop.git",
+		"directory": "packages/react"
+	},
+	"homepage": "https://github.com/autorender/react-mediadrop#readme",
+	"bugs": {
+		"url": "https://github.com/autorender/react-mediadrop/issues"
+	},
+	"keywords": [
+		"react",
+		"file-upload",
+		"drag-and-drop",
+		"dropzone",
+		"headless",
+		"file-intake"
+	],
+	"engines": {
+		"node": ">=18"
+	},
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",
@@ -11,6 +32,10 @@
 		".": {
 			"types": "./dist/index.d.mts",
 			"default": "./dist/index.mjs"
+		},
+		"./xhr-upload": {
+			"types": "./dist/xhr-upload.d.mts",
+			"default": "./dist/xhr-upload.mjs"
 		}
 	},
 	"files": [
@@ -18,21 +43,31 @@
 	],
 	"scripts": {
 		"build": "tsdown",
+		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest run"
+		"test": "vitest run",
+		"size": "node ../../scripts/check-bundle-size.mjs"
+	},
+	"sizeLimit": {
+		"dist/index.mjs": "10 KB",
+		"dist/xhr-upload.mjs": "3 KB"
 	},
 	"peerDependencies": {
 		"react": ">=18"
 	},
-	"dependencies": {
-		"@mediadrop/core": "workspace:*"
-	},
 	"devDependencies": {
+		"@mediadrop/core": "workspace:*",
+		"@mediadrop/xhr-upload": "workspace:*",
 		"@mediadrop/tsconfig": "workspace:*",
+		"@testing-library/react": "^16.3.2",
 		"@types/react": "^19.2.7",
+		"@types/react-dom": "^19.2.3",
+		"jsdom": "catalog:",
 		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
 		"typescript": "catalog:",
-		"vitest": "^4.1.9",
-		"tsdown": "^0.22.3"
+		"vitest": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
+		"tsdown": "catalog:"
 	}
 }

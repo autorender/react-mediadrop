@@ -1,0 +1,32 @@
+{
+	"name": "@mediadrop/test-utils",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Internal-only test scaffolding (a shared MockXhr double, etc.) for mediadrop's transport packages. Not published.",
+	"license": "MIT",
+	"sideEffects": false,
+	"type": "module",
+	"main": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@mediadrop/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@mediadrop/tsconfig": "workspace:*",
+		"typescript": "catalog:",
+		"tsdown": "catalog:"
+	}
+}

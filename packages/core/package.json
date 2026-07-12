@@ -1,9 +1,10 @@
 {
 	"name": "@mediadrop/core",
 	"private": true,
-	"version": "0.0.0",
-	"description": "Transport-agnostic upload queue engine — framework-free, browser+node.",
+	"version": "0.1.0",
+	"description": "Framework-free file intake, validation, drag/drop, and upload-queue/retry/session primitives for mediadrop.",
 	"license": "MIT",
+	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"types": "./dist/index.d.mts",
@@ -18,13 +19,19 @@
 	],
 	"scripts": {
 		"build": "tsdown",
+		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest run"
+		"test": "vitest run",
+		"size": "node ../../scripts/check-bundle-size.mjs"
+	},
+	"sizeLimit": {
+		"dist/index.mjs": "9 KB"
 	},
 	"devDependencies": {
 		"@mediadrop/tsconfig": "workspace:*",
 		"typescript": "catalog:",
-		"vitest": "^4.1.9",
-		"tsdown": "^0.22.3"
+		"vitest": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
+		"tsdown": "catalog:"
 	}
 }

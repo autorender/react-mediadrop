@@ -4,3 +4,9 @@ dist
 .DS_Store
 *.log
 coverage
+react-dropzone
+uppy
+.claude
+.env
+plans
+examples/test-server/uploads
