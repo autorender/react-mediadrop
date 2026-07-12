@@ -1,6 +1,6 @@
 # Contributing
 
-This is `autorenderhq/mediadrop-internal` — a private staging workspace,
+This is `autorender/mediadrop-internal` — a private staging workspace,
 not yet the public `mediadrop` repo. If you're reading this from inside
 Autorender, the short version:
 
