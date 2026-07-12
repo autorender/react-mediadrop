@@ -1,5 +1,5 @@
-import { useMediaDrop } from "react-mediadrop";
 import { useMemo } from "react";
+import { useMediaDrop } from "react-mediadrop";
 import { MAX_SIZE, TRANSPORTS, type TransportKey } from "./transports.js";
 
 function formatBytes(bytes: number): string {

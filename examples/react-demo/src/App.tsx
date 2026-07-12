@@ -10,10 +10,10 @@ export function App() {
 		<main className="page">
 			<h1>react-mediadrop demo</h1>
 			<p className="subtitle">
-				One React app driving <code>react-mediadrop/xhr-upload</code> against a real
-				local backend. Accepts PNG/JPEG/WebP, up to 5 files, 5 MB each. Needs{" "}
-				<code>examples/test-server</code> running locally to actually upload
-				anything.
+				One React app driving <code>react-mediadrop/xhr-upload</code> against a
+				real local backend. Accepts PNG/JPEG/WebP, up to 5 files, 5 MB each.
+				Needs <code>examples/test-server</code> running locally to actually
+				upload anything.
 			</p>
 
 			<div className="transport-picker">
