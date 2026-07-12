@@ -1,0 +1,51 @@
+---
+title: Contributing
+sidebarTitle: Contributing
+description: How to contribute to react-mediadrop
+---
+
+Thanks for your interest in contributing to `react-mediadrop`.
+
+## Install & verify
+
+```sh
+pnpm install
+pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm size
+```
+
+This is exactly what CI runs.
+
+## Scope
+
+Check the [Roadmap](/roadmap) and the
+[scope reference](https://github.com/autorenderhq/react-mediadrop/blob/main/skills/mediadrop/references/scope.md)
+before adding a feature — it's the authoritative "what's real" list.
+Don't build around something listed as not implemented; raise it instead.
+
+## Architecture non-negotiables
+
+- The core engine stays framework-free with zero runtime dependencies.
+- Retry/backoff lives in one place (`withRetry`) and is never duplicated
+  per transport.
+- Every transport stays thin — no retry, no concurrency logic of its own.
+
+See [Upload](/guides/upload) and [Writing a custom transport](/guides/custom-transport)
+for why this matters.
+
+## Style
+
+Biome (`pnpm format`) formats and lints. No comments beyond what explains
+a non-obvious *why* (a hidden constraint, a workaround, something that
+would surprise a reader) — code should read clearly enough not to need a
+*what* comment.
+
+## Tests
+
+Real regressions, not padding — new tests should exercise an actual
+race/edge case (cancel-vs-resolve races, retry exhaustion, reentrancy)
+the way the existing suite does, not just happy-path smoke tests.
+
+---
+
+Issue and PR templates and a vulnerability-reporting process already
+exist in the repo. There's no CLA or formal external-review process yet.

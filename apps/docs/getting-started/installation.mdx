@@ -1,0 +1,39 @@
+---
+title: Installation
+sidebarTitle: Installation
+description: Install react-mediadrop
+---
+
+<Note>
+  Requires React 18+.
+</Note>
+
+```sh
+pnpm add react-mediadrop
+```
+
+```sh npm
+npm install react-mediadrop
+```
+
+```sh yarn
+yarn add react-mediadrop
+```
+
+Only `react-mediadrop` is ever installed — its underlying engine and the
+reference `xhr-upload` transport are bundled into this one package. Never
+install `@mediadrop/core` or `@mediadrop/xhr-upload` directly; they aren't
+published.
+
+## Next.js / RSC
+
+`useMediaDrop` uses `useSyncExternalStore`/`useEffect`, so it only runs in
+a Client Component. In Next.js App Router (or any React Server Components
+setup), add `"use client"` to the top of the file that calls
+`useMediaDrop` — this is the single most common integration mistake.
+
+```tsx
+"use client";
+
+import { useMediaDrop } from "react-mediadrop";
+```

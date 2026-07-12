@@ -1,0 +1,31 @@
+---
+title: Roadmap
+sidebarTitle: Roadmap
+description: What's built, what's parked on a branch, and what's planned
+---
+
+This page tracks what's real today versus what's coming — see
+[Introduction](/introduction#not-supported-anywhere-in-this-codebase) for
+the authoritative "what's implemented" list.
+
+## Built previously, parked on a separate branch
+
+These were built against the same transport/validation contracts used
+today, but aren't merged into this codebase yet:
+
+- A vanilla JS/DOM binding (no React dependency)
+- `@mediadrop/s3` — presigned and multipart S3 upload transports
+- `@mediadrop/tus` — resumable upload transport via the tus protocol
+
+None of this is available today. Don't build around it as if it were.
+
+## Planned
+
+- **A components package** with prebuilt, styled dropzone/upload UI on
+  top of the existing headless hook — for teams that want a working UI
+  out of the box instead of building their own. The headless
+  `useMediaDrop` hook stays the core primitive either way; this is an
+  additive layer, not a replacement.
+
+Nothing above is scheduled — this page reflects direction, not a
+committed timeline.

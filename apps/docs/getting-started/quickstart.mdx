@@ -1,0 +1,120 @@
+---
+title: Quickstart
+sidebarTitle: Quickstart
+description: Build a working dropzone in a few lines
+---
+
+## A dropzone with validation
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function UploadBox() {
+	const {
+		getRootProps,
+		getInputProps,
+		open,
+		files,
+		isDragActive,
+		isDragReject,
+		removeFile,
+	} = useMediaDrop({
+		restrictions: {
+			accept: ["image/png", "image/jpeg", "image/webp"],
+			maxFiles: 5,
+			maxSize: 5 * 1024 * 1024,
+		},
+	});
+
+	return (
+		<div {...getRootProps()}>
+			<input {...getInputProps()} />
+			<p>{isDragActive ? "Drop it!" : "Drag files here"}</p>
+
+			{files.map((item) => (
+				<div key={item.id}>
+					{item.name}
+					<button type="button" onClick={() => removeFile(item.id)}>
+						Remove
+					</button>
+				</div>
+			))}
+
+			<button type="button" onClick={open}>
+				Choose files
+			</button>
+
+			{isDragReject ? <p>Some files are not allowed</p> : null}
+		</div>
+	);
+}
+```
+
+`getRootProps()` already makes the root click- and keyboard-activatable
+(Space/Enter opens the file picker) — no separate "Choose files" button is
+required unless you want one. Pass `noClick`/`noKeyboard`/`noDrag` to
+`useMediaDrop()` to opt out of any of that. See [Core concepts](/guides/core-concepts)
+for the full file model.
+
+## Adding upload
+
+Pass a `transport` and the hook additionally returns `uploadFile`/
+`uploadAll`/`cancelUpload`/`cancelAllUploads`/`retryUpload`. Without a
+`transport`, none of this exists on the returned object, and TypeScript
+won't let you call it.
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
+
+const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
+
+export function UploadBox() {
+	const { getRootProps, getInputProps, files, uploadAll, cancelUpload, retryUpload } =
+		useMediaDrop({ transport, concurrency: 3, retries: 2 });
+
+	return (
+		<div {...getRootProps()}>
+			<input {...getInputProps()} />
+
+			{files.map((item) => (
+				<div key={item.id}>
+					{item.name} — {item.uploadStatus ?? "not queued"}
+					{item.progress ? ` (${item.progress.loaded} bytes)` : null}
+					{item.uploadStatus === "uploading" ? (
+						<button type="button" onClick={() => cancelUpload(item.id)}>
+							Cancel
+						</button>
+					) : null}
+					{item.uploadStatus === "error" ? (
+						<button type="button" onClick={() => retryUpload(item.id)}>
+							Retry
+						</button>
+					) : null}
+				</div>
+			))}
+
+			<button type="button" onClick={uploadAll}>
+				Upload all
+			</button>
+		</div>
+	);
+}
+```
+
+See [Upload](/guides/upload) for the full queue/retry/cancel contract.
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    File model, store, and drag state
+  </Card>
+  <Card title="Validation" icon="shield-check" href="/guides/validation">
+    Restrictions and custom validators
+  </Card>
+  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
+    Queue, concurrency, retry, cancel
+  </Card>
+  <Card title="useMediaDrop API" icon="code" href="/api-reference/use-media-drop">
+    Full hook reference
+  </Card>
+</CardGroup>
