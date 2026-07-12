@@ -1,8 +1,8 @@
 {
-	"name": "mediadrop-internal",
+	"name": "react-mediadrop-monorepo",
 	"private": true,
-	"version": "0.0.0",
-	"description": "Battle-test workspace for mediadrop. Not the public repo — see README.md.",
+	"version": "0.1.0",
+	"description": "Monorepo for react-mediadrop — a lightweight, headless-first file uploader for React.",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@11.10.0",

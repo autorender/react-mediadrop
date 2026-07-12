@@ -24,7 +24,7 @@ is equivalent to `["image/png", "image/webp"]`).
 
 An empty/missing `accept` accepts every file type.
 
-## Error codes
+## Error codes and shape
 
 ```ts
 type MediaDropErrorCode =
@@ -32,12 +32,23 @@ type MediaDropErrorCode =
 	| "file-too-large"
 	| "file-too-small"
 	| "too-many-files"
-	| "validator-error";
+	| "validator-error"
+	| "upload-error";
+
+type MediaDropError = {
+	code: MediaDropErrorCode;
+	message: string; // for display — don't branch on this
+	status?: number; // HTTP status, upload errors only
+	sourceCode?: string; // transport-specific finer-grained code, upload errors only
+};
 ```
 
 Every rejected `MediaDropFile` has a non-empty `errors` array using these
 codes (plus whatever code your custom validator assigns — see below). Switch
 on `code`, not on `message` — messages are for display, not branching logic.
+`status`/`sourceCode` are only ever populated on upload errors (see
+[upload.md](upload.md#mediadropfiles-upload-fields)) — always absent on a
+Phase 1 validation error.
 
 ## Custom validators
 

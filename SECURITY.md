@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-This project is pre-1.0 (`0.0.0` across every package). Security fixes are only
+This project is pre-1.0 (`0.1.0` across every package). Security fixes are only
 made against the latest published version of each `@mediadrop/*` package —
 there is no long-term-support branch to backport fixes to.
 

@@ -1,8 +1,6 @@
 # Contributing
 
-This is `autorender/mediadrop-internal` — a private staging workspace,
-not yet the public `mediadrop` repo. If you're reading this from inside
-Autorender, the short version:
+Thanks for your interest in contributing to `react-mediadrop`. The short version:
 
 1. **Install & verify**: `pnpm install`, then `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm size` before opening a PR — this is exactly what CI runs (`.github/workflows/ci.yml`).
 2. **Scope**: check
@@ -29,6 +27,5 @@ Autorender, the short version:
 
 Issue and PR templates (`.github/ISSUE_TEMPLATE/`,
 `.github/PULL_REQUEST_TEMPLATE.md`) and a vulnerability-reporting process
-([`SECURITY.md`](SECURITY.md)) already exist. A CLA and a full external
-review process are still deferred until this becomes the public repo and
-there's an actual external contributor audience.
+([`SECURITY.md`](SECURITY.md)) already exist. There's no CLA or formal
+external-review process yet.

@@ -1,7 +1,7 @@
 {
 	"name": "@mediadrop/core",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "Framework-free file intake, validation, drag/drop, and upload-queue/retry/session primitives for mediadrop.",
 	"license": "MIT",
 	"sideEffects": false,

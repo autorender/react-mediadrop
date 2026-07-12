@@ -1,9 +1,29 @@
 {
 	"name": "react-mediadrop",
-	"private": true,
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "Headless React hook (useMediaDrop) for file intake, validation, drag/drop, and upload — @mediadrop/core is bundled in, no separate install needed. The xhr-upload transport is a separate, tree-shakeable \"react-mediadrop/xhr-upload\" subpath.",
 	"license": "MIT",
+	"author": "Autorender",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/autorender/react-mediadrop.git",
+		"directory": "packages/react"
+	},
+	"homepage": "https://github.com/autorender/react-mediadrop#readme",
+	"bugs": {
+		"url": "https://github.com/autorender/react-mediadrop/issues"
+	},
+	"keywords": [
+		"react",
+		"file-upload",
+		"drag-and-drop",
+		"dropzone",
+		"headless",
+		"file-intake"
+	],
+	"engines": {
+		"node": ">=18"
+	},
 	"sideEffects": false,
 	"type": "module",
 	"main": "./dist/index.mjs",

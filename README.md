@@ -2,13 +2,11 @@
   <img src="assets/logo.png" alt="mediadrop logo" width="120" />
 </p>
 
-# mediadrop-internal
+# react-mediadrop
 
-Private battle-test workspace for **mediadrop** — OSS file-uploader (`@mediadrop/*`).
-
-Not the public repo. This exists to stabilize the toolchain and API shape before a
-fresh `autorender/mediadrop` repo gets created at launch. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
+**mediadrop** is a lightweight, headless-first file uploader for React,
+published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
 
 ## What is mediadrop, and why headless-first?
 
@@ -56,6 +54,7 @@ never bundled:
 - `packages/core` *(internal, not published)* — file intake, validation, drag/drop, upload-queue/retry/session primitives
 - `packages/react` *(published as `react-mediadrop`)* — headless `useMediaDrop` hook + the `xhr-upload` subpath, both bundling `@mediadrop/core`
 - `packages/xhr-upload` *(internal, not published)* — reference `XMLHttpRequest` upload transport, source-only, bundled into `react-mediadrop/xhr-upload`
+- `packages/test-utils` *(internal, not published)* — shared test scaffolding (`MockXhr`, etc.) for the transport packages
 - `packages/tsconfig` — shared TypeScript config
 - `skills/mediadrop` — integration guide for coding agents working with mediadrop
 

@@ -1,6 +1,15 @@
 ---
 name: mediadrop
 description: Integrate mediadrop (Phase 1 + Phase 2) — file intake, drag/drop, validation, and upload (queue/concurrency/retry/cancel) for React. Use when a task asks to add a file picker, dropzone, or upload UI in a project that already depends on react-mediadrop.
+license: MIT
+compatibility: Requires React 18+. In Next.js App Router (or any RSC setup), the component calling useMediaDrop must be a "use client" component — the hook uses useSyncExternalStore/useEffect.
+metadata:
+  author: Autorender
+  version: "0.1.0"
+  homepage: https://github.com/autorender/react-mediadrop#readme
+  source: https://github.com/autorender/react-mediadrop
+  install-kind: node
+  install-package: react-mediadrop
 ---
 
 # mediadrop — Phase 1 (file intake) + Phase 2 (upload)
@@ -51,6 +60,15 @@ type (`MediaDropFile`, `MediaDropRestrictions`, `MediaDropError`,
 there's never a reason to import from `@mediadrop/core` directly — it
 isn't published as a separate package at all.
 
+## Next.js / RSC
+
+`useMediaDrop` touches `useSyncExternalStore`/`useEffect` — it only runs in
+a Client Component. In Next.js App Router (or any React Server Components
+setup), the file that calls `useMediaDrop` (or any component that renders
+it) needs a `"use client"` directive at the top. This is the single most
+common integration mistake — if a task target is a Next.js app, add
+`"use client"` up front rather than debugging the build error after the fact.
+
 ## Core mental model
 
 1. A user picks or drops files.
@@ -76,6 +94,10 @@ model, store, and drag-state semantics in detail.
 - Upload (queue/concurrency/retry/cancel, transport contract): [references/upload.md](references/upload.md)
 - Transport: [references/xhr-upload.md](references/xhr-upload.md)
 - Common mistakes: [references/troubleshooting.md](references/troubleshooting.md)
+- Full working demo (dropzone + upload UI + a real backend, wired
+  end-to-end) — not shipped with this skill, lives in the source repo:
+  https://github.com/autorender/react-mediadrop/tree/main/examples/react-demo
+  and https://github.com/autorender/react-mediadrop/tree/main/examples/test-server
 
 ## Hard rules for agents integrating mediadrop
 

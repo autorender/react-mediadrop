@@ -8,5 +8,5 @@ react-dropzone
 uppy
 .claude
 .env
-examples/test-server
 plans
+examples/test-server/uploads
