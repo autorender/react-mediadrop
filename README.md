@@ -7,7 +7,7 @@
 Private battle-test workspace for **mediadrop** — OSS file-uploader (`@mediadrop/*`).
 
 Not the public repo. This exists to stabilize the toolchain and API shape before a
-fresh `autorenderhq/mediadrop` repo gets created at launch. See
+fresh `autorender/mediadrop` repo gets created at launch. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
 
 ## What is mediadrop, and why headless-first?
