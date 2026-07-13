@@ -20,44 +20,39 @@
 	},
 	"favicon": "/favicon.png",
 	"navigation": {
-		"tabs": [
+		"groups": [
 			{
-				"tab": "Documentation",
-				"icon": "cube",
-				"groups": [
-					{
-						"group": "Overview",
-						"pages": ["introduction", "changelog", "roadmap"]
-					},
-					{
-						"group": "Getting Started",
-						"pages": [
-							"getting-started/installation",
-							"getting-started/quickstart"
-						]
-					},
-					{
-						"group": "Guides",
-						"pages": [
-							"guides/core-concepts",
-							"guides/validation",
-							"guides/upload",
-							"guides/custom-transport"
-						]
-					},
-					{
-						"group": "API Reference",
-						"pages": [
-							"api-reference/use-media-drop",
-							"api-reference/xhr-upload",
-							"api-reference/types"
-						]
-					},
-					{
-						"group": "Project",
-						"pages": ["contributing"]
-					}
+				"group": "Overview",
+				"pages": ["introduction", "changelog", "roadmap"]
+			},
+			{
+				"group": "Getting Started",
+				"pages": [
+					"getting-started/installation",
+					"getting-started/quickstart",
+					"getting-started/agent-skill"
 				]
+			},
+			{
+				"group": "Guides",
+				"pages": [
+					"guides/core-concepts",
+					"guides/validation",
+					"guides/upload",
+					"guides/custom-transport"
+				]
+			},
+			{
+				"group": "API Reference",
+				"pages": [
+					"api-reference/use-media-drop",
+					"api-reference/xhr-upload",
+					"api-reference/types"
+				]
+			},
+			{
+				"group": "Project",
+				"pages": ["contributing"]
 			}
 		]
 	},
