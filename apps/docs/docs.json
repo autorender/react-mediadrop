@@ -3,9 +3,9 @@
 	"theme": "almond",
 	"name": "react-mediadrop",
 	"colors": {
-		"primary": "#4F46E5",
-		"light": "#818CF8",
-		"dark": "#3730A3"
+		"primary": "#149ECA",
+		"light": "#61DAFB",
+		"dark": "#0B6A88"
 	},
 	"styling": {
 		"codeblocks": {

@@ -110,12 +110,12 @@ second time:
 
 ## Things to get right
 
-- **Don't wrap the returned `<input>` in `display: none` yourself and
-  expect `open()` to fail** — `getInputProps()` already hides it and
+- Don't wrap the returned `<input>` in `display: none` yourself and
+  expect `open()` to fail — `getInputProps()` already hides it and
   `open()` calls `.click()` on it programmatically, which works through
   `display: none` in all evergreen browsers.
-- **SSR-safe** — the hook never touches `window`/`document` during
-  render. `isDragGlobal`'s `document` listeners are registered inside a
+- The hook never touches `window`/`document` during render, so it's
+  SSR-safe. `isDragGlobal`'s `document` listeners are registered inside a
   `useEffect` (client-only) and removed on unmount. You can render it on
   the server without guards.
 - The engine backing one `useMediaDrop()` call is created once for that

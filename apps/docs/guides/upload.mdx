@@ -24,7 +24,7 @@ or a widget.
    (a provider SDK, a test double, a more advanced resumable protocol).
 2. You pass that transport to `useMediaDrop({ transport, ... })` — the
    exact same option regardless of which transport it is.
-3. **Only then** do `uploadFile`/`uploadAll`/`cancelUpload`/
+3. Only then do `uploadFile`/`uploadAll`/`cancelUpload`/
    `cancelAllUploads`/`retryUpload` exist on the returned object — without
    `transport`, they are absent, and TypeScript will not let you call
    them. This mirrors Core's own restraint: no feature exists halfway.
@@ -121,7 +121,7 @@ useMediaDrop({
   "accepted"` or is already in flight.
 - **`uploadAll()`** — queues every currently `status: "accepted"` file.
 - **`cancelUpload(id)`** — aborts it if it's uploading (via
-  `AbortSignal`, standard web API), or simply drops it if it's merely
+  `AbortSignal`, standard web API), or drops it if it's merely
   queued. Ends in `uploadStatus: "canceled"`, not `"error"`.
 - **`cancelAllUploads()`** — cancels every queued and in-flight file.
 - **`retryUpload(id)`** — re-enqueues a file, but only if its last
