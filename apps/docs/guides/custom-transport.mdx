@@ -20,7 +20,7 @@ type UploadTransport = {
 };
 ```
 
-## Rules
+## What must a transport do?
 
 - **One file, one attempt.** Send the file, report progress, resolve or
   reject. The queue decides whether to retry — you don't.
@@ -43,7 +43,7 @@ type UploadTransport = {
   many uploads run at once; your transport just services one call at a
   time when asked.
 
-## A minimal example
+## What does a minimal transport look like?
 
 ```ts
 import { withRetry, type UploadTransport } from "react-mediadrop";
@@ -75,7 +75,7 @@ needs real incremental progress, use `XMLHttpRequest.upload.onprogress`
 the way the reference transport does — see its
 [API reference](/api-reference/xhr-upload).
 
-## Multi-request transports
+## What about multi-request transports?
 
 A multi-request transport (splitting one file into several requests,
 like a resumable protocol) is still "one file, one `upload()` call" from
@@ -86,3 +86,12 @@ implementation.
 
 Resumable transports (S3 multipart, tus) aren't part of this codebase
 today — see [Roadmap](/roadmap).
+
+<CardGroup cols={2}>
+  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
+    The queue, concurrency, retry, and cancel
+  </Card>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+</CardGroup>

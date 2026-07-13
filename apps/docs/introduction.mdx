@@ -7,26 +7,18 @@ description: A lightweight, headless-first file uploader for React
 **react-mediadrop** is a file intake, validation, and upload engine for
 React, published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
 
+You can use react-mediadrop for:
+
+- A drag-and-drop upload zone with your own markup and styling
+- Client-side file validation (type, size, count) before anything uploads
+- A queue that uploads multiple files with concurrency, retry, and cancel
+- Upload progress and per-file status rendered in your own UI
+
 ## Headless-first
 
 You own the markup. `getRootProps`/`getInputProps` return plain props to
 spread onto whatever elements you already have — no prebuilt widget, no
 dashboard, nothing to override. Style it exactly like the rest of your app.
-
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="bolt" href="/getting-started/quickstart">
-    Wire up a dropzone in a few lines
-  </Card>
-  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
-    The file model, the store, and drag state
-  </Card>
-  <Card title="Validation" icon="shield-check" href="/guides/validation">
-    Restrictions and custom validators
-  </Card>
-  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
-    The queue, concurrency, retry, and cancel
-  </Card>
-</CardGroup>
 
 ## What's here today
 
@@ -45,4 +37,19 @@ a prebuilt widget. See [Roadmap](/roadmap) for what's next.
 
 If your files are small enough that a dropped connection losing all
 progress is acceptable, plain XHR covers it.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/getting-started/quickstart">
+    Wire up a dropzone in a few lines
+  </Card>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="Validation" icon="shield-check" href="/guides/validation">
+    Restrictions and custom validators
+  </Card>
+  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
+    The queue, concurrency, retry, and cancel
+  </Card>
+</CardGroup>
 

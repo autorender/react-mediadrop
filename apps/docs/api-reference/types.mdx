@@ -104,7 +104,7 @@ type RetryOptions = {
 function withRetry<T>(
 	attempt: (attemptNumber: number) => Promise<T>,
 	options: RetryOptions,
-	signal?: AbortSignal,
+	signal: AbortSignal,
 ): Promise<T>;
 ```
 
@@ -127,3 +127,12 @@ function createBrowserUploadSessionStore(options?: {
 
 function createFileFingerprint(file: File): string;
 ```
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="useMediaDrop API" icon="code" href="/api-reference/use-media-drop">
+    Full hook reference
+  </Card>
+</CardGroup>

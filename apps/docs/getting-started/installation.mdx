@@ -4,8 +4,11 @@ sidebarTitle: Installation
 description: Install react-mediadrop
 ---
 
+react-mediadrop ships as a single npm package — no separate core or
+transport package to install.
+
 <Note>
-  Requires React 18+.
+  Requires **React 18+**.
 </Note>
 
 <CodeGroup>
@@ -25,8 +28,6 @@ yarn add react-mediadrop
 bun add react-mediadrop
 ```
 </CodeGroup>
-
-That's the only package you need.
 
 ## Next.js / RSC
 
@@ -49,3 +50,12 @@ That's the only package you need.
 
 import { useMediaDrop } from "react-mediadrop";
 ```
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/getting-started/quickstart">
+    Wire up a dropzone in a few lines
+  </Card>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+</CardGroup>

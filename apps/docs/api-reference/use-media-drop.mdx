@@ -24,7 +24,7 @@ function useMediaDrop(options?: {
 	retries?: number; // retries after the first attempt. Default 0.
 	retryDelays?: number[]; // backoff per retry.
 	cancelGraceMs?: number; // force-free a slot after cancel. Default 5000.
-}): MediaDropResult;
+}): UseMediaDropResult;
 ```
 
 ## Return value
@@ -32,7 +32,7 @@ function useMediaDrop(options?: {
 | Field | Type | Notes |
 | --- | --- | --- |
 | `files` / `acceptedFiles` / `rejectedFiles` | `MediaDropFile[]` | Every file added, filtered by `status`. |
-| `isDragActive` / `isDragAccept` / `isDragReject` | `boolean` | Per-dropzone drag state — best-effort, see [Core concepts](/guides/core-concepts#drag-state). |
+| `isDragActive` / `isDragAccept` / `isDragReject` | `boolean` | Per-dropzone drag state — best-effort, see [Core concepts](/guides/core-concepts#how-do-i-know-when-a-file-is-being-dragged). |
 | `isFocused` | `boolean` | Root element has keyboard focus. Always `false` when `noKeyboard` is set. |
 | `isDragGlobal` | `boolean` | A file drag is happening anywhere on the document, not just this root. |
 | `removeFile(id)` / `clearFiles()` | `() => void` | Mutate the file list. Cancels any in-flight upload for removed files. |
@@ -123,6 +123,15 @@ second time:
   props after mount changes future drag-acceptance previews but does
   **not** retroactively re-validate files already in `files`.
 - Multiple `useMediaDrop()` calls on the same page are independent and
-  safe — see [Core concepts](/guides/core-concepts#multiple-dropzones-on-one-page).
+  safe — see [Core concepts](/guides/core-concepts#can-i-use-multiple-dropzones-on-one-page).
 - There's no dashboard/progress UI to import — every list item, remove
   button, progress bar, and status message is yours to build.
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="Types" icon="brackets-curly" href="/api-reference/types">
+    Every shared type exported from react-mediadrop
+  </Card>
+</CardGroup>

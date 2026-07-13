@@ -4,9 +4,11 @@ sidebarTitle: Validation
 description: Restrictions and custom validators
 ---
 
-Pass the same `restrictions`/`validator` shape to `useMediaDrop`.
+`useMediaDrop` rejects a file the moment it's added if it fails
+`restrictions` or your own `validator` — both take the same shape on
+every call.
 
-## Restrictions
+## What can restrictions check?
 
 ```ts
 type MediaDropRestrictions = {
@@ -29,7 +31,7 @@ is equivalent to `["image/png", "image/webp"]`).
 
 An empty/missing `accept` accepts every file type.
 
-## Error codes and shape
+## What does a validation error look like?
 
 ```ts
 type MediaDropErrorCode =
@@ -54,7 +56,7 @@ codes (plus whatever code your custom validator assigns). Switch on
 `status`/`sourceCode` are only ever populated on upload errors (see
 [Upload](/guides/upload)) — always absent on a validation error.
 
-## Custom validators
+## How do I write a custom validator?
 
 ```ts
 type MediaDropValidator = (
@@ -80,18 +82,19 @@ validator — use `restrictions` for those. Reserve the validator for rules
 `restrictions` can't express (content sniffing, naming conventions,
 cross-file business rules, etc.).
 
-## Validator and drag preview
+## Does the validator run during drag?
 
 The validator's primary job is drop-time validation, but `useMediaDrop`
 also runs it as part of the best-effort `isDragAccept`/`isDragReject`
-preview during an active drag — see [Core concepts](/guides/core-concepts#drag-state).
+preview during an active drag — see [Core concepts](/guides/core-concepts#how-do-i-know-when-a-file-is-being-dragged).
 This only happens when the browser hands back a real `File` via
 `DataTransferItem.getAsFile()` before drop; when it doesn't, the preview
-silently falls back to accept-only evaluation. Don't rely on this for
-correctness — the authoritative accept/reject decision is always the one
-made at drop time.
+silently falls back to accept-only evaluation.
 
-## What validation does not do
+Don't rely on this for correctness — the authoritative accept/reject
+decision is always the one made at drop time.
+
+## What doesn't validation do?
 
 - **No async validators.** The validator runs synchronously against the
   `File` object (name/size/type only) — it cannot read file contents or
@@ -101,3 +104,12 @@ made at drop time.
 - **No image-specific checks** (dimensions, aspect ratio, decode-ability).
   If you need that, it's a custom validator today, not a first-class
   option.
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
+    The queue, concurrency, retry, and cancel
+  </Card>
+</CardGroup>

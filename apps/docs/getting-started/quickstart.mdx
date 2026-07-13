@@ -4,7 +4,11 @@ sidebarTitle: Quickstart
 description: Build a working dropzone in a few lines
 ---
 
-## A dropzone with validation
+## Prerequisites
+
+- [Install react-mediadrop](/getting-started/installation)
+
+## 1. Build a dropzone
 
 ```tsx
 "use client";
@@ -58,13 +62,17 @@ export function UploadBox() {
 }
 ```
 
+Drop or pick a file. It appears in the list below the dropzone, with a
+Remove button; drop a file over 5MB or the wrong type and its rejection
+reason appears next to it instead.
+
 `getRootProps()` already makes the root click- and keyboard-activatable
 (Space/Enter opens the file picker) — no separate "Choose files" button is
 required unless you want one. Pass `noClick`/`noKeyboard`/`noDrag` to
 `useMediaDrop()` to opt out of any of that. See [Core concepts](/guides/core-concepts)
 for the full file model.
 
-## Adding upload
+## 2. Add upload
 
 Pass a `transport` and the hook additionally returns `uploadFile`/
 `uploadAll`/`cancelUpload`/`cancelAllUploads`/`retryUpload`. Without a
@@ -128,7 +136,9 @@ export function UploadBox() {
 }
 ```
 
-See [Upload](/guides/upload) for the full queue/retry/cancel contract.
+Click **Upload all**. Each file's status moves from `queued` to
+`uploading` to `done` (or `error`, with a Retry button). See
+[Upload](/guides/upload) for the full queue/retry/cancel contract.
 
 <CardGroup cols={2}>
   <Card title="Core concepts" icon="cube" href="/guides/core-concepts">

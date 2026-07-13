@@ -4,10 +4,12 @@ sidebarTitle: Core concepts
 description: The file model, the store, and drag state
 ---
 
-These concepts underlie `react-mediadrop`, which bundles its engine
-internally — the engine isn't published or imported separately.
+`react-mediadrop` tracks every file you add as a `MediaDropFile` object,
+backed by a small internal store you never call directly. The engine
+that owns this store is bundled inside `react-mediadrop` — it isn't
+published or imported separately.
 
-## The file model
+## What does a file look like?
 
 Every file you add becomes a `MediaDropFile`:
 
@@ -39,7 +41,7 @@ counting are all based on `status` alone and are completely unaffected by
 whether a file has started, finished, or failed uploading. See
 [Upload](/guides/upload#status-and-uploadstatus-stay-separate).
 
-## The store
+## How does the store work?
 
 The engine backing `useMediaDrop` returns an object backed by a small
 store:
@@ -54,7 +56,7 @@ engine.subscribe(selector, listener); // fires only when selector's result chang
 don't call `subscribe` yourself in React, you just read the hook's return
 value.
 
-## Drag state
+## How do I know when a file is being dragged?
 
 ```ts
 type DragState = {
@@ -81,8 +83,10 @@ as the browser lets it: some browsers hand back a real (if
 empty/unreadable) `File` from `DataTransferItem.getAsFile()` mid-drag, and
 when that happens the validator runs against it. When the browser doesn't
 expose that, the validator is silently skipped for the preview — it still
-runs for real at drop time either way. Don't assume the validator ran
-during drag; treat it as a bonus, not a guarantee.
+runs for real at drop time either way.
+
+Don't assume the validator ran during drag; treat it as a bonus, not a
+guarantee.
 
 `isDragActive`/`isDragAccept`/`isDragReject` are per-dropzone — there's no
 page-wide equivalent by default. `useMediaDrop` additionally returns
@@ -92,7 +96,7 @@ tracked via its own `dragenter`/`dragleave`/`dragend`/`drop` listeners on
 outside of it; wire your own `document` listeners if you need the same
 thing somewhere else.
 
-## `maxFiles` is an aggregate rule
+## How does `maxFiles` work across a batch?
 
 Individual restrictions (`accept`, `minSize`, `maxSize`) are evaluated per
 file — one bad file never blocks the others in the same batch.
@@ -102,7 +106,7 @@ you call `addFiles` with a batch that would exceed the remaining slots,
 files fill the remaining slots **in order** and the overflow is rejected
 with `too-many-files`. It does not reject the entire batch.
 
-## Multiple dropzones on one page
+## Can I use multiple dropzones on one page?
 
 Each `useMediaDrop()` call owns its own drag-enter/leave depth counter and
 only reacts to events that bubble to its own root element:
@@ -114,3 +118,12 @@ only reacts to events that bubble to its own root element:
   enter/leave).
 - Overlapping/nested dropzones are **not** specially coordinated today —
   a known limitation, not yet solved.
+
+<CardGroup cols={2}>
+  <Card title="Validation" icon="shield-check" href="/guides/validation">
+    Restrictions and custom validators
+  </Card>
+  <Card title="Upload" icon="cloud-arrow-up" href="/guides/upload">
+    The queue, concurrency, retry, and cancel
+  </Card>
+</CardGroup>
