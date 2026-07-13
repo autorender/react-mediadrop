@@ -7,16 +7,18 @@ description: Build a working dropzone in a few lines
 ## A dropzone with validation
 
 ```tsx
+"use client";
+
 import { useMediaDrop } from "react-mediadrop";
 
 export function UploadBox() {
 	const {
 		getRootProps,
 		getInputProps,
-		open,
 		files,
 		isDragActive,
 		isDragReject,
+		open,
 		removeFile,
 	} = useMediaDrop({
 		restrictions: {
@@ -34,6 +36,12 @@ export function UploadBox() {
 			{files.map((item) => (
 				<div key={item.id}>
 					{item.name}
+					{item.status === "rejected" ? (
+						<span>
+							{" "}
+							— {item.errors.map((error) => error.message).join(", ")}
+						</span>
+					) : null}
 					<button type="button" onClick={() => removeFile(item.id)}>
 						Remove
 					</button>
@@ -64,14 +72,32 @@ Pass a `transport` and the hook additionally returns `uploadFile`/
 won't let you call it.
 
 ```tsx
+"use client";
+
 import { useMediaDrop } from "react-mediadrop";
 import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
+// Replace with your own upload route.
 const transport = createXhrUploadTransport({ endpoint: "/api/upload" });
 
 export function UploadBox() {
-	const { getRootProps, getInputProps, files, uploadAll, cancelUpload, retryUpload } =
-		useMediaDrop({ transport, concurrency: 3, retries: 2 });
+	const {
+		getRootProps,
+		getInputProps,
+		files,
+		uploadAll,
+		cancelUpload,
+		retryUpload,
+	} = useMediaDrop({
+		restrictions: {
+			accept: ["image/png", "image/jpeg", "image/webp"],
+			maxFiles: 5,
+			maxSize: 5 * 1024 * 1024,
+		},
+		transport,
+		concurrency: 3,
+		retries: 2,
+	});
 
 	return (
 		<div {...getRootProps()}>

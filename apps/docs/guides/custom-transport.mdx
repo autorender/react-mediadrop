@@ -37,7 +37,8 @@ type UploadTransport = {
   reaction to a real anti-pattern: libraries that let every transport
   carry its own independent copy of retry/backoff logic end up with
   subtly different retry behavior per transport, and no single place to
-  fix a bug in it. mediadrop has one retry engine; use it.
+  fix a bug in it. react-mediadrop has one retry engine, and this is
+  where you plug into it.
 - **Do not implement your own concurrency limit.** The queue decides how
   many uploads run at once; your transport just services one call at a
   time when asked.

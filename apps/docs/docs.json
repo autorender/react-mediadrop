@@ -1,7 +1,7 @@
 {
 	"$schema": "https://mintlify.com/docs.json",
 	"theme": "almond",
-	"name": "mediadrop",
+	"name": "react-mediadrop",
 	"colors": {
 		"primary": "#4F46E5",
 		"light": "#818CF8",
@@ -64,7 +64,7 @@
 	"navbar": {
 		"primary": {
 			"type": "github",
-			"href": "https://github.com/autorenderhq/react-mediadrop"
+			"href": "https://github.com/autorender/react-mediadrop"
 		}
 	}
 }

@@ -4,19 +4,14 @@ sidebarTitle: Introduction
 description: A lightweight, headless-first file uploader for React
 ---
 
-**mediadrop** is a file intake, validation, and upload engine for React,
-published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
-
-`react-mediadrop` owns everything that's easy to get subtly wrong: drag/drop
-event quirks, upload concurrency, retry/backoff, and cancel races. The
-underlying engine is bundled directly into the published package — you only
-ever install one package.
+**react-mediadrop** is a file intake, validation, and upload engine for
+React, published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
 
 ## Headless-first
 
-The engine never assumes it owns your markup. `getRootProps`/`getInputProps`
-return plain props for a hook — style and markup are always yours. There is
-no prebuilt widget or dashboard today.
+You own the markup. `getRootProps`/`getInputProps` return plain props to
+spread onto whatever elements you already have — no prebuilt widget, no
+dashboard, nothing to override. Style it exactly like the rest of your app.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="bolt" href="/getting-started/quickstart">
@@ -33,28 +28,14 @@ no prebuilt widget or dashboard today.
   </Card>
 </CardGroup>
 
-## Status: Core + Upload
+## What's here today
 
-Core covers file intake, drag/drop, and validation. Upload adds a real
-upload path on top: a pluggable transport contract, a queue with
-concurrency/retry/cancel, and a reference XHR transport.
+Core handles file intake, drag/drop, and validation. Upload builds on top
+of it: a pluggable transport contract, a queue with concurrency/retry/
+cancel, and a reference XHR transport.
 
-There is still no pause/resume, no remote-provider import, no OAuth, no
-image transforms, no prebuilt widget, and no Autorender-specific adapter.
-See [Roadmap](/roadmap) for what's next.
-
-## Packages
-
-Only `react-mediadrop` is published. Its underlying engine and the
-reference transport are internal, unpublished source packages bundled
-directly into `react-mediadrop`'s own dist files — the hook and the
-transport are two independent entry points, so a consumer who never
-imports the transport never bundles its code.
-
-| Import | What it is |
-| --- | --- |
-| `react-mediadrop` | `useMediaDrop` and every shared type |
-| `react-mediadrop/xhr-upload` | `createXhrUploadTransport`, tree-shakeable — only bundled if you import it |
+Not yet: pause/resume, remote-provider import, OAuth, image transforms,
+a prebuilt widget. See [Roadmap](/roadmap) for what's next.
 
 ## Which transport should I use?
 
@@ -65,17 +46,3 @@ imports the transport never bundles its code.
 If your files are small enough that a dropped connection losing all
 progress is acceptable, plain XHR covers it.
 
-## Not supported, anywhere in this codebase
-
-- Pause/resume as a concept distinct from cancel
-- A vanilla JS/DOM binding — React-only for now
-- Resumable transports (S3 multipart, tus)
-- Persistence of file bytes across a page reload
-- Remote-provider import (Google Drive/Dropbox-style pickers) or OAuth
-- Image transforms or AI hooks (compression, resizing, moderation)
-- A prebuilt widget, dashboard, or progress UI — you own all markup
-- A hosted upload service — mediadrop is a client library
-- Any Autorender-specific or Cloudinary-specific adapter
-
-See the [scope reference](https://github.com/autorenderhq/react-mediadrop/blob/main/skills/mediadrop/references/scope.md)
-in the source repo for the complete, authoritative list.

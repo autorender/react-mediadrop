@@ -45,9 +45,9 @@ The engine backing `useMediaDrop` returns an object backed by a small
 store:
 
 ```ts
-mediadrop.getState(); // { files: MediaDropFile[] }
-mediadrop.subscribe(listener); // full-state subscription
-mediadrop.subscribe(selector, listener); // fires only when selector's result changes
+engine.getState(); // { files: MediaDropFile[] }
+engine.subscribe(listener); // full-state subscription
+engine.subscribe(selector, listener); // fires only when selector's result changes
 ```
 
 `react-mediadrop` wraps this with `useSyncExternalStore` internally — you
@@ -65,12 +65,16 @@ type DragState = {
 ```
 
 `isDragAccept`/`isDragReject` are evaluated from `DataTransferItem.type`
-during `dragenter`. Browsers do **not** expose the file name while
-dragging (only after drop), so an `accept` restriction like `[".png"]` (an
-extension) cannot be evaluated mid-drag — both flags stay `false` in that
-case. MIME-based restrictions (`"image/png"`, `"image/*"`) work during
-drag. This is intentional and documented, not a bug — don't try to "fix"
-it by guessing the extension from partial data.
+during `dragenter`.
+
+<Info>
+  Browsers don't expose the file name while dragging — only after drop. So
+  an `accept` restriction like `[".png"]` (an extension) can't be evaluated
+  mid-drag, and both flags stay `false` in that case. MIME-based
+  restrictions (`"image/png"`, `"image/*"`) work during drag, since the
+  MIME type *is* available on `DataTransferItem`. Use MIME types in
+  `accept` if you want an accurate drag-time preview.
+</Info>
 
 A custom `validator` also participates in this preview, but only as far
 as the browser lets it: some browsers hand back a real (if
@@ -108,5 +112,5 @@ only reacts to events that bubble to its own root element:
 - Moving the pointer across child elements inside one dropzone does not
   cause `isDragActive` to flicker (a counter, not a boolean flip, tracks
   enter/leave).
-- Overlapping/nested dropzones are **not** specially coordinated — this
-  is a known limitation, not an oversight to silently patch over.
+- Overlapping/nested dropzones are **not** specially coordinated today —
+  a known limitation, not yet solved.

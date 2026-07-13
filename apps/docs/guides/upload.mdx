@@ -36,17 +36,15 @@ or a widget.
 
 ## Where the logic actually lives
 
-`react-mediadrop` owns all upload orchestration. A simple transport's job
-is exactly one thing: send one file, once, report progress, resolve or
+`react-mediadrop` owns all upload orchestration. A transport's job is
+exactly one thing: send one file, once, report progress, resolve or
 reject. It has **no retry loop and no concurrency limit of its own** —
 both are the queue's job. `useMediaDrop`'s upload methods are thin
 pass-throughs to the same queue.
 
-If you're asked to add retry, backoff, or concurrency logic anywhere
-*other than* calling the shared retry engine (e.g. "add a retry loop
-inside the transport" or "have the hook retry failed uploads itself"),
-that's almost certainly wrong — point at the shared `withRetry` engine
-instead of adding a second copy of this logic.
+Writing your own transport? Retry and concurrency stay out of it — see
+[Writing a custom transport](/guides/custom-transport) for the shared
+`withRetry` engine it should call into instead.
 
 ### The shared retry engine
 
@@ -133,11 +131,13 @@ useMediaDrop({
 Retrying stops immediately once a file is canceled — a cancel always
 wins over a pending retry.
 
-**`cancelGraceMs` (default `5000`)** is a safety net, not the normal path:
-a well-behaved transport wires up `signal` and rejects promptly once
-aborted, so cancel usually settles almost immediately. If a transport
-doesn't, this timer force-frees the slot after the grace period
-regardless.
+<Info>
+  **`cancelGraceMs` (default `5000`)** is a safety net, not the normal
+  path: a well-behaved transport wires up `signal` and rejects promptly
+  once aborted, so cancel usually settles almost immediately. If a
+  transport doesn't, this timer force-frees the slot after the grace
+  period regardless.
+</Info>
 
 **`removeFile(id)`/`clearFiles()` cancel any in-flight upload for the
 files they remove** — no orphaned request keeps running in the
@@ -183,4 +183,5 @@ These stores hold metadata only — upload IDs, byte offsets, completed
 part numbers — never file bytes. `createFileFingerprint` is
 metadata-based on purpose: hashing file *contents* would let two
 selections of a huge file be compared reliably, but reading the whole
-file to do that is exactly the cost mediadrop avoids imposing by default.
+file to do that is exactly the cost react-mediadrop avoids imposing by
+default.
