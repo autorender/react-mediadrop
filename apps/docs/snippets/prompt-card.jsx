@@ -1,4 +1,7 @@
-export const PromptCard = ({ prompt, label = 'Use this pre-built prompt to get started faster.' }) => {
+export const PromptCard = ({
+	prompt,
+	label = "Use this pre-built prompt to get started faster.",
+}) => {
 	const [copied, setCopied] = useState(false);
 
 	const copyPrompt = async () => {
@@ -7,7 +10,7 @@ export const PromptCard = ({ prompt, label = 'Use this pre-built prompt to get s
 		setTimeout(() => setCopied(false), 2000);
 	};
 
-	const cursorHref = 'https://cursor.com/link/prompt?text=' + encodeURIComponent(prompt);
+	const cursorHref = `https://cursor.com/link/prompt?text=${encodeURIComponent(prompt)}`;
 
 	return (
 		<div className="mediadrop-prompt-card">
@@ -76,17 +79,32 @@ export const PromptCard = ({ prompt, label = 'Use this pre-built prompt to get s
 				}
 			`}</style>
 			<div className="mediadrop-prompt-card__label">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					aria-hidden="true"
+				>
 					<rect x="7" y="7" width="10" height="10" rx="1" />
 					<path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" />
 				</svg>
 				<span>{label}</span>
 			</div>
 			<div className="mediadrop-prompt-card__actions">
-				<button type="button" className="mediadrop-prompt-card__button mediadrop-prompt-card__button--primary" onClick={copyPrompt}>
-					{copied ? 'Copied!' : 'Copy prompt'}
+				<button
+					type="button"
+					className="mediadrop-prompt-card__button mediadrop-prompt-card__button--primary"
+					onClick={copyPrompt}
+				>
+					{copied ? "Copied!" : "Copy prompt"}
 				</button>
-				<a className="mediadrop-prompt-card__button mediadrop-prompt-card__button--secondary" href={cursorHref}>
+				<a
+					className="mediadrop-prompt-card__button mediadrop-prompt-card__button--secondary"
+					href={cursorHref}
+				>
 					Open in Cursor
 				</a>
 			</div>
