@@ -1,6 +1,13 @@
 packages:
   - "packages/*"
   - "examples/*"
+  - "apps/*"
+
+allowBuilds:
+  '@scarf/scarf': false
+  keytar: false
+  puppeteer: true
+  sharp: true
 
 catalog:
   typescript: ^5.9.3

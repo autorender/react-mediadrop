@@ -1,0 +1,138 @@
+---
+title: Types
+sidebarTitle: Types
+description: Every shared type exported from react-mediadrop
+---
+
+`react-mediadrop` re-exports every shared type — there's never a reason to
+import from an internal engine package directly.
+
+## `MediaDropFile`
+
+```ts
+type MediaDropFile = {
+	id: string;
+	file: File;
+	name: string;
+	size: number;
+	type: string;
+	lastModified?: number;
+	status: "idle" | "accepted" | "rejected";
+	errors: MediaDropError[];
+
+	// Upload fields, only set once an upload is requested:
+	uploadStatus?: "queued" | "uploading" | "done" | "error" | "canceled";
+	progress?: { loaded: number; total: number | null };
+	uploadError?: MediaDropError;
+	uploadResult?: unknown;
+	uploadAttempts?: number;
+};
+```
+
+## `MediaDropRestrictions`
+
+```ts
+type MediaDropRestrictions = {
+	maxFiles?: number;
+	minSize?: number; // bytes
+	maxSize?: number; // bytes
+	accept?: string[] | string; // mime types, wildcards, or extensions
+};
+```
+
+## `MediaDropError`
+
+```ts
+type MediaDropErrorCode =
+	| "file-invalid-type"
+	| "file-too-large"
+	| "file-too-small"
+	| "too-many-files"
+	| "validator-error"
+	| "upload-error";
+
+type MediaDropError = {
+	code: MediaDropErrorCode;
+	message: string;
+	status?: number; // HTTP status, upload errors only
+	sourceCode?: string; // transport-specific, upload errors only
+};
+```
+
+## `MediaDropValidator`
+
+```ts
+type MediaDropValidator = (
+	file: File,
+) => MediaDropError | MediaDropError[] | null | undefined;
+```
+
+## `DragState`
+
+```ts
+type DragState = {
+	isDragActive: boolean;
+	isDragAccept: boolean;
+	isDragReject: boolean;
+};
+```
+
+## `UploadTransport`
+
+```ts
+type UploadTransport = {
+	upload(
+		file: MediaDropFile,
+		context: {
+			onProgress: (progress: { loaded: number; total: number | null }) => void;
+			signal: AbortSignal;
+		},
+	): Promise<{ response?: unknown }>;
+};
+```
+
+## `RetryOptions` and `withRetry`
+
+```ts
+type RetryOptions = {
+	retries?: number;
+	retryDelays?: number[];
+	shouldRetry?: (error: unknown, attemptNumber: number) => boolean;
+	jitter?: number; // 0–1
+};
+
+function withRetry<T>(
+	attempt: (attemptNumber: number) => Promise<T>,
+	options: RetryOptions,
+	signal: AbortSignal,
+): Promise<T>;
+```
+
+## Session persistence
+
+Exported for custom resumable transports — no bundled transport currently
+uses them.
+
+```ts
+type MediaDropUploadSessionStore = {
+	get(key: string): Promise<unknown | null>;
+	set(key: string, value: unknown): Promise<void>;
+	remove(key: string): Promise<void>;
+};
+
+function createMemoryUploadSessionStore(): MediaDropUploadSessionStore;
+function createBrowserUploadSessionStore(options?: {
+	prefix?: string;
+}): MediaDropUploadSessionStore;
+
+function createFileFingerprint(file: File): string;
+```
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="cube" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="useMediaDrop API" icon="code" href="/api-reference/use-media-drop">
+    Full hook reference
+  </Card>
+</CardGroup>

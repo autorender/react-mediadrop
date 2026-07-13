@@ -69,18 +69,19 @@ needs finer-grained retry of its own:
 type RetryOptions = {
 	retries?: number; // retries after the first attempt. Default 0.
 	retryDelays?: number[]; // backoff per retry; last value repeats if exhausted.
-	shouldRetry?: (error: unknown, attemptNumber: number) => boolean; // default: retries everything
+	shouldRetry?: (error: unknown, attemptNumber: number) => boolean; // default: defaultShouldRetry
 	jitter?: number; // 0–1, randomizes each delay by up to this fraction. Default 0.
 };
 ```
 
-`shouldRetry` matters when a transport can tell the difference between
-"this will never succeed" (a 4xx response) and "this might succeed next
-time" (a network blip, a 5xx) — return `false` for the former to fail
-fast instead of burning through the retry budget. `jitter` matters when
-many requests could fail at once (e.g. every part of a multipart upload
-hitting the same transient network issue) — it spreads their retries out
-instead of having them all retry in lockstep.
+`defaultShouldRetry`, the built-in default, retries **408, 429, and every
+5xx** status, plus anything without a recognizable HTTP status (network
+errors) — it does not retry other 4xx statuses (400/401/403/404/413,
+etc.), since those describe a request that fails the same way every time.
+Pass your own `shouldRetry` to override this classification entirely.
+`jitter` matters when many requests could fail at once (e.g. every part
+of a multipart upload hitting the same transient network issue) — it
+spreads their retries out instead of having them all retry in lockstep.
 
 ## `MediaDropFile`'s upload fields
 
@@ -212,7 +213,7 @@ type MediaDropUploadSessionStore = {
 createMemoryUploadSessionStore(); // in-process only — gone on reload, gone between tabs
 createBrowserUploadSessionStore({ prefix? }); // localStorage-backed, SSR-safe (no-op without `window`)
 
-createFileFingerprint(file: File): string; // name+size+type+lastModified, not file contents
+createFileFingerprint(file: File): string; // name+size+type+lastModified+webkitRelativePath, not file contents
 ```
 
 **These stores hold metadata only — upload IDs, byte offsets, completed
@@ -220,11 +221,13 @@ part numbers — never file bytes.** `createFileFingerprint` is
 metadata-based on purpose: hashing file *contents* would let two
 selections of a huge file be compared reliably, but reading the whole
 file to do that is exactly the cost mediadrop avoids imposing by default.
-If a task asks for "guaranteed unique file identification" or
-content-addressed matching, say that the default fingerprint doesn't
-provide that — a custom resumable transport can accept its own
-`fingerprint` option rather than quietly hashing file contents inside
-core.
+Two different files with identical name, size, type, modified time, and
+relative path will still collide — this is "looks like the same file,"
+not a content-addressed guarantee. If a task asks for "guaranteed unique
+file identification" or content-addressed matching, say that the default
+fingerprint doesn't provide that — a custom resumable transport can
+accept its own `fingerprint` option rather than quietly hashing file
+contents inside core.
 
 ## Transport guide
 

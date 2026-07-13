@@ -1,0 +1,65 @@
+{
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "almond",
+	"name": "react-mediadrop",
+	"colors": {
+		"primary": "#149ECA",
+		"light": "#61DAFB",
+		"dark": "#0B6A88"
+	},
+	"styling": {
+		"codeblocks": {
+			"theme": {
+				"light": "github-light",
+				"dark": "vesper"
+			}
+		}
+	},
+	"contextual": {
+		"options": ["copy", "chatgpt", "claude"]
+	},
+	"favicon": "/favicon.png",
+	"navigation": {
+		"groups": [
+			{
+				"group": "Overview",
+				"pages": ["introduction", "changelog", "roadmap"]
+			},
+			{
+				"group": "Getting Started",
+				"pages": [
+					"getting-started/installation",
+					"getting-started/quickstart",
+					"getting-started/agent-skill"
+				]
+			},
+			{
+				"group": "Guides",
+				"pages": [
+					"guides/core-concepts",
+					"guides/validation",
+					"guides/upload",
+					"guides/custom-transport"
+				]
+			},
+			{
+				"group": "API Reference",
+				"pages": [
+					"api-reference/use-media-drop",
+					"api-reference/xhr-upload",
+					"api-reference/types"
+				]
+			},
+			{
+				"group": "Project",
+				"pages": ["contributing"]
+			}
+		]
+	},
+	"navbar": {
+		"primary": {
+			"type": "github",
+			"href": "https://github.com/autorender/react-mediadrop"
+		}
+	}
+}
