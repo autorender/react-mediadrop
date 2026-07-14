@@ -8,6 +8,7 @@
 
 ## Test plan
 
+- [ ] `pnpm changeset` added (or not needed — docs-only/internal change)
 - [ ] `pnpm lint` passes
 - [ ] `pnpm typecheck` passes
 - [ ] `pnpm test` passes (new tests added for new behavior, if applicable)

@@ -45,7 +45,27 @@ Real regressions, not padding — new tests should exercise an actual
 race/edge case (cancel-vs-resolve races, retry exhaustion, reentrancy)
 the way the existing suite does, not just happy-path smoke tests.
 
+## Opening a pull request
+
+Maintainers branch directly off latest `main`. Outside contributors fork
+the repo first, then branch off their fork's `main`.
+
+If the change is user-facing (bug fix, feature, behavior change), run
+`pnpm changeset` and commit the generated file — `changesets/action`
+reads these to version and changelog the next release. Skip it for
+docs-only or internal changes.
+
+Open the PR against `autorender/react-mediadrop:main`. If it's your first
+PR here, its CI run won't start until a maintainer manually approves it —
+standard GitHub protection for first-time contributors on public repos,
+a one-time step.
+
+Merging requires **1 approving review** and all **4** CI checks
+(`lint`, `typecheck`, `test`, `build`) passing. `main` has a linear
+history — merges are squash or rebase only, never merge commits.
+
 ---
 
-Issue and PR templates and a vulnerability-reporting process already
-exist in the repo. There's no CLA or formal external-review process yet.
+Issue and PR templates, a vulnerability-reporting process, and a
+[Code of Conduct](https://github.com/autorender/react-mediadrop/blob/main/CODE_OF_CONDUCT.md)
+already exist in the repo. There's no CLA yet.

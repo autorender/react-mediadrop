@@ -6,6 +6,9 @@
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@11.10.0",
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
