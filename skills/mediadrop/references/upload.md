@@ -238,5 +238,5 @@ contents inside core.
 See [scope.md](scope.md) for the authoritative, up-to-date list. In short:
 pause/resume, S3/tus transports, persistence of file *bytes* across a
 reload, remote-provider import, OAuth, image transforms, and any
-Autorender-specific adapter are all out of scope — don't improvise a
+specific CDN/storage-provider adapter are all out of scope — don't improvise a
 stand-in for any of them inside mediadrop's public API.

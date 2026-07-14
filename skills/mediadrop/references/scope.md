@@ -73,7 +73,7 @@ improvising a stand-in inside mediadrop's public API:
   headless-first; there is no drop-in UI component to import, in this
   phase or planned for any phase. `progress`/`uploadStatus` are data you
   read — building the progress bar/toast/dashboard is still your job.
-- **Any Autorender-specific or Cloudinary-specific adapter.**
+- **Any specific CDN/storage-provider adapter.**
 - **Async validators.** The `validator` function is synchronous only.
 - **Re-validation of files already added.** Restrictions/validator changes
   don't retroactively touch existing `MediaDropFile` entries.

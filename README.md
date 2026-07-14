@@ -4,69 +4,26 @@
 
 # react-mediadrop
 
-**mediadrop** is a lightweight, headless-first file uploader for React,
-published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
+[![npm](https://img.shields.io/npm/v/react-mediadrop.svg?style=flat-square)](https://www.npmjs.com/package/react-mediadrop)
+![CI](https://img.shields.io/github/actions/workflow/status/autorender/react-mediadrop/ci.yml?branch=main&style=flat-square&label=CI)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](CODE_OF_CONDUCT.md)
 
-## What is mediadrop, and why headless-first?
+**mediadrop** is a lightweight, headless-first file uploader for React — file
+intake, drag/drop, validation, and upload (queue, concurrency, retry, cancel)
+via a single `useMediaDrop` hook. No prebuilt widget — you own the markup.
 
-mediadrop is a file intake/validation/upload engine for React. `react-mediadrop`
-owns everything that's easy to get subtly wrong (drag/drop event quirks, upload
-concurrency, retry/backoff, cancel races) — the underlying engine
-(`@mediadrop/core`) is bundled directly into `react-mediadrop`'s published
-package, so you only ever install one package.
+Documentation and examples at https://react-mediadrop.mintlify.site.
+Source code at https://github.com/autorender/react-mediadrop.
 
-**Headless-first** means the engine never assumes it owns your markup.
-`getRootProps`/`getInputProps` return plain props for a hook — style and
-markup are always yours. There is no prebuilt widget or dashboard, in this
-phase or planned for any phase — see
-[`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md).
+## Install
 
-## Status: Core + Upload
+```sh
+pnpm add react-mediadrop
+```
 
-Core covers file intake, drag/drop, and validation. Upload adds a real
-upload path on top: a pluggable transport contract, a queue with concurrency/retry/cancel,
-and a reference XHR transport. **There is still no pause/resume, no
-remote-provider import, no OAuth, no image transforms, no prebuilt widget,
-and no Autorender-specific adapter.** See
-[`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
-for the full boundary between what's implemented and what isn't.
-
-A vanilla JS/DOM binding and S3 (presigned + multipart)/tus transports were
-previously built on this same contract and are on a separate branch for a
-future phase — not part of this codebase right now. This workspace is
-React-only for now.
-
-## Packages
-
-Only **`react-mediadrop`** is published. `@mediadrop/core` and
-`@mediadrop/xhr-upload` are internal workspace-only source packages — each
-is bundled directly into its own dist file inside `react-mediadrop` at
-build time (see `packages/react/tsdown.config.ts`), so a consumer only
-ever installs one package.
-
-`react-mediadrop` ships two independent entry points so unused code is
-never bundled:
-
-- `react-mediadrop` — the `useMediaDrop` hook, with `@mediadrop/core` bundled in.
-- `react-mediadrop/xhr-upload` — `createXhrUploadTransport`, with `@mediadrop/core` bundled in separately. A consumer who never imports this subpath never bundles it — verified with a real Vite build + `vite-bundle-analyzer`, see [`packages/react/README.md`](packages/react/README.md#entry-points).
-
-- `packages/core` *(internal, not published)* — file intake, validation, drag/drop, upload-queue/retry/session primitives
-- `packages/react` *(published as `react-mediadrop`)* — headless `useMediaDrop` hook + the `xhr-upload` subpath, both bundling `@mediadrop/core`
-- `packages/xhr-upload` *(internal, not published)* — reference `XMLHttpRequest` upload transport, source-only, bundled into `react-mediadrop/xhr-upload`
-- `packages/test-utils` *(internal, not published)* — shared test scaffolding (`MockXhr`, etc.) for the transport packages
-- `packages/tsconfig` — shared TypeScript config
-- `skills/mediadrop` — integration guide for coding agents working with mediadrop
-
-## Which transport should I use?
-
-| Transport | Import | Request shape | Resumable? | Backend needs to implement |
-| --- | --- | --- | --- | --- |
-| XHR | `react-mediadrop/xhr-upload` | One request, whole file | No | A single upload endpoint |
-
-If your files are small enough that a dropped connection losing all
-progress is acceptable, plain XHR covers it. Resumable transports (S3
-multipart, tus) are on a separate branch for a future phase.
+or `npm install` / `yarn add` — `react-mediadrop` ships as ESM with TypeScript
+types included, and works with any modern bundler.
 
 ## Quickstart
 
@@ -79,8 +36,6 @@ const { getRootProps, getInputProps, files } = useMediaDrop({
 	restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
 });
 ```
-
-See [`skills/mediadrop/references/react.md`](skills/mediadrop/references/react.md).
 
 ### Upload (opt-in)
 
@@ -95,50 +50,60 @@ const { files, uploadAll } = useMediaDrop({
 });
 ```
 
-See [`skills/mediadrop/references/upload.md`](skills/mediadrop/references/upload.md)
-for the full queue/concurrency/retry/cancel contract and the transport
-interface.
+Without `transport`, nothing is uploaded — `useMediaDrop` only tracks
+intake/validation state. See the
+[quickstart](https://react-mediadrop.mintlify.site/getting-started/quickstart)
+and [upload guide](https://react-mediadrop.mintlify.site/guides/upload) for
+the full API.
 
-## Supported / not supported
+## What's implemented
 
-**Supported today:** drag/drop and picker intake, sync validation
-(accept/size/count + custom validator), the `react-mediadrop` hook, and
-upload with concurrency/retry/cancel via `react-mediadrop/xhr-upload`.
+**Core**: file intake from a picker or drag/drop, sync validation
+(`accept`/`maxFiles`/`minSize`/`maxSize` + a custom `validator`), and drag
+state (`isDragActive`/`isDragAccept`/`isDragReject`).
 
-**Not supported, anywhere in this codebase:**
+**Upload** (opt-in via `transport`): a pluggable transport contract, a queue
+with concurrency limit + shared retry/backoff, cancel via `AbortSignal`, and
+a reference `react-mediadrop/xhr-upload` transport.
 
-- Pause/resume as a concept distinct from cancel.
-- A vanilla JS/DOM binding — built previously, currently on a separate
-  branch, not in this codebase. This workspace is React-only for now.
-- Resumable transports (S3 multipart, tus) — built previously, currently
-  on a separate branch for a future phase, not in this codebase.
-- Persistence of file bytes across a page reload.
-- Remote-provider import (Google Drive/Dropbox/URL-import pickers, an
-  Uppy-Companion-equivalent server) or any OAuth flow.
-- Image transforms (compression, resizing, format conversion, cropping)
-  or AI hooks (content moderation, tagging).
-- A prebuilt widget, dashboard, or progress UI — you own all markup.
-- A hosted upload service — mediadrop is a client library; you provide
-  and own the backend.
-- Any Autorender-specific or Cloudinary-specific adapter.
+Pause/resume, remote-provider import, OAuth, image transforms, a prebuilt
+widget, and any vendor-specific adapter are not implemented — see the
+[scope reference](skills/mediadrop/references/scope.md) for the full,
+authoritative list.
 
-See [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
-for the complete, authoritative list.
+## Packages
+
+Only `react-mediadrop` is published to npm — everything else is an internal,
+workspace-only source package bundled directly into it at build time.
+
+| Package | Published? | What it is |
+| --- | --- | --- |
+| [`packages/react`](packages/react) | `react-mediadrop` | The `useMediaDrop` hook + the `react-mediadrop/xhr-upload` subpath |
+| [`packages/core`](packages/core) | internal | File intake, validation, drag/drop, upload-queue/retry primitives |
+| [`packages/xhr-upload`](packages/xhr-upload) | internal | Reference `XMLHttpRequest` upload transport |
+| [`skills/mediadrop`](skills/mediadrop) | — | Integration guide for coding agents |
 
 ## Example
 
 `examples/react-demo` (`pnpm --filter react-demo dev`) exercises
-`react-mediadrop` + `react-mediadrop/xhr-upload` against a real
-backend — see `examples/test-server/` — rather than a faked dev-server
-mock.
+`react-mediadrop` against a real backend — see `examples/test-server` —
+rather than a faked dev-server mock.
 
 ## Commands
 
-```
+```sh
 pnpm install
 pnpm build
 pnpm test
 pnpm typecheck
 pnpm lint
-pnpm size    # checks each package's gzipped dist (published or internal/bundled-in) against its sizeLimit budget
+pnpm size    # checks each published/bundled package's gzipped dist against its size budget
 ```
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
+
+## License
+
+[MIT](LICENSE)

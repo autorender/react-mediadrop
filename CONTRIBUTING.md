@@ -33,7 +33,7 @@ Thanks for your interest in contributing to `react-mediadrop`. The short version
    `pnpm changeset` and commit the generated file — `changesets/action`
    (`.github/workflows/release.yml`) reads these to version and changelog
    the next release. Skip it for docs-only/internal changes.
-3. Open the PR against `autorender/react-mediadrop:main`. If this is your
+3. Open the PR against `main`. If this is your
    first PR here, its CI run won't start until a maintainer manually
    approves it (standard GitHub protection for first-time contributors on
    public repos) — a one-time step.

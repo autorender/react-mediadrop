@@ -4,7 +4,7 @@ description: Integrate mediadrop (Core + Upload) — file intake, drag/drop, val
 license: MIT
 compatibility: Requires React 18+. In Next.js App Router (or any RSC setup), the component calling useMediaDrop must be a "use client" component — the hook uses useSyncExternalStore/useEffect.
 metadata:
-  author: Autorender
+  author: autorender
   version: "0.1.0"
   homepage: https://github.com/autorender/react-mediadrop#readme
   source: https://github.com/autorender/react-mediadrop
@@ -112,7 +112,7 @@ model, store, and drag-state semantics in detail.
   prebuilt dashboard/progress widget, image transforms, a vanilla
   JS/DOM binding, S3/tus support (none of this is part of this codebase
   right now — see [references/scope.md](references/scope.md)), or any
-  Autorender-specific adapter. None of that is built here.
+  vendor-specific adapter. None of that is built here.
 - **Retry/concurrency logic lives in one place**: the shared `withRetry`
   engine, called via the upload queue. Don't add a second retry/backoff
   implementation inside a transport (including a custom one you write) or
