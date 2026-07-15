@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   '@scarf/scarf': false
+  esbuild: true
   keytar: false
   puppeteer: true
   sharp: true
@@ -15,6 +16,9 @@ catalog:
   "@vitest/coverage-v8": ^4.1.10
   tsdown: ^0.22.3
   jsdom: ^29.1.1
+
+minimumReleaseAgeExclude:
+  - blume@1.0.4
 
 # No dependency in this tree currently declares a preinstall/postinstall
 # script (verified via `find node_modules/.pnpm -name package.json | xargs

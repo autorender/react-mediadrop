@@ -1,0 +1,39 @@
+---
+title: Styling
+description: getRootProps() sets no className or style of its own — you're in full control.
+---
+
+`getRootProps()`/`getInputProps()` set no `className` or `style` of
+their own — you're in full control, and anything you pass through is
+merged in.
+
+<StylingExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+import { useMemo } from "react";
+
+export function StylingExample() {
+  const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
+    useMediaDrop({ restrictions: { accept: ["image/*"] } });
+
+  const style = useMemo(() => {
+    if (isDragAccept) return { borderColor: "#12b76a" };
+    if (isDragReject) return { borderColor: "#e5484d" };
+    if (isFocused) return { borderColor: "#0B6A88" };
+    return { borderColor: "#ccc" };
+  }, [isFocused, isDragAccept, isDragReject]);
+
+  return (
+    <div {...getRootProps({ style })}>
+      <input {...getInputProps()} />
+      <p>Drag an image here, or click to browse</p>
+    </div>
+  );
+}
+```
+
+A `style`/`className` you pass to `getRootProps()` or `getInputProps()`
+is merged with what the hook needs internally — the one exception is
+`getInputProps()`'s hidden-input `display: none`, which always wins,
+since the hidden-native-input pattern breaks without it.

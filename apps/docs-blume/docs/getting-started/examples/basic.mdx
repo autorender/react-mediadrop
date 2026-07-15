@@ -1,0 +1,36 @@
+---
+title: Basic
+description: The minimal setup — file intake and drag state, no validation and no upload transport.
+---
+
+The minimal setup: file intake and drag state, no validation and no upload transport.
+
+<BasicExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function BasicExample() {
+  const { acceptedFiles, getRootProps, getInputProps, isDragActive } =
+    useMediaDrop();
+
+  return (
+    <div
+      {...getRootProps()}
+      className={isDragActive ? "dropzone dropzone--active" : "dropzone"}
+    >
+      <input {...getInputProps()} />
+      <p>Drag files here, or click to browse</p>
+      {acceptedFiles.length > 0 && (
+        <ul className="file-list">
+          {acceptedFiles.map((file) => (
+            <li key={file.id}>
+              {file.name} — {(file.size / 1024).toFixed(1)} KB
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```

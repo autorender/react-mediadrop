@@ -1,0 +1,37 @@
+---
+title: Custom validation
+description: Reject files with a validator function react-mediadrop can't express through restrictions.
+---
+
+Reject files with a `validator` function for rules `restrictions` can't
+express.
+
+<ValidatorExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+function noSpacesValidator(file: File) {
+  if (file.name.includes(" ")) {
+    return { code: "validator-error" as const, message: "Filenames can't contain spaces" };
+  }
+  return null;
+}
+
+export function ValidatorExample() {
+  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+    useMediaDrop({ validator: noSpacesValidator });
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      <p>Drag files here, or click to browse</p>
+    </div>
+  );
+}
+```
+
+Return `null`/`undefined` to accept, or one error / an array of errors to
+reject. Don't reimplement `accept`/`maxSize`/`minSize` here — use
+`restrictions` for those. See [Validation](/guides/validation) for the
+full contract.

@@ -1,0 +1,42 @@
+---
+title: Using it inside a form
+description: Mirror accepted files into a hidden input so a native form submission includes them.
+---
+
+`react-mediadrop`'s files live in its own store, not in a native
+`<input type="file">` — a plain form submission won't include them
+unless you mirror them into a hidden input yourself.
+
+<FormsExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+import { useEffect, useRef } from "react";
+
+export function FormsExample() {
+  const { acceptedFiles, getRootProps, getInputProps } = useMediaDrop();
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!hiddenInputRef.current) return;
+    const dataTransfer = new DataTransfer();
+    for (const item of acceptedFiles) dataTransfer.items.add(item.file);
+    hiddenInputRef.current.files = dataTransfer.files;
+  }, [acceptedFiles]);
+
+  return (
+    <form onSubmit={(e) => e.preventDefault()}>
+      <div {...getRootProps()}>
+        <input {...getInputProps()} />
+        <input ref={hiddenInputRef} type="file" name="attachments" multiple style={{ display: "none" }} />
+        <p>Drag files here, or click to browse</p>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+Each `MediaDropFile` carries the original browser `File` on `.file` —
+that's what gets added to the hidden input's `DataTransfer`. On submit,
+the hidden input's `FileList` goes out with the rest of the form fields.

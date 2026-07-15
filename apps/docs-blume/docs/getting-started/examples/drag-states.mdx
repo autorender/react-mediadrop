@@ -1,0 +1,36 @@
+---
+title: Drag states
+description: Every drag flag useMediaDrop returns, read live off one dropzone.
+---
+
+`useMediaDrop` returns five drag/focus flags. Drag an image over the
+zone below to watch them flip live.
+
+<DragStatesExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function DragStatesExample() {
+  const { getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject, isFocused, isDragGlobal } =
+    useMediaDrop({ restrictions: { accept: ["image/*"] } });
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      <p>isDragActive: {String(isDragActive)}</p>
+      <p>isDragAccept: {String(isDragAccept)}</p>
+      <p>isDragReject: {String(isDragReject)}</p>
+      <p>isFocused: {String(isFocused)}</p>
+      <p>isDragGlobal: {String(isDragGlobal)}</p>
+    </div>
+  );
+}
+```
+
+`isDragAccept`/`isDragReject` are best-effort — browsers only expose a
+dragged file's MIME type, not its name, until drop. An extension-based
+`accept` (like `.png`) can't be evaluated mid-drag, so use MIME types
+(`image/*`) if you want this preview to work. `isDragGlobal` tracks
+drags anywhere on the document, not just this dropzone's root. See
+[Core concepts](/guides/core-concepts#how-do-i-know-when-a-file-is-being-dragged).

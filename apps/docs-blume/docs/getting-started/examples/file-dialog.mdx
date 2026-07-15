@@ -1,0 +1,36 @@
+---
+title: Opening the file dialog
+description: Open the native file picker from your own button with open().
+---
+
+Open the native file picker from your own button, instead of the
+dropzone's default click-to-open.
+
+<FileDialogExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function FileDialogExample() {
+  const { getRootProps, getInputProps, open } = useMediaDrop({
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      <p>Drag files here — clicking the dropzone itself does nothing</p>
+      <button type="button" onClick={open}>
+        Choose files
+      </button>
+    </div>
+  );
+}
+```
+
+`noClick` and `noKeyboard` turn off the dropzone's own click-to-open and
+Space/Enter-to-open behavior, so `open()` is the only way in. Most
+browsers require the call to originate from a direct user interaction
+like a click — calling it from an effect or a timer won't open the
+picker.

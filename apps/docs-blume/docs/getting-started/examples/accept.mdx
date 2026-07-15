@@ -1,0 +1,41 @@
+---
+title: Accepting file types
+description: Restrict the dropzone to specific MIME types with restrictions.accept.
+---
+
+Restrict the dropzone to specific file types with `restrictions.accept`.
+
+<AcceptExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function AcceptExample() {
+  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+    useMediaDrop({ restrictions: { accept: ["image/png", "image/jpeg"] } });
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      <p>Drag files here, or click to browse</p>
+      <ul>
+        {acceptedFiles.map((file) => (
+          <li key={file.id}>{file.name}</li>
+        ))}
+      </ul>
+      <ul>
+        {rejectedFiles.map((file) => (
+          <li key={file.id}>
+            {file.name} — {file.errors.map((e) => e.message).join(", ")}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+`accept` takes an exact MIME type (`"image/png"`), a wildcard
+(`"image/*"`), a file extension (`".png"`), or an array/comma-separated
+string of any of those. See [Validation](/guides/validation) for the
+full shape.

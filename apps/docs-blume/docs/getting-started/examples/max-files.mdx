@@ -1,0 +1,30 @@
+---
+title: Max files
+description: Cap how many files a dropzone accepts with restrictions.maxFiles.
+---
+
+Cap how many files a dropzone accepts with `restrictions.maxFiles`.
+
+<MaxFilesExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function MaxFilesExample() {
+  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+    useMediaDrop({ restrictions: { maxFiles: 3 } });
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      <p>Drag files here, or click to browse</p>
+      <p>{acceptedFiles.length} of 3 slots filled</p>
+    </div>
+  );
+}
+```
+
+`maxFiles` is evaluated across the whole file list, not per file. Drop a
+batch bigger than the remaining slots and files fill the remaining slots
+in order — the overflow is rejected with `too-many-files`, not the whole
+batch. See [Core concepts](/guides/core-concepts#how-does-maxfiles-work-across-a-batch).

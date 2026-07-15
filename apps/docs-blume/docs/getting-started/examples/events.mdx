@@ -1,0 +1,38 @@
+---
+title: Event propagation
+description: Call event.stopPropagation() in your own onDrop to opt out of react-mediadrop's default handling.
+---
+
+Passing your own `onDrop` to `getRootProps()` runs before
+react-mediadrop's own drop handling. Call `event.stopPropagation()`
+inside it and the default handling — adding the dropped files — never
+runs.
+
+<EventsExample />
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+export function EventsExample() {
+  const { acceptedFiles, getRootProps, getInputProps } = useMediaDrop();
+
+  return (
+    <div
+      {...getRootProps({
+        onDrop: (event) => {
+          event.stopPropagation(); // skips react-mediadrop's own drop handling
+        },
+      })}
+    >
+      <input {...getInputProps()} />
+      <p>{acceptedFiles.length} file(s) accepted</p>
+    </div>
+  );
+}
+```
+
+The same applies to `onClick`, `onKeyDown`, `onFocus`, and `onBlur`
+passed to `getRootProps()`, and `onChange`/`onClick` passed to
+`getInputProps()` — your handler runs first, and calling
+`stopPropagation()` on the event skips react-mediadrop's own handling
+for that interaction.
