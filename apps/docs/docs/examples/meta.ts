@@ -2,6 +2,7 @@ import { defineMeta } from "blume";
 
 export default defineMeta({
 	title: "Examples",
+	order: 0,
 	pages: [
 		"basic",
 		"accept",
