@@ -2,9 +2,19 @@ import { useMediaDrop } from "react-mediadrop";
 
 function Flag({ label, on }: { label: string; on: boolean }) {
 	return (
-		<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+		<div
+			style={{
+				display: "flex",
+				justifyContent: "space-between",
+				fontSize: "0.85rem",
+			}}
+		>
 			<span>{label}</span>
-			<span style={{ color: on ? "var(--blume-accent)" : "var(--blume-muted-foreground)" }}>
+			<span
+				style={{
+					color: on ? "var(--blume-accent)" : "var(--blume-muted-foreground)",
+				}}
+			>
 				{String(on)}
 			</span>
 		</div>
@@ -12,11 +22,20 @@ function Flag({ label, on }: { label: string; on: boolean }) {
 }
 
 export default function DragStatesExample() {
-	const { getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject, isFocused, isDragGlobal } =
-		useMediaDrop({ restrictions: { accept: ["image/*"] } });
+	const {
+		getRootProps,
+		getInputProps,
+		isDragActive,
+		isDragAccept,
+		isDragReject,
+		isFocused,
+		isDragGlobal,
+	} = useMediaDrop({ restrictions: { accept: ["image/*"] } });
 
 	return (
-		<div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem" }}>
+		<div
+			style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem" }}
+		>
 			<div
 				{...getRootProps()}
 				style={{

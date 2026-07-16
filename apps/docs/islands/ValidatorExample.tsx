@@ -2,15 +2,19 @@ import { useMediaDrop } from "react-mediadrop";
 
 function noSpacesValidator(file: File) {
 	if (file.name.includes(" ")) {
-		return { code: "validator-error" as const, message: "Filenames can't contain spaces" };
+		return {
+			code: "validator-error" as const,
+			message: "Filenames can't contain spaces",
+		};
 	}
 	return null;
 }
 
 export default function ValidatorExample() {
-	const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } = useMediaDrop({
-		validator: noSpacesValidator,
-	});
+	const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+		useMediaDrop({
+			validator: noSpacesValidator,
+		});
 
 	return (
 		<div>
@@ -29,7 +33,14 @@ export default function ValidatorExample() {
 				<p>Drag files here, or click to browse</p>
 				<em>Filenames with spaces are rejected</em>
 			</div>
-			<ul style={{ listStyle: "none", margin: "1rem 0 0", padding: 0, fontSize: "0.9rem" }}>
+			<ul
+				style={{
+					listStyle: "none",
+					margin: "1rem 0 0",
+					padding: 0,
+					fontSize: "0.9rem",
+				}}
+			>
 				{acceptedFiles.map((file) => (
 					<li key={file.id}>✓ {file.name}</li>
 				))}

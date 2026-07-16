@@ -1,8 +1,14 @@
 import { useMediaDrop } from "react-mediadrop";
 
 export default function AcceptExample() {
-	const { acceptedFiles, rejectedFiles, getRootProps, getInputProps, isDragAccept, isDragReject } =
-		useMediaDrop({ restrictions: { accept: ["image/png", "image/jpeg"] } });
+	const {
+		acceptedFiles,
+		rejectedFiles,
+		getRootProps,
+		getInputProps,
+		isDragAccept,
+		isDragReject,
+	} = useMediaDrop({ restrictions: { accept: ["image/png", "image/jpeg"] } });
 
 	return (
 		<div>
@@ -26,10 +32,24 @@ export default function AcceptExample() {
 				<p>Drag files here, or click to browse</p>
 				<em>Only PNG and JPEG images are accepted</em>
 			</div>
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "1rem" }}>
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "1fr 1fr",
+					gap: "1rem",
+					marginTop: "1rem",
+				}}
+			>
 				<div>
 					<strong style={{ fontSize: "0.85rem" }}>Accepted</strong>
-					<ul style={{ listStyle: "none", margin: "0.5rem 0 0", padding: 0, fontSize: "0.9rem" }}>
+					<ul
+						style={{
+							listStyle: "none",
+							margin: "0.5rem 0 0",
+							padding: 0,
+							fontSize: "0.9rem",
+						}}
+					>
 						{acceptedFiles.map((file) => (
 							<li key={file.id}>{file.name}</li>
 						))}
@@ -37,7 +57,14 @@ export default function AcceptExample() {
 				</div>
 				<div>
 					<strong style={{ fontSize: "0.85rem" }}>Rejected</strong>
-					<ul style={{ listStyle: "none", margin: "0.5rem 0 0", padding: 0, fontSize: "0.9rem" }}>
+					<ul
+						style={{
+							listStyle: "none",
+							margin: "0.5rem 0 0",
+							padding: 0,
+							fontSize: "0.9rem",
+						}}
+					>
 						{rejectedFiles.map((file) => (
 							<li key={file.id}>
 								{file.name}

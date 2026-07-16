@@ -35,7 +35,14 @@ export default function FileDialogExample() {
 				Choose files
 			</button>
 			{acceptedFiles.length > 0 && (
-				<ul style={{ listStyle: "none", margin: "1rem 0 0", padding: 0, fontSize: "0.9rem" }}>
+				<ul
+					style={{
+						listStyle: "none",
+						margin: "1rem 0 0",
+						padding: 0,
+						fontSize: "0.9rem",
+					}}
+				>
 					{acceptedFiles.map((file) => (
 						<li key={file.id}>{file.name}</li>
 					))}

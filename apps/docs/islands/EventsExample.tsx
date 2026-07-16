@@ -1,5 +1,5 @@
-import { useMediaDrop } from "react-mediadrop";
 import { useState } from "react";
+import { useMediaDrop } from "react-mediadrop";
 
 export default function EventsExample() {
 	const [stopPropagation, setStopPropagation] = useState(false);
@@ -7,7 +7,15 @@ export default function EventsExample() {
 
 	return (
 		<div>
-			<label style={{ display: "flex", gap: "0.5rem", alignItems: "center", fontSize: "0.9rem", marginBottom: "0.75rem" }}>
+			<label
+				style={{
+					display: "flex",
+					gap: "0.5rem",
+					alignItems: "center",
+					fontSize: "0.9rem",
+					marginBottom: "0.75rem",
+				}}
+			>
 				<input
 					type="checkbox"
 					checked={stopPropagation}
@@ -33,7 +41,13 @@ export default function EventsExample() {
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
 			</div>
-			<p style={{ fontSize: "0.9rem", color: "var(--blume-muted-foreground)", marginTop: "1rem" }}>
+			<p
+				style={{
+					fontSize: "0.9rem",
+					color: "var(--blume-muted-foreground)",
+					marginTop: "1rem",
+				}}
+			>
 				{stopPropagation
 					? "Stopping propagation yourself skips react-mediadrop's own drop handling — nothing is added below."
 					: `${acceptedFiles.length} file(s) accepted`}

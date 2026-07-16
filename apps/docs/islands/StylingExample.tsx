@@ -1,5 +1,5 @@
-import { useMediaDrop } from "react-mediadrop";
 import { useMemo } from "react";
+import { useMediaDrop } from "react-mediadrop";
 
 const baseStyle: React.CSSProperties = {
 	borderRadius: "var(--blume-radius)" as string,
@@ -12,13 +12,24 @@ const baseStyle: React.CSSProperties = {
 };
 
 export default function StylingExample() {
-	const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } = useMediaDrop({
-		restrictions: { accept: ["image/*"] },
-	});
+	const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
+		useMediaDrop({
+			restrictions: { accept: ["image/*"] },
+		});
 
 	const style = useMemo<React.CSSProperties>(() => {
-		if (isDragAccept) return { ...baseStyle, borderColor: "#12b76a", background: "rgba(18,183,106,0.08)" };
-		if (isDragReject) return { ...baseStyle, borderColor: "#e5484d", background: "rgba(229,72,77,0.08)" };
+		if (isDragAccept)
+			return {
+				...baseStyle,
+				borderColor: "#12b76a",
+				background: "rgba(18,183,106,0.08)",
+			};
+		if (isDragReject)
+			return {
+				...baseStyle,
+				borderColor: "#e5484d",
+				background: "rgba(229,72,77,0.08)",
+			};
 		if (isFocused) return { ...baseStyle, borderColor: "var(--blume-accent)" };
 		return baseStyle;
 	}, [isFocused, isDragAccept, isDragReject]);
@@ -27,7 +38,10 @@ export default function StylingExample() {
 		<div {...getRootProps({ style })}>
 			<input {...getInputProps()} />
 			<p>Drag an image here, or click to browse</p>
-			<em>getRootProps() sets no className or style of its own — this border is ours</em>
+			<em>
+				getRootProps() sets no className or style of its own — this border is
+				ours
+			</em>
 		</div>
 	);
 }

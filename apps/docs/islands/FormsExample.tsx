@@ -1,5 +1,5 @@
-import { useMediaDrop } from "react-mediadrop";
 import { useEffect, useRef, useState } from "react";
+import { useMediaDrop } from "react-mediadrop";
 
 export default function FormsExample() {
 	const { acceptedFiles, getRootProps, getInputProps } = useMediaDrop();
@@ -36,7 +36,13 @@ export default function FormsExample() {
 				}}
 			>
 				<input {...getInputProps()} />
-				<input ref={hiddenInputRef} type="file" name="attachments" multiple style={{ display: "none" }} />
+				<input
+					ref={hiddenInputRef}
+					type="file"
+					name="attachments"
+					multiple
+					style={{ display: "none" }}
+				/>
 				<p>Drag files here, or click to browse</p>
 			</div>
 			<button
@@ -54,8 +60,15 @@ export default function FormsExample() {
 				Submit
 			</button>
 			{submitted && (
-				<p style={{ fontSize: "0.9rem", color: "var(--blume-muted-foreground)", marginTop: "0.75rem" }}>
-					Form submitted with: {submitted.length > 0 ? submitted.join(", ") : "no files"}
+				<p
+					style={{
+						fontSize: "0.9rem",
+						color: "var(--blume-muted-foreground)",
+						marginTop: "0.75rem",
+					}}
+				>
+					Form submitted with:{" "}
+					{submitted.length > 0 ? submitted.join(", ") : "no files"}
 				</p>
 			)}
 		</form>

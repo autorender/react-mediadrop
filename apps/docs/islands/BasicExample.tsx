@@ -15,7 +15,9 @@ export default function BasicExample() {
 				cursor: "pointer",
 				color: "var(--blume-muted-foreground)",
 				background: isDragActive ? "var(--blume-muted)" : "transparent",
-				borderColor: isDragActive ? "var(--blume-accent)" : "var(--blume-border)",
+				borderColor: isDragActive
+					? "var(--blume-accent)"
+					: "var(--blume-border)",
 			}}
 		>
 			<input {...getInputProps()} />
