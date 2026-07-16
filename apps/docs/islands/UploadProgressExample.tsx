@@ -30,7 +30,9 @@ export default function UploadProgressExample() {
 			>
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
-				<em>Each file uploads to a simulated transport as soon as it's accepted</em>
+				<em>
+					Each file uploads to a simulated transport as soon as it's accepted
+				</em>
 			</div>
 			<ul
 				style={{

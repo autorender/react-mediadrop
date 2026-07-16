@@ -49,8 +49,8 @@ export function UploadProgressExample({ transport }: { transport: UploadTranspor
 }
 ```
 
-`progress` is `undefined` until the first `onProgress` call, so fall
-back to the file's own `size` for `max` — a 0-length bar reads as "not
-started yet" rather than as broken. See
+`progress` may be `undefined` before upload begins, and `total` may be
+`null` until the transport reports it. Fall back to the file's own
+`size` for `max`. See
 [Upload](/guides/upload#what-upload-fields-does-mediadropfile-have) for
 the full field list.

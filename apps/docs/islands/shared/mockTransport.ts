@@ -37,7 +37,10 @@ export function createMockTransport(
 
 				const interval = setInterval(() => {
 					const elapsed = performance.now() - start;
-					const loaded = Math.min(total, Math.round((elapsed / durationMs) * total));
+					const loaded = Math.min(
+						total,
+						Math.round((elapsed / durationMs) * total),
+					);
 					onProgress({ loaded, total });
 
 					if (elapsed >= durationMs) {

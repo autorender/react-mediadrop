@@ -46,7 +46,7 @@ export default function ValidatorExample() {
 				))}
 				{rejectedFiles.map((file) => (
 					<li key={file.id} style={{ color: "var(--blume-muted-foreground)" }}>
-						✗ {file.name} — {file.errors[0]?.message}
+						✗ {file.name} — {file.errors?.[0]?.message}
 					</li>
 				))}
 			</ul>

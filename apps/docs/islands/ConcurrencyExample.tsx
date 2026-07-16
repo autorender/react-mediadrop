@@ -18,7 +18,9 @@ export default function ConcurrencyExample() {
 		}
 	}, [files, uploadFile]);
 
-	const uploadingCount = files.filter((file) => file.uploadStatus === "uploading").length;
+	const uploadingCount = files.filter(
+		(file) => file.uploadStatus === "uploading",
+	).length;
 
 	return (
 		<div>
@@ -35,9 +37,17 @@ export default function ConcurrencyExample() {
 			>
 				<input {...getInputProps()} />
 				<p>Drop several files at once</p>
-				<em>At most {CONCURRENCY} upload in parallel — the rest wait as "queued"</em>
+				<em>
+					At most {CONCURRENCY} upload in parallel — the rest wait as "queued"
+				</em>
 			</div>
-			<p style={{ fontSize: "0.85rem", color: "var(--blume-muted-foreground)", margin: "0.75rem 0 0" }}>
+			<p
+				style={{
+					fontSize: "0.85rem",
+					color: "var(--blume-muted-foreground)",
+					margin: "0.75rem 0 0",
+				}}
+			>
 				Uploading now: {uploadingCount} / {CONCURRENCY}
 			</p>
 			<ul

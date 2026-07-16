@@ -17,13 +17,26 @@ export default function CancelRetryExample() {
 	const forceFailRef = useRef(forceFail);
 	forceFailRef.current = forceFail;
 
-	const { files, getRootProps, getInputProps, uploadFile, cancelUpload, retryUpload } =
-		useMediaDrop({
-			transport: createMockTransport({
-				durationMs: 4000,
-				shouldFail: () => forceFailRef.current,
-			}),
-		});
+	const {
+		files,
+		getRootProps,
+		getInputProps,
+		uploadFile,
+		cancelUpload,
+		retryUpload,
+	} = useMediaDrop({
+		transport: createMockTransport({
+			durationMs: 4000,
+			shouldFail: () => {
+				const shouldFail = forceFailRef.current;
+				if (shouldFail) {
+					forceFailRef.current = false;
+					setForceFail(false);
+				}
+				return shouldFail;
+			},
+		}),
+	});
 
 	useEffect(() => {
 		for (const file of files) {
@@ -82,14 +95,21 @@ export default function CancelRetryExample() {
 					const loaded = file.progress?.loaded ?? 0;
 					return (
 						<li key={file.id}>
-							<div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									gap: "0.5rem",
+								}}
+							>
 								<span>{file.name}</span>
 								<span style={{ color: "var(--blume-muted-foreground)" }}>
 									{file.uploadStatus === "error"
 										? `error — ${file.uploadError?.message}`
 										: (file.uploadStatus ?? file.status)}
 								</span>
-								{(file.uploadStatus === "queued" || file.uploadStatus === "uploading") && (
+								{(file.uploadStatus === "queued" ||
+									file.uploadStatus === "uploading") && (
 									<button
 										type="button"
 										style={buttonStyle}
