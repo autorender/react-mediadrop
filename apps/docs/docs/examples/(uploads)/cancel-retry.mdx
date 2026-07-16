@@ -1,0 +1,59 @@
+---
+title: Cancel and retry
+description: Cancel an in-flight upload with cancelUpload(), and recover from a failed one with retryUpload().
+---
+
+`cancelUpload(id)` aborts an in-flight upload via `AbortSignal` and ends
+in `uploadStatus: "canceled"`. `retryUpload(id)` re-enqueues a file, but
+only once its last attempt ended in `uploadStatus: "error"`.
+
+<CancelRetryExample />
+
+:::info
+This page's transport is simulated (4-second uploads, no live
+backend) so there's time to click Cancel mid-flight and to force a
+failure to retry. The API below is real — see
+[Upload](/guides/upload#how-do-i-configure-concurrency-retry-and-cancel)
+for the full `cancelUpload`/`retryUpload` contract.
+:::
+
+```tsx
+import { useEffect } from "react";
+import { useMediaDrop } from "react-mediadrop";
+
+export function CancelRetryExample({ transport }: { transport: UploadTransport }) {
+  const { files, getRootProps, getInputProps, uploadFile, cancelUpload, retryUpload } =
+    useMediaDrop({ transport });
+
+  useEffect(() => {
+    for (const file of files) {
+      if (file.status === "accepted" && file.uploadStatus === undefined) {
+        uploadFile(file.id);
+      }
+    }
+  }, [files, uploadFile]);
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      {files.map((file) => (
+        <div key={file.id}>
+          {file.name} — {file.uploadStatus ?? file.status}
+          {(file.uploadStatus === "queued" || file.uploadStatus === "uploading") && (
+            <button onClick={() => cancelUpload(file.id)}>Cancel</button>
+          )}
+          {file.uploadStatus === "error" && (
+            <button onClick={() => retryUpload(file.id)}>Retry</button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+Retrying stops immediately once a file is canceled — a cancel always
+wins over a pending retry. This manual `retryUpload` is separate from
+the automatic `retries`/`retryDelays` config, which runs before a file
+ever reaches `uploadStatus: "error"` — see
+[Upload](/guides/upload#the-shared-retry-engine).

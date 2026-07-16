@@ -1,0 +1,52 @@
+---
+title: Concurrency limit
+description: Cap how many uploads run at once with the concurrency option — the rest wait as "queued".
+---
+
+Pass `concurrency` to `useMediaDrop({ transport, concurrency })` to cap
+how many uploads run at once. Every file beyond that cap sits at
+`uploadStatus: "queued"` until a slot frees up.
+
+<ConcurrencyExample />
+
+:::info
+This page's transport is simulated, so multiple files can be dropped
+at once with no live backend to send them to. The `concurrency` option
+below is real — see
+[Upload](/guides/upload#how-do-i-configure-concurrency-retry-and-cancel).
+:::
+
+```tsx
+import { useEffect } from "react";
+import { useMediaDrop } from "react-mediadrop";
+
+export function ConcurrencyExample({ transport }: { transport: UploadTransport }) {
+  const { files, getRootProps, getInputProps, uploadFile } = useMediaDrop({
+    transport,
+    concurrency: 2, // at most 2 uploads in flight at once. Default 1.
+  });
+
+  useEffect(() => {
+    for (const file of files) {
+      if (file.status === "accepted" && file.uploadStatus === undefined) {
+        uploadFile(file.id);
+      }
+    }
+  }, [files, uploadFile]);
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      {files.map((file) => (
+        <div key={file.id}>
+          {file.name} — {file.uploadStatus ?? file.status}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+Drop more files than the `concurrency` cap and only that many ever show
+`"uploading"` at once — the rest hold at `"queued"` until a slot frees
+up, then the queue picks the next one automatically.

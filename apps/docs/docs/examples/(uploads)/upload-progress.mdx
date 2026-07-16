@@ -1,0 +1,56 @@
+---
+title: Upload progress
+description: Auto-upload accepted files and track per-file progress and status against a transport.
+---
+
+Call `uploadFile(id)` as soon as a file is accepted, then read
+`progress` and `uploadStatus` off each `MediaDropFile` to render a bar.
+
+<UploadProgressExample />
+
+:::info
+This page's transport is simulated — there's no live backend on this
+docs site. The API below is real: swap in
+`createXhrUploadTransport()` (see
+[xhr-upload](/api-reference/xhr-upload)) or your own transport (see
+[Writing a custom transport](/guides/custom-transport)) and nothing
+else changes.
+:::
+
+```tsx
+import { useEffect } from "react";
+import { useMediaDrop } from "react-mediadrop";
+
+export function UploadProgressExample({ transport }: { transport: UploadTransport }) {
+  const { files, getRootProps, getInputProps, uploadFile } = useMediaDrop({ transport });
+
+  useEffect(() => {
+    for (const file of files) {
+      if (file.status === "accepted" && file.uploadStatus === undefined) {
+        uploadFile(file.id);
+      }
+    }
+  }, [files, uploadFile]);
+
+  return (
+    <div {...getRootProps()}>
+      <input {...getInputProps()} />
+      {files.map((file) => (
+        <div key={file.id}>
+          {file.name} — {file.uploadStatus ?? file.status}
+          <progress
+            value={file.progress?.loaded ?? 0}
+            max={file.progress?.total ?? file.size}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+`progress` is `undefined` until the first `onProgress` call, so fall
+back to the file's own `size` for `max` — a 0-length bar reads as "not
+started yet" rather than as broken. See
+[Upload](/guides/upload#what-upload-fields-does-mediadropfile-have) for
+the full field list.
