@@ -1,0 +1,53 @@
+---
+title: Error codes
+description: Every restriction, validator, and upload failure surfaces as a MediaDropError with a stable code you can switch over.
+---
+
+Every restriction, validator, and upload failure produces a `MediaDropError`
+&mdash; a stable `code` plus a human `message` &mdash; so you can switch on
+`code` instead of parsing `message` text.
+
+| Code | Fires when | Appears on |
+| --- | --- | --- |
+| `file-invalid-type` | file doesn't match `restrictions.accept` | `file.errors` |
+| `file-too-large` | `file.size > restrictions.maxSize` | `file.errors` |
+| `file-too-small` | `file.size < restrictions.minSize` | `file.errors` |
+| `too-many-files` | selection exceeds `restrictions.maxFiles` | `file.errors` |
+| `validator-error` | your `validator` function returned an error | `file.errors` |
+| `upload-error` | the transport's `upload()` rejected | `file.uploadError` |
+
+<ErrorCodesExample />
+
+<em>
+	This demo accepts images only, 1 KB&ndash;2 MB, max 3 files, and rejects
+	filenames with spaces &mdash; try tripping each rule. Toggle the checkbox
+	to force the next upload to fail with `upload-error`.
+</em>
+
+```tsx
+import { useMediaDrop } from "react-mediadrop";
+
+const { files } = useMediaDrop({
+  restrictions: { accept: "image/*", minSize: 1024, maxSize: 2_000_000, maxFiles: 3 },
+  validator: (file) =>
+    file.name.includes(" ")
+      ? { code: "validator-error", message: "Filenames can't contain spaces" }
+      : null,
+  transport, // rejects to produce uploadError: { code: "upload-error", ... }
+});
+
+for (const file of files) {
+  for (const error of file.errors) {
+    console.log(error.code, error.message);
+  }
+  if (file.uploadError) {
+    console.log(file.uploadError.code, file.uploadError.message);
+  }
+}
+```
+
+`upload-error` additionally carries `status` (the HTTP status, when the
+transport threw via `createHttpError`) and `sourceCode` (a transport-specific
+code, when the transport attached one) &mdash; both omitted when not
+applicable. See [Types](/api-reference/types#mediadroperror) for the full
+shape.

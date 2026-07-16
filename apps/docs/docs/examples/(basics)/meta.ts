@@ -8,6 +8,7 @@ export default defineMeta({
 		"accept",
 		"max-files",
 		"validator",
+		"error-codes",
 		"drag-states",
 		"file-dialog",
 		"forms",
