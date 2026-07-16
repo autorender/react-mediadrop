@@ -19,7 +19,7 @@ function noSpacesValidator(file: File) {
 }
 
 export function ValidatorExample() {
-  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+  const { getRootProps, getInputProps } =
     useMediaDrop({ validator: noSpacesValidator });
 
   return (

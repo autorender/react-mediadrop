@@ -47,7 +47,7 @@ type UploadTransport = {
 ## What does a minimal transport look like?
 
 ```ts
-import { withRetry, type UploadTransport } from "react-mediadrop";
+import { createHttpError, type UploadTransport } from "react-mediadrop";
 
 function createMyTransport(options: { endpoint: string }): UploadTransport {
 	return {
@@ -59,7 +59,7 @@ function createMyTransport(options: { endpoint: string }): UploadTransport {
 			});
 
 			if (!response.ok) {
-				throw new Error(`Upload failed: ${response.status}`);
+				throw createHttpError(`Upload failed: ${response.status}`, response.status);
 			}
 
 			onProgress({ loaded: file.size, total: file.size });

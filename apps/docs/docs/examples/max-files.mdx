@@ -11,7 +11,7 @@ Cap how many files a dropzone accepts with `restrictions.maxFiles`.
 import { useMediaDrop } from "react-mediadrop";
 
 export function MaxFilesExample() {
-  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+  const { acceptedFiles, getRootProps, getInputProps } =
     useMediaDrop({ restrictions: { maxFiles: 3 } });
 
   return (
