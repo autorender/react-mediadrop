@@ -13,7 +13,9 @@ export default function MaxFilesExample() {
 			<Dropzone {...getRootProps()}>
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
-				<p className="mt-1 text-xs italic">3 files max — the rest are rejected</p>
+				<p className="mt-1 text-xs italic">
+					3 files max — the rest are rejected
+				</p>
 			</Dropzone>
 			<FileList files={acceptedFiles} />
 			<FileList files={rejectedFiles} variant="rejected" />

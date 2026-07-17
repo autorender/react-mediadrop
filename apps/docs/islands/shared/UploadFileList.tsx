@@ -1,5 +1,5 @@
-import type { MediaDropFile } from "react-mediadrop";
 import type { ReactNode } from "react";
+import type { MediaDropFile } from "react-mediadrop";
 import { cn } from "./cn";
 import { FileIcon } from "./FileIcon";
 
@@ -39,7 +39,7 @@ export function UploadFileList({
 								{file.size.toLocaleString()} bytes
 							</span>
 							<span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
-								{renderStatus?.(file) ?? (file.uploadStatus ?? file.status)}
+								{renderStatus?.(file) ?? file.uploadStatus ?? file.status}
 							</span>
 							{renderActions?.(file)}
 						</div>

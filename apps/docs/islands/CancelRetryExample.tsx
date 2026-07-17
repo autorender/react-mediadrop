@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useMediaDrop } from "react-mediadrop";
 import type { MediaDropFile } from "react-mediadrop";
+import { useMediaDrop } from "react-mediadrop";
 import { Dropzone } from "./shared/Dropzone";
-import {
-	CancelIcon,
-	IconButton,
-	RetryIcon,
-} from "./shared/IconButton";
+import { CancelIcon, IconButton, RetryIcon } from "./shared/IconButton";
 import { createMockTransport } from "./shared/mockTransport";
 import { UploadFileList } from "./shared/UploadFileList";
 

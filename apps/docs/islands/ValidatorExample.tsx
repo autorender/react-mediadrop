@@ -23,7 +23,9 @@ export default function ValidatorExample() {
 			<Dropzone {...getRootProps()}>
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
-				<p className="mt-1 text-xs italic">Filenames with spaces are rejected</p>
+				<p className="mt-1 text-xs italic">
+					Filenames with spaces are rejected
+				</p>
 			</Dropzone>
 			<FileList files={acceptedFiles} />
 			<FileList files={rejectedFiles} variant="rejected" />

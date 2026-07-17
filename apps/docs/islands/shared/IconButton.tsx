@@ -31,6 +31,7 @@ export function CancelIcon({ className }: { className?: string }) {
 			strokeWidth="2"
 			aria-hidden
 		>
+			<title>Cancel</title>
 			<path d="M18 6 6 18" />
 			<path d="m6 6 12 12" />
 		</svg>
@@ -47,6 +48,7 @@ export function RetryIcon({ className }: { className?: string }) {
 			strokeWidth="2"
 			aria-hidden
 		>
+			<title>Retry</title>
 			<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
 			<path d="M3 3v5h5" />
 		</svg>

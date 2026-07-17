@@ -23,7 +23,8 @@ export default function UploadProgressExample() {
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
 				<p className="mt-1 text-xs italic">
-					Each file uploads to a simulated transport as soon as it&apos;s accepted
+					Each file uploads to a simulated transport as soon as it&apos;s
+					accepted
 				</p>
 			</Dropzone>
 			<UploadFileList files={files} />

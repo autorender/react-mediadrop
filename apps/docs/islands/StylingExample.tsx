@@ -53,7 +53,9 @@ export default function StylingExample() {
 			>
 				<input {...getInputProps()} />
 				<p>Drag an image here, or click to browse</p>
-				<p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{status}</p>
+				<p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+					{status}
+				</p>
 			</Dropzone>
 
 			<div className="flex flex-wrap gap-2">

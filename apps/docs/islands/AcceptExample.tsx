@@ -14,14 +14,12 @@ export default function AcceptExample() {
 
 	return (
 		<div className="w-full space-y-3">
-			<Dropzone
-				{...getRootProps()}
-				accept={isDragAccept}
-				reject={isDragReject}
-			>
+			<Dropzone {...getRootProps()} accept={isDragAccept} reject={isDragReject}>
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
-				<p className="mt-1 text-xs italic">Only PNG and JPEG images are accepted</p>
+				<p className="mt-1 text-xs italic">
+					Only PNG and JPEG images are accepted
+				</p>
 			</Dropzone>
 			<FileList files={acceptedFiles} />
 			<FileList files={rejectedFiles} variant="rejected" />
