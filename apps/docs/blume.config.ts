@@ -4,7 +4,11 @@ export default defineConfig({
 	title: "react-mediadrop",
 	description: "A lightweight, headless-first file uploader for React",
 	logo: {
-		image: { alt: "react-mediadrop", light: "/favicon.png" },
+		image: {
+			alt: "react-mediadrop",
+			light: "/react-mediadrop-oss-logo-colored.svg",
+			dark: "/react-mediadrop-oss-logo-colored.svg",
+		},
 	},
 	theme: {
 		accent: { light: "#0B6A88", dark: "#61DAFB" },
