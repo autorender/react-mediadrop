@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
+import { Button } from "./shared/Button";
+import { Dropzone } from "./shared/Dropzone";
+import { FileList } from "./shared/FileList";
 
 export default function FormsExample() {
 	const { acceptedFiles, getRootProps, getInputProps } = useMediaDrop();
 	const hiddenInputRef = useRef<HTMLInputElement>(null);
 	const [submitted, setSubmitted] = useState<string[] | null>(null);
 
-	// A dropzone's files live in react-mediadrop's own store, not in a native
-	// <input type="file">, so a plain <form> submission won't include them
-	// unless we mirror them into a hidden input's FileList ourselves.
 	useEffect(() => {
 		if (!hiddenInputRef.current) return;
 		const dataTransfer = new DataTransfer();
@@ -18,55 +18,28 @@ export default function FormsExample() {
 
 	return (
 		<form
+			className="w-full space-y-3"
 			onSubmit={(event) => {
 				event.preventDefault();
 				const files = hiddenInputRef.current?.files;
 				setSubmitted(files ? Array.from(files).map((file) => file.name) : []);
 			}}
 		>
-			<div
-				{...getRootProps()}
-				style={{
-					border: "2px dashed var(--blume-border)",
-					borderRadius: "var(--blume-radius)",
-					padding: "2.5rem 1.5rem",
-					textAlign: "center",
-					cursor: "pointer",
-					color: "var(--blume-muted-foreground)",
-				}}
-			>
+			<Dropzone {...getRootProps()}>
 				<input {...getInputProps()} />
 				<input
 					ref={hiddenInputRef}
 					type="file"
 					name="attachments"
 					multiple
-					style={{ display: "none" }}
+					className="hidden"
 				/>
 				<p>Drag files here, or click to browse</p>
-			</div>
-			<button
-				type="submit"
-				style={{
-					marginTop: "0.75rem",
-					padding: "0.5rem 1rem",
-					borderRadius: "var(--blume-radius)",
-					border: "1px solid var(--blume-border)",
-					background: "var(--blume-accent)",
-					color: "#fff",
-					cursor: "pointer",
-				}}
-			>
-				Submit
-			</button>
+			</Dropzone>
+			<FileList files={acceptedFiles} />
+			<Button type="submit">Submit</Button>
 			{submitted && (
-				<p
-					style={{
-						fontSize: "0.9rem",
-						color: "var(--blume-muted-foreground)",
-						marginTop: "0.75rem",
-					}}
-				>
+				<p className="text-sm text-zinc-500 dark:text-zinc-400">
 					Form submitted with:{" "}
 					{submitted.length > 0 ? submitted.join(", ") : "no files"}
 				</p>

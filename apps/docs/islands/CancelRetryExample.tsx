@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
+import type { MediaDropFile } from "react-mediadrop";
+import { Dropzone } from "./shared/Dropzone";
+import {
+	CancelIcon,
+	IconButton,
+	RetryIcon,
+} from "./shared/IconButton";
 import { createMockTransport } from "./shared/mockTransport";
-
-const buttonStyle: React.CSSProperties = {
-	padding: "0.2rem 0.6rem",
-	borderRadius: "var(--blume-radius)",
-	border: "1px solid var(--blume-border)",
-	background: "var(--blume-accent)",
-	color: "#fff",
-	cursor: "pointer",
-	fontSize: "0.8rem",
-};
+import { UploadFileList } from "./shared/UploadFileList";
 
 export default function CancelRetryExample() {
-	const [forceFail, setForceFail] = useState(false);
+	const [forceFail, setForceFail] = useState(true);
 	const forceFailRef = useRef(forceFail);
 	forceFailRef.current = forceFail;
 
@@ -47,16 +45,8 @@ export default function CancelRetryExample() {
 	}, [files, uploadFile]);
 
 	return (
-		<div>
-			<label
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "0.5rem",
-					fontSize: "0.9rem",
-					marginBottom: "0.75rem",
-				}}
-			>
+		<div className="w-full space-y-3">
+			<label className="flex items-center gap-2 text-sm">
 				<input
 					type="checkbox"
 					checked={forceFail}
@@ -64,79 +54,44 @@ export default function CancelRetryExample() {
 				/>
 				Fail the next upload attempt
 			</label>
-			<div
-				{...getRootProps()}
-				style={{
-					border: "2px dashed var(--blume-border)",
-					borderRadius: "var(--blume-radius)",
-					padding: "2.5rem 1.5rem",
-					textAlign: "center",
-					cursor: "pointer",
-					color: "var(--blume-muted-foreground)",
-				}}
-			>
+			<Dropzone {...getRootProps()}>
 				<input {...getInputProps()} />
 				<p>Drag files here, or click to browse</p>
-				<em>Uploads take 4s — enough time to cancel one mid-flight</em>
-			</div>
-			<ul
-				style={{
-					listStyle: "none",
-					margin: "1rem 0 0",
-					padding: 0,
-					display: "flex",
-					flexDirection: "column",
-					gap: "0.5rem",
-					fontSize: "0.9rem",
-				}}
-			>
-				{files.map((file) => {
-					const total = file.progress?.total ?? file.size;
-					const loaded = file.progress?.loaded ?? 0;
-					return (
-						<li key={file.id}>
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									gap: "0.5rem",
-								}}
+				<p className="mt-1 text-xs italic">
+					Uploads take 4s — enough time to cancel one mid-flight
+				</p>
+			</Dropzone>
+			<UploadFileList
+				files={files}
+				renderStatus={(file: MediaDropFile) =>
+					file.uploadStatus === "error"
+						? `error — ${file.uploadError?.message}`
+						: (file.uploadStatus ?? file.status)
+				}
+				renderActions={(file: MediaDropFile) => (
+					<>
+						{(file.uploadStatus === "queued" ||
+							file.uploadStatus === "uploading") && (
+							<IconButton
+								aria-label={`Cancel ${file.name}`}
+								title="Cancel"
+								onClick={() => cancelUpload(file.id)}
 							>
-								<span>{file.name}</span>
-								<span style={{ color: "var(--blume-muted-foreground)" }}>
-									{file.uploadStatus === "error"
-										? `error — ${file.uploadError?.message}`
-										: (file.uploadStatus ?? file.status)}
-								</span>
-								{(file.uploadStatus === "queued" ||
-									file.uploadStatus === "uploading") && (
-									<button
-										type="button"
-										style={buttonStyle}
-										onClick={() => cancelUpload(file.id)}
-									>
-										Cancel
-									</button>
-								)}
-								{file.uploadStatus === "error" && (
-									<button
-										type="button"
-										style={buttonStyle}
-										onClick={() => retryUpload(file.id)}
-									>
-										Retry
-									</button>
-								)}
-							</div>
-							<progress
-								value={loaded}
-								max={total}
-								style={{ width: "100%", height: "6px" }}
-							/>
-						</li>
-					);
-				})}
-			</ul>
+								<CancelIcon className="size-4" />
+							</IconButton>
+						)}
+						{file.uploadStatus === "error" && (
+							<IconButton
+								aria-label={`Retry ${file.name}`}
+								title="Retry"
+								onClick={() => retryUpload(file.id)}
+							>
+								<RetryIcon className="size-4" />
+							</IconButton>
+						)}
+					</>
+				)}
+			/>
 		</div>
 	);
 }

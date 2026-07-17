@@ -34,19 +34,32 @@ export function CancelRetryExample({ transport }: { transport: UploadTransport }
   }, [files, uploadFile]);
 
   return (
-    <div {...getRootProps()}>
-      <input {...getInputProps()} />
-      {files.map((file) => (
-        <div key={file.id}>
-          {file.name} — {file.uploadStatus ?? file.status}
-          {(file.uploadStatus === "queued" || file.uploadStatus === "uploading") && (
-            <button onClick={() => cancelUpload(file.id)}>Cancel</button>
-          )}
-          {file.uploadStatus === "error" && (
-            <button onClick={() => retryUpload(file.id)}>Retry</button>
-          )}
-        </div>
-      ))}
+    <div className="space-y-3">
+      <div {...getRootProps()} className="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700">
+        <input {...getInputProps()} />
+        <p>Drag files here, or click to browse</p>
+      </div>
+      <ul className="space-y-2">
+        {files.map((file) => (
+          <li key={file.id} className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate">{file.name}</span>
+              <span className="text-xs text-zinc-500">{file.size.toLocaleString()} bytes · {file.uploadStatus ?? file.status}</span>
+              {(file.uploadStatus === "queued" || file.uploadStatus === "uploading") && (
+                <button aria-label="Cancel" onClick={() => cancelUpload(file.id)}>✕</button>
+              )}
+              {file.uploadStatus === "error" && (
+                <button aria-label="Retry" onClick={() => retryUpload(file.id)}>↻</button>
+              )}
+            </div>
+            <progress
+              className="mt-2 h-1.5 w-full"
+              value={file.progress?.loaded ?? 0}
+              max={file.progress?.total ?? file.size}
+            />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
