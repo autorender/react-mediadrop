@@ -29,6 +29,19 @@ export default defineConfig({
 		posthog: {
 			key: "phc_mRwuB9ktYeQwz3tWni5ifqP3Ymby4a3dzuhoQHdH9WrY",
 		},
+		scripts: [
+			{
+				src: "https://www.googletagmanager.com/gtag/js?id=G-M2VY77VNNN",
+				strategy: "async",
+			},
+			{
+				content:
+					"window.dataLayer = window.dataLayer || [];" +
+					"function gtag(){dataLayer.push(arguments);}" +
+					"gtag('js', new Date());" +
+					"gtag('config', 'G-M2VY77VNNN');",
+			},
+		],
 	},
 	seo: {
 		og: {
