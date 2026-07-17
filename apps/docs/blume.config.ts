@@ -25,6 +25,11 @@ export default defineConfig({
 	deployment: {
 		site: "https://www.mediadrop.dev/docs",
 	},
+	analytics: {
+		posthog: {
+			key: "phc_mRwuB9ktYeQwz3tWni5ifqP3Ymby4a3dzuhoQHdH9WrY",
+		},
+	},
 	seo: {
 		og: {
 			palette: { accent: "#0B6A88" },
