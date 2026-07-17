@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
-import { createMockTransport } from "./shared/mockTransport";
+import { createMockTransport } from "../components/shared/mockTransport";
 
 // The docs site has no backend to issue real presigned URLs. This stands in
 // for "your server returns a presigned PUT URL for this file" — the

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { MediaDropFile } from "react-mediadrop";
 import { useMediaDrop } from "react-mediadrop";
-import { Dropzone } from "./shared/Dropzone";
-import { CancelIcon, IconButton, RetryIcon } from "./shared/IconButton";
-import { createMockTransport } from "./shared/mockTransport";
-import { UploadFileList } from "./shared/UploadFileList";
+import { Dropzone } from "../components/shared/Dropzone";
+import {
+	CancelIcon,
+	IconButton,
+	RetryIcon,
+} from "../components/shared/IconButton";
+import { createMockTransport } from "../components/shared/mockTransport";
+import { UploadFileList } from "../components/shared/UploadFileList";
 
 export default function CancelRetryExample() {
 	const [forceFail, setForceFail] = useState(true);

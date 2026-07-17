@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
-import { createMockTransport } from "./shared/mockTransport";
+import { createMockTransport } from "../components/shared/mockTransport";
 
 function noSpacesValidator(file: File) {
 	if (file.name.includes(" ")) {

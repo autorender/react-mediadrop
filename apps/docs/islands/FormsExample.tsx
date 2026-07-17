@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
-import { Button } from "./shared/Button";
-import { Dropzone } from "./shared/Dropzone";
-import { FileList } from "./shared/FileList";
+import { Button } from "../components/shared/Button";
+import { Dropzone } from "../components/shared/Dropzone";
+import { FileList } from "../components/shared/FileList";
 
 export default function FormsExample() {
 	const { acceptedFiles, getRootProps, getInputProps } = useMediaDrop();

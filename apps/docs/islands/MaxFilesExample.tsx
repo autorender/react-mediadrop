@@ -1,6 +1,6 @@
 import { useMediaDrop } from "react-mediadrop";
-import { Dropzone } from "./shared/Dropzone";
-import { FileList } from "./shared/FileList";
+import { Dropzone } from "../components/shared/Dropzone";
+import { FileList } from "../components/shared/FileList";
 
 export default function MaxFilesExample() {
 	const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =

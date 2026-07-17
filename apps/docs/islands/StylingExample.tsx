@@ -1,7 +1,7 @@
 import { useMediaDrop } from "react-mediadrop";
-import { cn } from "./shared/cn";
-import { Dropzone } from "./shared/Dropzone";
-import { FileList } from "./shared/FileList";
+import { cn } from "../components/shared/cn";
+import { Dropzone } from "../components/shared/Dropzone";
+import { FileList } from "../components/shared/FileList";
 
 function Chip({ label, on }: { label: string; on: boolean }) {
 	return (

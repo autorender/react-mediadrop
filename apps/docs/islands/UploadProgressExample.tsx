@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useMediaDrop } from "react-mediadrop";
-import { Dropzone } from "./shared/Dropzone";
-import { createMockTransport } from "./shared/mockTransport";
-import { UploadFileList } from "./shared/UploadFileList";
+import { Dropzone } from "../components/shared/Dropzone";
+import { createMockTransport } from "../components/shared/mockTransport";
+import { UploadFileList } from "../components/shared/UploadFileList";
 
 export default function UploadProgressExample() {
 	const { files, getRootProps, getInputProps, uploadFile } = useMediaDrop({

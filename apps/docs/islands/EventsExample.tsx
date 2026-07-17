@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMediaDrop } from "react-mediadrop";
-import { Dropzone } from "./shared/Dropzone";
-import { FileList } from "./shared/FileList";
+import { Dropzone } from "../components/shared/Dropzone";
+import { FileList } from "../components/shared/FileList";
 
 export default function EventsExample() {
 	const [stopPropagation, setStopPropagation] = useState(false);
