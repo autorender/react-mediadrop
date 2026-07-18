@@ -28,6 +28,7 @@ export default defineConfig({
 		repo: true,
 	},
 	deployment: {
+		base: "/docs",
 		site: "https://www.mediadrop.dev/docs",
 	},
 	analytics: {
