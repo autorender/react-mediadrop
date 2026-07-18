@@ -41,8 +41,6 @@ full option list (`method`, `fieldName`, `headers`, `withCredentials`,
   (`0`) by default; set it if a task needs "don't hang forever on a dead
   connection."
 - It has **no resumability** — a failed or canceled upload restarts from
-  byte zero. Resumable, multi-request transports (S3 multipart, tus)
-  currently live on a separate branch, not in this codebase — see
-  [scope.md](scope.md).
+  byte zero.
 - `formData: false` still sends one request, one body — it does not
   split a file into parts.

@@ -1,0 +1,17 @@
+header[data-blume-header] a[href="/"] span[aria-hidden="true"] {
+	height: 32px;
+	width: 32px;
+}
+
+header[data-blume-header] a[href="/"] span[aria-hidden="true"] svg {
+	height: 32px;
+	width: 32px;
+}
+
+header[data-blume-header] a[href="/"] span:not([aria-hidden]) {
+	font-size: 1.5rem;
+}
+
+img[alt="react-mediadrop"] {
+	height: 24px;
+}

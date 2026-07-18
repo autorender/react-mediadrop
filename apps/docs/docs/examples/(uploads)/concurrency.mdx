@@ -1,0 +1,65 @@
+---
+title: Concurrency limit
+description: Cap how many uploads run at once with the concurrency option — the rest wait as "queued".
+---
+
+Pass `concurrency` to `useMediaDrop({ transport, concurrency })` to cap
+how many uploads run at once. Every file beyond that cap sits at
+`uploadStatus: "queued"` until a slot frees up.
+
+<ConcurrencyExample />
+
+:::info
+This page's transport is simulated, so multiple files can be dropped
+at once with no live backend to send them to. The `concurrency` option
+below is real — see
+[Upload](/guides/upload#how-do-i-configure-concurrency-retry-and-cancel).
+:::
+
+```tsx
+import { useEffect } from "react";
+import { useMediaDrop } from "react-mediadrop";
+
+export function ConcurrencyExample({ transport }: { transport: UploadTransport }) {
+  const { files, getRootProps, getInputProps, uploadFile } = useMediaDrop({
+    transport,
+    concurrency: 2, // at most 2 uploads in flight at once. Default 1.
+  });
+
+  useEffect(() => {
+    for (const file of files) {
+      if (file.status === "accepted" && file.uploadStatus === undefined) {
+        uploadFile(file.id);
+      }
+    }
+  }, [files, uploadFile]);
+
+  return (
+    <div className="space-y-3">
+      <div {...getRootProps()} className="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700">
+        <input {...getInputProps()} />
+        <p>Drop several files at once</p>
+      </div>
+      <ul className="space-y-2">
+        {files.map((file) => (
+          <li key={file.id} className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
+            <div className="flex justify-between">
+              <span>{file.name}</span>
+              <span className="text-xs text-zinc-500">{file.size.toLocaleString()} bytes · {file.uploadStatus ?? file.status}</span>
+            </div>
+            <progress
+              className="mt-2 h-1.5 w-full"
+              value={file.progress?.loaded ?? 0}
+              max={file.progress?.total ?? file.size}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+Drop more files than the `concurrency` cap and only that many ever show
+`"uploading"` at once — the rest hold at `"queued"` until a slot frees
+up, then the queue picks the next one automatically.

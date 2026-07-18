@@ -1,0 +1,53 @@
+---
+title: Introduction
+description: A hooks-first, headless file uploader for React
+---
+
+**react-mediadrop** is a file intake, validation, and upload engine for
+React, published to npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
+
+You can use react-mediadrop for:
+
+- A drag-and-drop upload zone with your own markup and styling
+- Client-side file validation (type, size, count) before anything uploads
+- A queue that uploads multiple files with concurrency, retry, and cancel
+- Upload progress and per-file status rendered in your own UI
+
+## Headless-first
+
+You own the markup. `getRootProps`/`getInputProps` return plain props to
+spread onto whatever elements you already have — no prebuilt widget, no
+dashboard, nothing to override. Style it exactly like the rest of your app.
+
+## What's here today
+
+Core handles file intake, drag/drop, and validation. Upload builds on top
+of it: a pluggable transport contract, a queue with concurrency/retry/
+cancel, and a reference XHR transport.
+
+Not yet: pause/resume, remote-provider import, OAuth, image transforms,
+a prebuilt widget. See [Roadmap](/roadmap) for what's next.
+
+## Which transport should I use?
+
+| Transport | Import | Request shape | Resumable? |
+| --- | --- | --- | --- |
+| XHR | `react-mediadrop/xhr-upload` | One request, whole file | No |
+
+If your files are small enough that a dropped connection losing all
+progress is acceptable, plain XHR covers it.
+
+<CardGroup cols={2}>
+  <Card title="Examples" icon="zap" href="/examples/basic">
+    See a minimal working dropzone
+  </Card>
+  <Card title="Core concepts" icon="box" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+  <Card title="Validation" icon="shield-check" href="/guides/validation">
+    Restrictions and custom validators
+  </Card>
+  <Card title="Upload" icon="cloud-upload" href="/guides/upload">
+    The queue, concurrency, retry, and cancel
+  </Card>
+</CardGroup>

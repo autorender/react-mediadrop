@@ -1,30 +1,59 @@
 <p align="center">
-  <img src="assets/logo.png" alt="mediadrop logo" width="120" />
+  <img src="assets/readme-banner.png" alt="react-mediadrop banner" />
 </p>
-
-# react-mediadrop
 
 [![npm](https://img.shields.io/npm/v/react-mediadrop.svg?style=flat-square)](https://www.npmjs.com/package/react-mediadrop)
 ![CI](https://img.shields.io/github/actions/workflow/status/autorender/react-mediadrop/ci.yml?branch=main&style=flat-square&label=CI)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![bundle size](https://img.shields.io/badge/min%2Bgzip-4.4KB-success?style=flat-square)](https://bundlephobia.com/package/react-mediadrop)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](CODE_OF_CONDUCT.md)
 [![skills.sh](https://skills.sh/b/autorender/react-mediadrop)](https://skills.sh/autorender/react-mediadrop)
 
-**mediadrop** is a lightweight, headless-first file uploader for React — file
-intake, drag/drop, validation, and upload (queue, concurrency, retry, cancel)
-via a single `useMediaDrop` hook. No prebuilt widget — you own the markup.
+## Introduction
 
-Documentation and examples at https://react-mediadrop.mintlify.site.
-Source code at https://github.com/autorender/react-mediadrop.
+**mediadrop** is a hooks-first, headless file uploader for React — file
+intake, drag/drop, validation, and upload (queue, concurrency, retry,
+cancel) via a single `useMediaDrop` hook. No prebuilt widget — you own the
+markup.
+
+`react-mediadrop` ships at **4.4 KB minified + gzipped** (per
+[Bundlephobia](https://bundlephobia.com/package/react-mediadrop)); the
+optional `xhr-upload` transport is a separate subpath import, so you only
+pay for it if you use it.
+
+Documentation and examples at https://www.mediadrop.dev/docs.
+
+## Why
+
+We built mediadrop for Autorender's own upload widget — the entry point for
+every file and media asset into our pipeline. It went through several
+iterations before it looked like this: a lightweight, hooks-first, headless
+core, with a pluggable transport layer instead of one fixed upload path.
+
+What came out of it is a set of ordinary React primitives — hooks,
+validation, a transport contract — the same shape whether you're wiring
+them into a media pipeline or a plain upload form. We're open-sourcing
+mediadrop so any team building an uploader can start from the same
+primitives we did.
+
+If you've used `react-dropzone`, the API will feel familiar —
+`useMediaDrop` returns the same `getRootProps`/`getInputProps` shape, plus a
+built-in upload queue react-dropzone doesn't have.
 
 ## Install
 
 ```sh
 pnpm add react-mediadrop
+# or: npm install react-mediadrop
+# or: yarn add react-mediadrop
 ```
 
-or `npm install` / `yarn add` — `react-mediadrop` ships as ESM with TypeScript
-types included, and works with any modern bundler.
+- Ships as **ESM** with TypeScript types included — works with any modern
+  bundler.
+- Requires **React 18+**.
+- No `window`/`document` access at render time — safe to import in SSR
+  frameworks (Next.js, Remix, etc.); browser APIs only run inside event
+  handlers, on the client.
 
 ## Quickstart
 
@@ -53,8 +82,8 @@ const { files, uploadAll } = useMediaDrop({
 
 Without `transport`, nothing is uploaded — `useMediaDrop` only tracks
 intake/validation state. See the
-[quickstart](https://react-mediadrop.mintlify.site/getting-started/quickstart)
-and [upload guide](https://react-mediadrop.mintlify.site/guides/upload) for
+[quickstart](https://www.mediadrop.dev/docs/getting-started/quickstart)
+and [upload guide](https://www.mediadrop.dev/docs/guides/upload) for
 the full API.
 
 ## What's implemented
@@ -75,7 +104,9 @@ authoritative list.
 ## Packages
 
 Only `react-mediadrop` is published to npm — everything else is an internal,
-workspace-only source package bundled directly into it at build time.
+workspace-only source package bundled directly into it at build time. Only
+`react-mediadrop` matters if you're a consumer — the rest is internal build
+structure, listed here for contributors.
 
 | Package | Published? | What it is |
 | --- | --- | --- |
@@ -86,9 +117,25 @@ workspace-only source package bundled directly into it at build time.
 
 ## Example
 
-`examples/react-demo` (`pnpm --filter react-demo dev`) exercises
-`react-mediadrop` against a real backend — see `examples/test-server` —
-rather than a faked dev-server mock.
+`examples/react-demo` exercises `react-mediadrop` against a real backend
+(`examples/test-server`, a plain Express app) instead of a faked dev-server
+mock.
+
+| Example | Binding | Transports covered |
+| --- | --- | --- |
+| [`react-demo`](examples/react-demo) | `react-mediadrop` | `react-mediadrop/xhr-upload` |
+| [`test-server`](examples/test-server) | — | Real Express backend for `react-demo` |
+
+```sh
+# terminal 1 — backend, listens on http://localhost:8787
+pnpm --filter test-server dev
+
+# terminal 2 — frontend
+pnpm --filter react-demo dev
+```
+
+Open the demo, drop a file, hit "Upload all" — bytes land in
+`examples/test-server/uploads/` (git-ignored).
 
 ## Commands
 
@@ -101,10 +148,16 @@ pnpm lint
 pnpm size    # checks each published/bundled package's gzipped dist against its size budget
 ```
 
+## Support
+
+Questions or issues not covered by the [docs](https://www.mediadrop.dev/docs)?
+Open a [GitHub issue](https://github.com/autorender/react-mediadrop/issues) or
+email oss@autorender.io.
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
 
 ## License
 
-[MIT](LICENSE)
+Brought to you by [Autorender](https://autorender.io), [MIT](LICENSE)

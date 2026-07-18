@@ -1,0 +1,152 @@
+---
+title: Installation
+sidebar:
+  label: Installation
+description: Install react-mediadrop
+---
+
+react-mediadrop ships as a single npm package — no separate core or
+transport package to install.
+
+<Prompt
+  description="Integrate react-mediadrop correctly on the first try."
+  actions={["copy"]}
+>
+Purpose: integrate react-mediadrop correctly on the first try.
+
+**Setup**
+
+```
+npm install react-mediadrop
+# Requires React 18+.
+# In Next.js App Router (or any RSC setup), add "use client" to the
+# top of the file that calls useMediaDrop — it uses
+# useSyncExternalStore/useEffect and only runs in a Client Component.
+
+import { useMediaDrop } from "react-mediadrop";
+import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
+```
+
+**useMediaDrop(options?) — full option reference**
+
+| Option | Type | Default |
+| --- | --- | --- |
+| restrictions | MediaDropRestrictions | — |
+| validator | MediaDropValidator | — |
+| noClick | boolean | false |
+| noKeyboard | boolean | false |
+| noDrag | boolean | false |
+| transport | UploadTransport | — (opts into upload) |
+| concurrency | number | 1 |
+| retries | number | 0 |
+| retryDelays | number[] | — |
+| cancelGraceMs | number | 5000 |
+
+`MediaDropRestrictions: { maxFiles?, minSize?, maxSize?, accept?: string[] | string }`
+
+Return value (always present): files / acceptedFiles / rejectedFiles,
+isDragActive / isDragAccept / isDragReject, isFocused, isDragGlobal,
+removeFile(id), clearFiles(), open(), getRootProps(), getInputProps().
+Return type name: UseMediaDropResult.
+
+Only present when `transport` is passed: uploadFile(id), uploadAll(),
+cancelUpload(id), cancelAllUploads(), retryUpload(id). Without
+`transport`, none of these exist on the returned object and
+TypeScript will not let you call them.
+
+**createXhrUploadTransport(options) — the reference transport**
+
+| Option | Type | Default |
+| --- | --- | --- |
+| endpoint | string or (file) => string | required |
+| method | string | "POST" |
+| fieldName | string | "file" |
+| fields | object or (file) => object | — |
+| headers | object or (file) => object | — |
+| withCredentials | boolean | false |
+| formData | boolean | true |
+| isSuccessStatus | (status) => boolean | 200-299 |
+| stallTimeoutMs | number | 0 (disabled) |
+
+**ALWAYS DO**
+
+1. ALWAYS add "use client" at the top of any file calling useMediaDrop
+   in a Next.js App Router / RSC project.
+2. ALWAYS import from "react-mediadrop" and "react-mediadrop/xhr-upload"
+   only. Never import from @mediadrop/core or @mediadrop/xhr-upload —
+   those are private, unpublished packages bundled inside
+   react-mediadrop.
+3. ALWAYS pass `transport` before calling uploadFile/uploadAll/
+   cancelUpload/cancelAllUploads/retryUpload.
+4. ALWAYS write a custom transport as exactly one method,
+   `upload(file, { onProgress, signal }) => Promise<{ response?: unknown }>`.
+5. ALWAYS call the shared withRetry export for any retry logic a
+   custom transport needs of its own.
+
+**NEVER DO**
+
+1. NEVER assume pause/resume, a remote-provider import, OAuth, or a
+   prebuilt upload widget exist — none are implemented.
+2. NEVER add a retry loop, backoff, or concurrency limit inside a
+   custom transport or inside useMediaDrop's upload methods — the
+   queue and withRetry already own that.
+3. NEVER assume the default shouldRetry retries every failure — it
+   retries only 408, 429, 5xx, and statusless (network) errors; other
+   4xx statuses are not retried.
+4. NEVER treat createFileFingerprint as content-addressed — it hashes
+   name+size+type+lastModified+webkitRelativePath, not file bytes, so
+   two different files with identical metadata can collide.
+5. NEVER name the hook's return type MediaDropResult — the real
+   exported name is UseMediaDropResult.
+
+**Verification checklist**
+
+Before returning any solution, verify:
+- [ ] "use client" is present if this file runs in a Next.js App Router tree.
+- [ ] transport is passed to useMediaDrop before any upload method is called.
+- [ ] restrictions only use maxFiles/minSize/maxSize/accept — no invented options.
+- [ ] No retry/backoff/concurrency logic exists inside a custom transport.
+- [ ] Run `tsc` — it must reject uploadFile/uploadAll/etc. calls when
+      transport was not passed.
+
+Full reference: https://github.com/autorender/react-mediadrop/tree/main/skills/mediadrop
+</Prompt>
+
+:::note
+Requires **React 18+**.
+:::
+
+```package-install
+react-mediadrop
+```
+
+## Next.js / RSC
+
+:::warning
+`useMediaDrop` uses `useSyncExternalStore`/`useEffect`, so it only runs
+in a Client Component. Forgetting this is the single most common
+integration mistake — if you hit an error like:
+
+```
+Error: You're importing a component that needs `useState`. It only
+works in a Client Component but none of its parents are marked with
+"use client", so they're Server Components by default.
+```
+
+add `"use client"` to the top of the file that calls `useMediaDrop`:
+:::
+
+```tsx
+"use client";
+
+import { useMediaDrop } from "react-mediadrop";
+```
+
+<CardGroup cols={2}>
+  <Card title="Examples" icon="zap" href="/examples/basic">
+    See a minimal working dropzone
+  </Card>
+  <Card title="Agent skill" icon="bot" href="/getting-started/agent-skill">
+    Let your AI coding agent integrate this package for you
+  </Card>
+</CardGroup>

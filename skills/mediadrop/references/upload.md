@@ -4,9 +4,8 @@ Upload adds a real, working upload path on top of Core's file intake: a
 queue, concurrency, retry, cancel, and a pluggable transport contract, with
 `react-mediadrop/xhr-upload` as the reference transport.
 
-Advanced transports built on this same contract (S3 presigned/multipart,
-tus) exist on a separate branch for a future phase — not part of this
-codebase right now.
+Only the reference XHR transport ships today — additional transports are
+new work, not part of this codebase.
 
 This still does **not** add pause/resume, a remote-provider/OAuth story,
 or a widget — see [scope.md](scope.md) before assuming any of that
@@ -198,10 +197,9 @@ implementing exactly this — one method, one file, one attempt:
 
 `react-mediadrop` still exports the metadata-persistence utilities built
 for resumable transports, even though no transport in this codebase
-currently uses them (S3/tus, the transports that did, are on a separate
-branch). If you write a custom resumable transport, these exist so you
-don't have to invent your own metadata storage or "is this the same
-file" check:
+currently uses them. If you write a custom resumable transport, these
+exist so you don't have to invent your own metadata storage or "is this
+the same file" check:
 
 ```ts
 type MediaDropUploadSessionStore = {
@@ -236,7 +234,8 @@ contents inside core.
 ## What's still not implemented — do not build around it, do not fake it
 
 See [scope.md](scope.md) for the authoritative, up-to-date list. In short:
-pause/resume, S3/tus transports, persistence of file *bytes* across a
-reload, remote-provider import, OAuth, image transforms, and any
-specific CDN/storage-provider adapter are all out of scope — don't improvise a
-stand-in for any of them inside mediadrop's public API.
+pause/resume, a bundled resumable/multi-request transport, persistence
+of file *bytes* across a reload, remote-provider import, OAuth, image
+transforms, and any specific CDN/storage-provider adapter are all out of
+scope — don't improvise a stand-in for any of them inside mediadrop's
+public API.

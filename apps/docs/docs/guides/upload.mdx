@@ -1,0 +1,195 @@
+---
+title: Upload
+sidebar:
+  label: Upload
+description: The queue, concurrency, retry, and cancel contract
+---
+
+Upload adds a queue, concurrency, retry, and cancel on top of Core's file
+intake, behind a pluggable transport contract —
+`react-mediadrop/xhr-upload` ships as the reference transport.
+
+This still does **not** add pause/resume, a remote-provider/OAuth story,
+or a widget.
+
+## How does upload work?
+
+1. You pick a transport — a small object with one method,
+   `upload(file, { onProgress, signal })`. `createXhrUploadTransport()` is
+   the reference implementation. You can write your own for anything else
+   (a provider SDK, a test double, a more advanced resumable protocol).
+2. You pass that transport to `useMediaDrop({ transport, ... })` — the
+   exact same option regardless of which transport it is.
+3. Only then do `uploadFile`/`uploadAll`/`cancelUpload`/
+   `cancelAllUploads`/`retryUpload` exist on the returned object — without
+   `transport`, they are absent, and TypeScript will not let you call
+   them. This mirrors Core's own restraint: no feature exists halfway.
+4. Every file's upload progress lives on the `MediaDropFile` itself
+   (`uploadStatus`, `progress`, `uploadError`, `uploadResult`,
+   `uploadAttempts`) — you read it the same way you already read
+   `status`/`errors`, via `files`.
+
+## Where does retry and concurrency logic live?
+
+`react-mediadrop` owns all upload orchestration. A transport's job is
+exactly one thing: send one file, once, report progress, resolve or
+reject. It has **no retry loop and no concurrency limit of its own** —
+both are the queue's job. `useMediaDrop`'s upload methods are thin
+pass-throughs to the same queue.
+
+Writing your own transport? Retry and concurrency stay out of it — see
+[Writing a custom transport](/guides/custom-transport) for the shared
+`withRetry` engine it should call into instead.
+
+### The shared retry engine
+
+`withRetry(attempt, options, signal)` is the one retry engine, used by the
+queue and available to any transport that needs finer-grained retry of
+its own:
+
+```ts
+type RetryOptions = {
+	retries?: number; // retries after the first attempt. Default 0.
+	retryDelays?: number[]; // backoff per retry; last value repeats if exhausted.
+	shouldRetry?: (error: unknown, attemptNumber: number) => boolean; // default: defaultShouldRetry
+	jitter?: number; // 0–1, randomizes each delay by up to this fraction. Default 0.
+};
+```
+
+`defaultShouldRetry`, the built-in default, retries **408, 429, and every
+5xx** status, plus anything without a recognizable HTTP status (network
+errors) — it does not retry other 4xx statuses (400/401/403/404/413, etc.),
+since those describe a request that fails the same way every time. Pass
+your own `shouldRetry` to override this classification entirely. `jitter`
+matters when many requests could fail at once (e.g. every part of a
+multipart upload hitting the same transient network issue) — it spreads
+their retries out instead of having them all retry in lockstep.
+
+## What upload fields does `MediaDropFile` have?
+
+```ts
+type MediaDropFile = {
+	// ...status, errors, etc. — unchanged from Core...
+	uploadStatus?: "queued" | "uploading" | "done" | "error" | "canceled";
+	progress?: { loaded: number; total: number | null };
+	uploadError?: MediaDropError; // code: "upload-error", present after a failed attempt
+	uploadResult?: unknown; // whatever the transport resolved with — opaque to the engine
+	uploadAttempts?: number; // 1-indexed, for the current/last upload run
+};
+```
+
+`uploadError.code` is always `"upload-error"`. `uploadError.status` (HTTP
+status) and `uploadError.sourceCode` (a transport's own finer-grained
+error classification, if it attaches one) are both optional. Don't switch
+exhaustively on `sourceCode`; it's transport-specific and open-ended.
+
+`uploadStatus` is **`undefined` until an upload is requested** for that
+file — a freshly-accepted file has no `uploadStatus` at all, not
+`"queued"`. It only ever applies to `status: "accepted"` files.
+
+### `status` and `uploadStatus` stay separate
+
+`status` (`"idle" | "accepted" | "rejected"`) is the Core validation
+verdict and is **never touched by the upload queue** — it's decided once,
+when the file is added. `uploadStatus` is a completely independent field
+for the upload lifecycle:
+
+- `getAcceptedFiles()`/`getRejectedFiles()` behave identically whether or
+  not any upload has started, finished, or failed.
+- `maxFiles` counting (based on `status`) is unaffected by upload
+  progress — a file finishing its upload does not free up a `maxFiles`
+  slot.
+
+## How do I configure concurrency, retry, and cancel?
+
+```ts
+useMediaDrop({
+	transport,
+	concurrency: 3, // max uploads in flight at once. Default 1 (sequential).
+	retries: 2, // retries *after* the first attempt, shared for every file. Default 0.
+	retryDelays: [1000, 2000, 4000], // backoff per retry; last value repeats if exhausted.
+	cancelGraceMs: 5000, // force-free a slot this long after cancel if the transport never settles. Default 5000.
+});
+```
+
+- **`uploadFile(id)`** — queues a file (or restarts it, even if it
+  already finished/failed/was canceled). No-op if the file isn't `status:
+  "accepted"` or is already in flight.
+- **`uploadAll()`** — queues every currently `status: "accepted"` file.
+- **`cancelUpload(id)`** — aborts it if it's uploading (via
+  `AbortSignal`, standard web API), or drops it if it's merely
+  queued. Ends in `uploadStatus: "canceled"`, not `"error"`.
+- **`cancelAllUploads()`** — cancels every queued and in-flight file.
+- **`retryUpload(id)`** — re-enqueues a file, but only if its last
+  attempt ended in `uploadStatus: "error"` — a no-op otherwise. This is a
+  *manual* retry after automatic retries were exhausted, distinct from
+  the automatic `retries` config above.
+
+Retrying stops immediately once a file is canceled — a cancel always
+wins over a pending retry.
+
+:::info
+**`cancelGraceMs` (default `5000`)** is a safety net, not the normal
+path: a well-behaved transport wires up `signal` and rejects promptly
+once aborted, so cancel usually settles almost immediately. If a
+transport doesn't, this timer force-frees the slot after the grace
+period regardless.
+:::
+
+**`removeFile(id)`/`clearFiles()` cancel any in-flight upload for the
+files they remove** — no orphaned request keeps running in the
+background with a leaked concurrency slot.
+
+## What's the transport contract?
+
+```ts
+type UploadTransport = {
+	upload(
+		file: MediaDropFile,
+		context: {
+			onProgress: (progress: { loaded: number; total: number | null }) => void;
+			signal: AbortSignal;
+		},
+	): Promise<{ response?: unknown }>;
+};
+```
+
+See [Writing a custom transport](/guides/custom-transport) for the full
+guide.
+
+## What are the session-persistence utilities for?
+
+`react-mediadrop` still exports the metadata-persistence utilities built
+for resumable transports, even though no transport in this codebase
+currently uses them:
+
+```ts
+type MediaDropUploadSessionStore = {
+	get(key: string): Promise<unknown | null>;
+	set(key: string, value: unknown): Promise<void>;
+	remove(key: string): Promise<void>;
+};
+
+createMemoryUploadSessionStore(); // in-process only — gone on reload, gone between tabs
+createBrowserUploadSessionStore({ prefix? }); // localStorage-backed, SSR-safe (no-op without `window`)
+
+createFileFingerprint(file: File): string; // name+size+type+lastModified+webkitRelativePath, not file contents
+```
+
+These stores hold metadata only — upload IDs, byte offsets, completed
+part numbers — never file bytes. `createFileFingerprint` is
+metadata-based on purpose: hashing file *contents* would let two
+selections of a huge file be compared reliably, but reading the whole
+file to do that is exactly the cost react-mediadrop avoids imposing by
+default. Two different files with identical name, size, type, modified
+time, and relative path will still collide — this is "looks like the
+same file," not a guarantee.
+
+<CardGroup cols={2}>
+  <Card title="Writing a custom transport" icon="plug" href="/guides/custom-transport">
+    Implement the transport contract yourself
+  </Card>
+  <Card title="Core concepts" icon="box" href="/guides/core-concepts">
+    The file model, the store, and drag state
+  </Card>
+</CardGroup>

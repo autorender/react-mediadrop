@@ -1,0 +1,58 @@
+---
+title: Agent skill
+sidebar:
+  label: Agent skill
+description: Install the mediadrop Agent Skill so your AI coding agent integrates react-mediadrop correctly
+---
+
+react-mediadrop ships an [Agent Skill](https://skills.sh) — a reference
+doc your AI coding agent reads before it writes code against this
+package, so it gets the file model, the transport contract, and the
+retry engine right on the first try instead of guessing from the
+package name.
+
+## Install the skill
+
+```sh
+npx skills add autorender/react-mediadrop
+```
+
+This pulls `skills/mediadrop` from the
+[react-mediadrop repo](https://github.com/autorender/react-mediadrop)
+into your project so any Agent Skills-compatible tool (Claude Code,
+Cursor, Copilot) picks it up automatically.
+
+## What's in the skill
+
+- **`SKILL.md`** — when to use it, the mental model, and links to every
+  reference below.
+- **`references/core-concepts.md`** — the file model, the store, drag
+  state.
+- **`references/validation.md`** — restrictions and custom validators.
+- **`references/upload.md`** — the queue, concurrency, retry, and
+  cancel contract.
+- **`references/xhr-upload.md`** — the reference transport.
+- **`references/react.md`** — the `useMediaDrop` hook surface.
+- **`references/scope.md`** — what's deliberately not implemented yet,
+  so your agent doesn't invent a pause/resume or OAuth API that isn't
+  there.
+- **`references/troubleshooting.md`** — the same integration mistakes
+  covered in [Installation](/getting-started/installation) and
+  [Core concepts](/guides/core-concepts), written for an agent to check
+  against.
+
+:::info
+The skill describes the same package as this site — same types, same
+defaults, same limitations. If you ever see the two disagree, that's a
+docs bug: open an issue on the
+[repo](https://github.com/autorender/react-mediadrop).
+:::
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/getting-started/installation">
+    Add the package to your project
+  </Card>
+  <Card title="Examples" icon="zap" href="/examples/basic">
+    See a minimal working dropzone
+  </Card>
+</CardGroup>
