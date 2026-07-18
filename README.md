@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="assets/logo.png" alt="mediadrop logo" width="120" />
+  <img src="assets/readme-banner.png" alt="react-mediadrop banner" />
 </p>
-
-# react-mediadrop
 
 [![npm](https://img.shields.io/npm/v/react-mediadrop.svg?style=flat-square)](https://www.npmjs.com/package/react-mediadrop)
 ![CI](https://img.shields.io/github/actions/workflow/status/autorender/react-mediadrop/ci.yml?branch=main&style=flat-square&label=CI)
