@@ -33,14 +33,14 @@ see this, something outside mediadrop's public API is mutating file state
 — don't "fix" it by making upload move files between `status` buckets;
 that would be a regression, not a fix.
 
-## "I want S3 or tus support"
+## "I want to use a different upload protocol or storage provider"
 
-Not in this codebase right now — `@mediadrop/s3`/`@mediadrop/tus`
-existed on the same transport contract but currently live on a separate
-branch for a future phase. See [scope.md](scope.md). Don't stand up a
-fake tus/S3 backend to work around this; for a generic endpoint you
-control today, use the bundled [xhr-upload transport](xhr-upload.md)
-(`react-mediadrop/xhr-upload`).
+Only the single-request XHR transport ships today — see [scope.md](scope.md).
+Don't stand up a fake backend to work around this; for a generic
+endpoint you control, use the bundled
+[xhr-upload transport](xhr-upload.md) (`react-mediadrop/xhr-upload`).
+Anything else is new work: write a custom transport against the
+contract in [upload.md](upload.md).
 
 ## "An upload kept running after I removed/tore down its component"
 

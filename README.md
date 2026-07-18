@@ -9,31 +9,51 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](CODE_OF_CONDUCT.md)
 [![skills.sh](https://skills.sh/b/autorender/react-mediadrop)](https://skills.sh/autorender/react-mediadrop)
 
-**mediadrop** is a headless file uploader for React — file intake, drag/drop,
-validation, and upload (queue, concurrency, retry, cancel) via a single
-`useMediaDrop` hook. No prebuilt widget — you own the markup.
+## Introduction
+
+**mediadrop** is a hooks-first, headless file uploader for React — file
+intake, drag/drop, validation, and upload (queue, concurrency, retry,
+cancel) via a single `useMediaDrop` hook. No prebuilt widget — you own the
+markup.
 
 `react-mediadrop` ships at **4.4 KB minified + gzipped** (per
 [Bundlephobia](https://bundlephobia.com/package/react-mediadrop)); the
 optional `xhr-upload` transport is a separate subpath import, so you only
-pay for it if you use it. If you've used `react-dropzone`, the API will feel
-familiar — `useMediaDrop` returns the same `getRootProps`/`getInputProps`
-shape, plus a built-in upload queue react-dropzone doesn't have.
+pay for it if you use it.
 
 Documentation and examples at https://www.mediadrop.dev/docs.
-Source code at https://github.com/autorender/react-mediadrop.
+
+## Why
+
+We built mediadrop for Autorender's own upload widget — the entry point for
+every file and media asset into our pipeline. It went through several
+iterations before it looked like this: a lightweight, hooks-first, headless
+core, with a pluggable transport layer instead of one fixed upload path.
+
+What came out of it is a set of ordinary React primitives — hooks,
+validation, a transport contract — the same shape whether you're wiring
+them into a media pipeline or a plain upload form. We're open-sourcing
+mediadrop so any team building an uploader can start from the same
+primitives we did.
+
+If you've used `react-dropzone`, the API will feel familiar —
+`useMediaDrop` returns the same `getRootProps`/`getInputProps` shape, plus a
+built-in upload queue react-dropzone doesn't have.
 
 ## Install
 
 ```sh
 pnpm add react-mediadrop
+# or: npm install react-mediadrop
+# or: yarn add react-mediadrop
 ```
 
-or `npm install` / `yarn add` — `react-mediadrop` ships as ESM with TypeScript
-types included, and works with any modern bundler. Requires **React 18+**;
-no `window`/`document` access at render time, so it's safe to import in SSR
-frameworks (Next.js, Remix, etc.) — browser APIs only run inside event
-handlers, on the client.
+- Ships as **ESM** with TypeScript types included — works with any modern
+  bundler.
+- Requires **React 18+**.
+- No `window`/`document` access at render time — safe to import in SSR
+  frameworks (Next.js, Remix, etc.); browser APIs only run inside event
+  handlers, on the client.
 
 ## Quickstart
 
@@ -97,9 +117,25 @@ structure, listed here for contributors.
 
 ## Example
 
-`examples/react-demo` (`pnpm --filter react-demo dev`) exercises
-`react-mediadrop` against a real backend — see `examples/test-server` —
-rather than a faked dev-server mock.
+`examples/react-demo` exercises `react-mediadrop` against a real backend
+(`examples/test-server`, a plain Express app) instead of a faked dev-server
+mock.
+
+| Example | Binding | Transports covered |
+| --- | --- | --- |
+| [`react-demo`](examples/react-demo) | `react-mediadrop` | `react-mediadrop/xhr-upload` |
+| [`test-server`](examples/test-server) | — | Real Express backend for `react-demo` |
+
+```sh
+# terminal 1 — backend, listens on http://localhost:8787
+pnpm --filter test-server dev
+
+# terminal 2 — frontend
+pnpm --filter react-demo dev
+```
+
+Open the demo, drop a file, hit "Upload all" — bytes land in
+`examples/test-server/uploads/` (git-ignored).
 
 ## Commands
 
@@ -124,4 +160,4 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
 
 ## License
 
-[MIT](LICENSE)
+Brought to you by [Autorender](https://autorender.io), [MIT](LICENSE)

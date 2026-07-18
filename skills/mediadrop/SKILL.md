@@ -14,7 +14,7 @@ metadata:
 
 # mediadrop — Core (file intake) + Upload
 
-mediadrop is a lightweight, headless-first file uploader for React.
+mediadrop is a hooks-first, headless file uploader for React.
 **Core** covers file selection, drag/drop, and validation via the
 `useMediaDrop` hook. **Upload** adds a real upload path on top: a
 pluggable transport contract, a queue with concurrency/retry/cancel, and
@@ -33,10 +33,9 @@ transport never bundles its code. You only ever install
 `react-mediadrop`; never `@mediadrop/core` or `@mediadrop/xhr-upload`
 directly.
 
-A vanilla JS/DOM binding, and additional transports (S3 presigned/multipart,
-tus) built on this same contract, exist on a separate branch for a future
-phase — not part of this codebase right now. Don't build around them as
-if they were available; see [references/scope.md](references/scope.md).
+A vanilla JS/DOM binding, and additional transports built on this same
+contract, are not part of this codebase right now. Don't build around
+them as if they were available; see [references/scope.md](references/scope.md).
 
 Read [references/scope.md](references/scope.md) first if you are unsure
 whether a feature exists yet — it is the authoritative "what's real" list.
@@ -110,9 +109,9 @@ model, store, and drag-state semantics in detail.
   pause/resume, persistence of file *bytes* across a page reload,
   remote-provider import (Google Drive/Dropbox-style pickers), OAuth, a
   prebuilt dashboard/progress widget, image transforms, a vanilla
-  JS/DOM binding, S3/tus support (none of this is part of this codebase
-  right now — see [references/scope.md](references/scope.md)), or any
-  vendor-specific adapter. None of that is built here.
+  JS/DOM binding, or any vendor-specific adapter (none of this is part
+  of this codebase right now — see [references/scope.md](references/scope.md)).
+  None of that is built here.
 - **Retry/concurrency logic lives in one place**: the shared `withRetry`
   engine, called via the upload queue. Don't add a second retry/backoff
   implementation inside a transport (including a custom one you write) or

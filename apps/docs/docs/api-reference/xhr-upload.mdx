@@ -56,12 +56,11 @@ const { files } = useMediaDrop({ transport, concurrency: 3, retries: 2 });
   default; set it if a task needs "don't hang forever on a dead
   connection."
 - It has **no resumability** — a failed or canceled upload restarts from
-  byte zero. Resumable, multi-request transports (S3 multipart, tus)
-  aren't part of this codebase — see [Roadmap](/roadmap).
+  byte zero.
 - `formData: false` still sends one request, one body — it does not
   split a file into parts.
 
-Need something else — a provider SDK, a resumable protocol, a test
+Need something else — a provider SDK, a different protocol, a test
 double? See [Writing a custom transport](/guides/custom-transport).
 
 <CardGroup cols={2}>

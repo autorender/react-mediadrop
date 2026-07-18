@@ -4,10 +4,11 @@ export default defineConfig({
 	title: "react-mediadrop",
 	description: "A lightweight, headless-first file uploader for React",
 	logo: {
+		text: "",
 		image: {
 			alt: "react-mediadrop",
-			light: "/react-mediadrop-oss-logo-colored.svg",
-			dark: "/react-mediadrop-oss-logo-colored.svg",
+			light: "/react-mediadrop-wordmark-light.svg",
+			dark: "/react-mediadrop-wordmark-dark.svg",
 		},
 	},
 	theme: {
@@ -49,12 +50,13 @@ export default defineConfig({
 	},
 	seo: {
 		og: {
+			logo: "/react-mediadrop-wordmark-dark.svg",
 			palette: {
-				accent: "#0B6A88",
-				background: "#020617",
-				foreground: "#F8FAFC",
-				muted: "#94A3B8",
-				border: "#1E293B",
+				accent: "#00D9FF",
+				background: "#000000",
+				foreground: "#FFFFFF",
+				muted: "#999999",
+				border: "#262626",
 			},
 		},
 		x: {

@@ -78,15 +78,11 @@ the way the reference transport does — see its
 
 ## What about multi-request transports?
 
-A multi-request transport (splitting one file into several requests,
-like a resumable protocol) is still "one file, one `upload()` call" from
-the queue's point of view — internally it may issue many requests and
-retry individual ones via the shared `withRetry`, called
-again for that finer-grained retry, but never a second, hand-rolled retry
-implementation.
-
-Resumable transports (S3 multipart, tus) aren't part of this codebase
-today — see [Roadmap](/roadmap).
+A transport that splits one file into several requests is still "one
+file, one `upload()` call" from the queue's point of view — internally
+it may issue many requests and retry individual ones via the shared
+`withRetry`, called again for that finer-grained retry, but never a
+second, hand-rolled retry implementation.
 
 <CardGroup cols={2}>
   <Card title="Upload" icon="cloud-upload" href="/guides/upload">

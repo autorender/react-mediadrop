@@ -43,17 +43,6 @@ See [upload.md](upload.md) for the full contract. Summary:
   `uploadError`, `uploadResult`, `uploadAttempts` — kept separate from the
   Core `status`/`errors` fields, which upload never touches.
 
-## Previously implemented, currently removed (S3, tus)
-
-`@mediadrop/s3` (`createS3UploadTransport`/`createS3MultipartUploadTransport`)
-and `@mediadrop/tus` (`createTusUploadTransport`) were built on the same
-transport contract, plus resumable-metadata support in
-`@mediadrop/core` (`MediaDropUploadSessionStore`, `createFileFingerprint`)
-and `withRetry`'s `shouldRetry`/`jitter` options. All of it currently
-lives on a separate branch for a future phase — none of it is in this
-codebase right now. Don't reintroduce it piecemeal or assume any of it
-exists; if a task needs it, that's new work, not "using mediadrop as-is."
-
 ## Not implemented — do not build around it, do not fake it
 
 If a task requires any of the following, say so explicitly rather than
@@ -61,8 +50,9 @@ improvising a stand-in inside mediadrop's public API:
 
 - **Pause/resume.** Canceling an upload ends it; there's no "pause and
   continue later" distinct from cancel.
-- **S3 or tus transports.** See "Previously implemented, currently
-  removed" above — they exist on a separate branch, not in this codebase.
+- **A bundled resumable or multi-request transport.** Only the
+  single-request XHR transport ships; anything else is new work — write
+  a custom transport against the contract in [upload.md](upload.md).
 - **Persistence of file bytes across a page reload.**
 - **Remote-provider import** (Google Drive/Dropbox/URL-import style pickers,
   an Uppy-Companion-equivalent server).

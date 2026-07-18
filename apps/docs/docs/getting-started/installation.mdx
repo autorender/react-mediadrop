@@ -85,9 +85,8 @@ TypeScript will not let you call them.
 
 **NEVER DO**
 
-1. NEVER assume pause/resume, S3/tus resumable transports, a
-   remote-provider import, OAuth, or a prebuilt upload widget exist —
-   none are implemented.
+1. NEVER assume pause/resume, a remote-provider import, OAuth, or a
+   prebuilt upload widget exist — none are implemented.
 2. NEVER add a retry loop, backoff, or concurrency limit inside a
    custom transport or inside useMediaDrop's upload methods — the
    queue and withRetry already own that.

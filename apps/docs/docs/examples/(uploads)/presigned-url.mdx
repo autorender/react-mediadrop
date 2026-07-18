@@ -56,7 +56,6 @@ export function PresignedUploadExample() {
 ```
 
 `formData: false` sends the file's raw bytes as the request body &mdash; a
-single PUT/POST, not S3's multipart-upload API (multiple parts, an upload
-ID, a completion call). That protocol isn't part of this codebase; see
-[Roadmap](/roadmap). For anything else `createXhrUploadTransport` doesn't
+single PUT/POST, not a multipart upload (multiple parts, an upload ID, a
+completion call). For anything else `createXhrUploadTransport` doesn't
 cover, see [Writing a custom transport](/guides/custom-transport).
