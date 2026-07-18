@@ -49,7 +49,13 @@ export default defineConfig({
 	},
 	seo: {
 		og: {
-			palette: { accent: "#0B6A88" },
+			palette: {
+				accent: "#0B6A88",
+				background: "#020617",
+				foreground: "#F8FAFC",
+				muted: "#94A3B8",
+				border: "#1E293B",
+			},
 		},
 		x: {
 			handle: "vasantharb",
