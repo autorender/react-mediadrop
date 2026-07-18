@@ -1,6 +1,6 @@
 {
 	"name": "react-mediadrop",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Headless React hook (useMediaDrop) for file intake, validation, drag/drop, and upload — @mediadrop/core is bundled in, no separate install needed. The xhr-upload transport is a separate, tree-shakeable \"react-mediadrop/xhr-upload\" subpath.",
 	"license": "MIT",
 	"author": {
