@@ -1,7 +1,7 @@
 {
 	"name": "react-demo",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "Manual test bed for react-mediadrop's xhr-upload transport — not published, not part of the public API.",
 	"license": "MIT",
 	"type": "module",

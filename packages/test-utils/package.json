@@ -1,7 +1,7 @@
 {
 	"name": "@mediadrop/test-utils",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Internal-only test scaffolding (a shared MockXhr double, etc.) for mediadrop's transport packages. Not published.",
 	"license": "MIT",
 	"sideEffects": false,
