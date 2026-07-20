@@ -29,7 +29,7 @@ export default defineConfig({
 	},
 	deployment: {
 		base: "/docs",
-		site: "https://www.mediadrop.dev/docs",
+		site: "https://www.mediadrop.dev",
 	},
 	analytics: {
 		posthog: {
