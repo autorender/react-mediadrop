@@ -15,3 +15,21 @@ header[data-blume-header] a[href="/"] span:not([aria-hidden]) {
 img[alt="react-mediadrop"] {
 	height: 24px;
 }
+
+/* Docs example code blocks: a custom header (TSX label, copy, Open in
+   StackBlitz) sits flush above a headerless <CodeBlock>, so the two read as
+   one panel. Blume's own copy button still auto-attaches to any .prose pre;
+   suppress it here since the header already has one. */
+astro-island:has(+ astro-island [data-example-header]) > div {
+	margin-bottom: 1.5rem;
+}
+
+astro-island:has([data-example-header]) + div.prose > pre {
+	margin-top: 0;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+
+astro-island:has([data-example-header]) + div.prose pre [data-blume-copy] {
+	display: none;
+}
