@@ -3,38 +3,16 @@ title: Opening the file dialog
 description: Open the native file picker from your own button with open().
 ---
 
+import fileDialogCode from "../../../examples-source/file-dialog.tsx?raw";
+
 Open the native file picker from your own button, instead of the
 dropzone's default click-to-open.
 
 <FileDialogExample />
 
-```tsx
-import { useMediaDrop } from "react-mediadrop";
+<ExampleCodeHeader code={fileDialogCode} title="react-mediadrop — Opening the file dialog" />
 
-export function FileDialogExample() {
-  const { acceptedFiles, getRootProps, getInputProps, open } = useMediaDrop({
-    noClick: true,
-    noKeyboard: true,
-  });
-
-  return (
-    <div className="space-y-3">
-      <div {...getRootProps()} className="rounded-lg border-2 border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700">
-        <input {...getInputProps()} />
-        <p>Drag files here — clicking the dropzone itself does nothing</p>
-        <button type="button" onClick={open}>Choose files</button>
-      </div>
-      <ul className="space-y-2">
-        {acceptedFiles.map((file) => (
-          <li key={file.id} className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
-            {file.name} — {file.size.toLocaleString()} bytes
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
+<CodeBlock code={fileDialogCode} lang="tsx" />
 
 `noClick` and `noKeyboard` turn off the dropzone's own click-to-open and
 Space/Enter-to-open behavior, so `open()` is the only way in. Most

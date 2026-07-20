@@ -3,6 +3,8 @@ title: Presigned URL upload
 description: Upload directly to a presigned PUT URL (S3, GCS, or any provider) by resolving the URL before the upload starts.
 ---
 
+import presignedUrlCode from "../../../examples-source/presigned-url.tsx?raw";
+
 `createXhrUploadTransport`'s `endpoint` can be a function of the file, but
 it's synchronous &mdash; it can't `await` a request to your server. Resolve
 each file's presigned URL first, then call `uploadFile(id)` once you have it.
@@ -16,44 +18,9 @@ provider-agnostic: it works the same for S3, GCS, or Azure SAS URLs, or any
 endpoint your own server signs.
 :::
 
-```tsx
-import { useEffect, useRef, useState } from "react";
-import { useMediaDrop } from "react-mediadrop";
-import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
+<ExampleCodeHeader code={presignedUrlCode} title="react-mediadrop — Presigned URL upload" />
 
-export function PresignedUploadExample() {
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const requested = useRef(new Set<string>());
-
-  const transport = createXhrUploadTransport({
-    formData: false, // send the raw file body, not multipart/form-data
-    endpoint: (file) => urls[file.id],
-  });
-
-  const { files, getRootProps, getInputProps, uploadFile } = useMediaDrop({ transport });
-
-  useEffect(() => {
-    for (const file of files) {
-      if (file.status === "accepted" && file.uploadStatus === undefined && !requested.current.has(file.id)) {
-        requested.current.add(file.id);
-        fetch(`/api/presign?filename=${file.name}`)
-          .then((response) => response.json())
-          .then(({ url }) => {
-            setUrls((previous) => ({ ...previous, [file.id]: url }));
-            uploadFile(file.id);
-          });
-      }
-    }
-  }, [files, uploadFile]);
-
-  return (
-    <div {...getRootProps()}>
-      <input {...getInputProps()} />
-      {/* render files, using file.uploadStatus */}
-    </div>
-  );
-}
-```
+<CodeBlock code={presignedUrlCode} lang="tsx" />
 
 `formData: false` sends the file's raw bytes as the request body &mdash; a
 single PUT/POST, not a multipart upload (multiple parts, an upload ID, a
