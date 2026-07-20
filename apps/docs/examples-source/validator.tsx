@@ -1,34 +1,47 @@
 import { useMediaDrop } from "react-mediadrop";
 
 function noSpacesValidator(file: File) {
-  if (file.name.includes(" ")) {
-    return { code: "validator-error" as const, message: "Filenames can't contain spaces" };
-  }
-  return null;
+	if (file.name.includes(" ")) {
+		return {
+			code: "validator-error" as const,
+			message: "Filenames can't contain spaces",
+		};
+	}
+	return null;
 }
 
 export function ValidatorExample() {
-  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
-    useMediaDrop({ validator: noSpacesValidator });
+	const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } =
+		useMediaDrop({ validator: noSpacesValidator });
 
-  return (
-    <div className="space-y-3">
-      <div {...getRootProps()} className="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700">
-        <input {...getInputProps()} />
-        <p>Drag files here, or click to browse</p>
-      </div>
-      <ul className="space-y-2">
-        {acceptedFiles.map((file) => (
-          <li key={file.id} className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
-            {file.name} — {file.size.toLocaleString()} bytes
-          </li>
-        ))}
-        {rejectedFiles.map((file) => (
-          <li key={file.id} className="rounded-md border border-red-200 px-3 py-2 text-sm dark:border-red-900/60">
-            {file.name} — {file.size.toLocaleString()} bytes · {file.errors?.[0]?.message}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+	return (
+		<div className="space-y-3">
+			<div
+				{...getRootProps()}
+				className="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700"
+			>
+				<input {...getInputProps()} />
+				<p>Drag files here, or click to browse</p>
+			</div>
+			<ul className="space-y-2">
+				{acceptedFiles.map((file) => (
+					<li
+						key={file.id}
+						className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"
+					>
+						{file.name} — {file.size.toLocaleString()} bytes
+					</li>
+				))}
+				{rejectedFiles.map((file) => (
+					<li
+						key={file.id}
+						className="rounded-md border border-red-200 px-3 py-2 text-sm dark:border-red-900/60"
+					>
+						{file.name} — {file.size.toLocaleString()} bytes ·{" "}
+						{file.errors?.[0]?.message}
+					</li>
+				))}
+			</ul>
+		</div>
+	);
 }
