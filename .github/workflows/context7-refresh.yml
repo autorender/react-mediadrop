@@ -21,7 +21,7 @@ jobs:
           if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
             exit 0
           fi
-          if grep -q '"error":"too-early"' <<< "$body"; then
+          if [ "$http_code" -eq 400 ] && jq -e '.error == "too-early"' <<< "$body" > /dev/null 2>&1; then
             echo "Refresh skipped: still within Context7's cooldown window."
             exit 0
           fi
