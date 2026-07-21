@@ -6,6 +6,6 @@
   "rules": [
     "react-mediadrop is headless — it has no bundled UI components, only the useMediaDrop hook and transport contract",
     "Do not invent APIs that aren't documented here — check apps/docs/docs/reference for the exact exported types and hook signature",
-    "Uploads require a transport implementing UploadTransport; react-mediadrop/xhr-upload provides the built-in XHR transport"
+    "Uploads require a transport implementing UploadTransport, supplied via useMediaDrop({ transport }); react-mediadrop/xhr-upload provides createXhrUploadTransport() as a reference transport"
   ]
 }

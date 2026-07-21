@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Trigger Context7 Refresh
         run: |
-          curl -s -X POST https://context7.com/api/v1/refresh \
+          curl -s --fail-with-body --show-error -X POST https://context7.com/api/v1/refresh \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.CONTEXT7_API_KEY }}" \
             -d '{"libraryName": "/${{ github.repository }}"}'
