@@ -1,11 +1,11 @@
 {
-  "$schema": "https://context7.com/schema/context7.json",
-  "projectTitle": "react-mediadrop",
-  "description": "A lightweight, headless-first file uploader for React — drag-and-drop, validation, and a pluggable upload queue with concurrency, retry, and cancel support.",
-  "folders": ["apps/docs/docs"],
-  "rules": [
-    "react-mediadrop is headless — it has no bundled UI components, only the useMediaDrop hook and transport contract",
-    "Do not invent APIs that aren't documented here — check apps/docs/docs/reference for the exact exported types and hook signature",
-    "Uploads require a transport implementing UploadTransport, supplied via useMediaDrop({ transport }); react-mediadrop/xhr-upload provides createXhrUploadTransport() as a reference transport"
-  ]
+	"$schema": "https://context7.com/schema/context7.json",
+	"projectTitle": "react-mediadrop",
+	"description": "A lightweight, headless-first file uploader for React — drag-and-drop, validation, and a pluggable upload queue with concurrency, retry, and cancel support.",
+	"folders": ["apps/docs/docs"],
+	"rules": [
+		"react-mediadrop is headless — it has no bundled UI components, only the useMediaDrop hook and transport contract",
+		"Do not invent APIs that aren't documented here — check apps/docs/docs/reference for the exact exported types and hook signature",
+		"Uploads require a transport implementing UploadTransport, supplied via useMediaDrop({ transport }); react-mediadrop/xhr-upload provides createXhrUploadTransport() as a reference transport"
+	]
 }
