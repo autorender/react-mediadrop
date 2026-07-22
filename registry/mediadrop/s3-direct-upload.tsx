@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type MediaDropFile, useMediaDrop } from "react-mediadrop";
 import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
@@ -18,27 +18,27 @@ export default function S3DirectUpload({
 	maxFiles,
 	className,
 }: S3DirectUploadProps) {
-	const urlsRef = useRef<Record<string, string>>({});
+	// Plain mutable object, not a ref: `endpoint` closes over it and mutates
+	// it in place (in the effect below) rather than through a ref, so React
+	// doesn't treat this as a "read a ref during render" hazard — a plain
+	// useState closure here would stay frozen on whatever presigned URLs
+	// existed at that first render.
+	const urlsMap = useMemo(() => ({}) as Record<string, string>, []);
 	const requestedRef = useRef(new Set<string>());
 	const [presignErrors, setPresignErrors] = useState<Record<string, string>>(
 		{},
 	);
 
-	// Built once, from a ref: the engine only ever sees the transport
-	// instance from the render that created it, so `endpoint` must read
-	// through a ref (mutated in place) rather than close over `urlsRef`'s
-	// value directly — a plain `useState` closure here would stay frozen
-	// on whatever presigned URLs existed at that first render.
-	const transportRef = useRef(
+	const [transport] = useState(() =>
 		createXhrUploadTransport({
 			formData: false, // PUT the raw bytes — S3 presigned URLs expect the object body, not multipart/form-data
-			endpoint: (file) => urlsRef.current[file.id] ?? "",
+			endpoint: (file) => urlsMap[file.id] ?? "",
 		}),
 	);
 
 	const { files, getRootProps, getInputProps, uploadFile, cancelUpload } =
 		useMediaDrop({
-			transport: transportRef.current,
+			transport,
 			restrictions: { accept, maxFiles },
 		});
 
@@ -53,7 +53,7 @@ export default function S3DirectUpload({
 				requestedRef.current.add(file.id);
 				getPresignedUrl(file)
 					.then((url) => {
-						urlsRef.current[file.id] = url;
+						urlsMap[file.id] = url;
 						uploadFile(file.id);
 					})
 					.catch((error) => {
@@ -68,7 +68,7 @@ export default function S3DirectUpload({
 					});
 			}
 		}
-	}, [files, getPresignedUrl, uploadFile]);
+	}, [files, getPresignedUrl, uploadFile, urlsMap]);
 
 	return (
 		<div className={className ?? "w-full space-y-3"}>

@@ -71,6 +71,7 @@ export default function AvatarUploader({
 			>
 				<input {...getInputProps()} />
 				{previewUrl ? (
+					// eslint-disable-next-line @next/next/no-img-element -- framework-agnostic block; blob: preview URL, not an optimizable remote image
 					<img
 						src={previewUrl}
 						alt="Avatar preview"
