@@ -25,7 +25,7 @@ export default function MediaDropzone({
 	useEffect(() => {
 		for (const file of files) {
 			if (file.status === "accepted" && file.uploadStatus === undefined) {
-				uploadFile(file.id);
+				uploadFile?.(file.id);
 			}
 		}
 	}, [files, uploadFile]);
