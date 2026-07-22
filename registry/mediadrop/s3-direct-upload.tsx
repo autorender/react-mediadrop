@@ -92,9 +92,7 @@ export default function S3DirectUpload({
 								<span className="truncate">{file.name}</span>
 								<div className="flex items-center gap-2">
 									<span className="text-xs text-muted-foreground">
-										{presignErrors[file.id] ??
-											file.uploadStatus ??
-											file.status}
+										{presignErrors[file.id] ?? file.uploadStatus ?? file.status}
 									</span>
 									{file.uploadStatus === "uploading" && (
 										<button

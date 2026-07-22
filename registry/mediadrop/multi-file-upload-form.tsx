@@ -30,8 +30,7 @@ export default function MultiFileUploadForm({
 	});
 
 	const pending = acceptedFiles.filter(
-		(file) =>
-			file.uploadStatus === undefined || file.uploadStatus === "error",
+		(file) => file.uploadStatus === undefined || file.uploadStatus === "error",
 	);
 
 	const handleSubmit = () => {
@@ -63,8 +62,8 @@ export default function MultiFileUploadForm({
 								<div className="flex items-center gap-2">
 									<span className="text-xs text-muted-foreground">
 										{file.status === "rejected"
-											? file.errors[0]?.message ?? "Rejected"
-											: file.uploadStatus ?? file.status}
+											? (file.errors[0]?.message ?? "Rejected")
+											: (file.uploadStatus ?? file.status)}
 									</span>
 									{file.uploadStatus === "uploading" && (
 										<button
