@@ -21,10 +21,11 @@ npx shadcn@latest add autorender/react-mediadrop/<item-name>
 npx shadcn@latest add autorender/react-mediadrop/dropzone
 ```
 
-This is the GitHub-registry address form (`owner/repo/item`) — works
-today, no extra setup on the consumer's side. A shorter
-`@mediadrop/<item-name>` namespace form is pending shadcn Registry
-Directory review; don't assume it works yet.
+This is the GitHub-registry address form (`owner/repo/item`) — requires
+an existing shadcn/ui project (ran `shadcn init`), but no additional
+registry setup beyond that. A shorter `@mediadrop/<item-name>` namespace
+form is pending shadcn Registry Directory review; don't assume it works
+yet.
 
 ## Before reaching for a block
 
