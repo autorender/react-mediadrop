@@ -10,7 +10,7 @@ type MediaDropzoneProps = {
 	className?: string;
 };
 
-export function MediaDropzone({
+export default function MediaDropzone({
 	transport,
 	accept,
 	maxFiles,
