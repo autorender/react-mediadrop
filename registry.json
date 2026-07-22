@@ -15,6 +15,45 @@
 					"type": "registry:block"
 				}
 			]
+		},
+		{
+			"name": "avatar-uploader",
+			"type": "registry:block",
+			"title": "MediaDrop Avatar Uploader",
+			"description": "Circular single-image avatar picker built on react-mediadrop's useMediaDrop hook, with click/drag replace and upload progress.",
+			"dependencies": ["react-mediadrop"],
+			"files": [
+				{
+					"path": "registry/mediadrop/avatar-uploader.tsx",
+					"type": "registry:block"
+				}
+			]
+		},
+		{
+			"name": "multi-file-upload-form",
+			"type": "registry:block",
+			"title": "MediaDrop Multi-File Upload Form",
+			"description": "Multi-file picker with a review list and an explicit submit step — add files, then upload — with per-file progress, cancel, and retry.",
+			"dependencies": ["react-mediadrop"],
+			"files": [
+				{
+					"path": "registry/mediadrop/multi-file-upload-form.tsx",
+					"type": "registry:block"
+				}
+			]
+		},
+		{
+			"name": "s3-direct-upload",
+			"type": "registry:block",
+			"title": "MediaDrop S3 Direct Upload",
+			"description": "Direct-to-S3 upload block using a presigned PUT URL you supply per file, built on react-mediadrop's xhr-upload transport.",
+			"dependencies": ["react-mediadrop"],
+			"files": [
+				{
+					"path": "registry/mediadrop/s3-direct-upload.tsx",
+					"type": "registry:block"
+				}
+			]
 		}
 	]
 }
