@@ -11,10 +11,11 @@
 
 ## Introduction
 
-**mediadrop** is a hooks-first, headless file uploader for React — file
-intake, drag/drop, validation, and upload (queue, concurrency, retry,
-cancel) via a single `useMediaDrop` hook. No prebuilt widget — you own the
-markup.
+**mediadrop** is a headless, hooks-first file uploader for React: intake,
+drag/drop, validation, and upload (queue, concurrency, retry, cancel) via
+a single `useMediaDrop` hook — the same `getRootProps`/`getInputProps`
+shape you already know from react-dropzone, with upload built in. No
+prebuilt widget — you own the markup.
 
 `react-mediadrop` ships at **4.4 KB minified + gzipped** (per
 [Bundlephobia](https://bundlephobia.com/package/react-mediadrop)); the
@@ -47,6 +48,18 @@ pnpm add react-mediadrop
 # or: npm install react-mediadrop
 # or: yarn add react-mediadrop
 ```
+
+Using an AI coding agent? Also install the Agent Skill so it integrates
+the API correctly on the first try instead of guessing from the package
+name:
+
+```sh
+npx skills add autorender/react-mediadrop
+```
+
+Also indexed on [Context7](https://context7.com/autorender/react-mediadrop)
+— reachable via MCP from Cursor, Claude Code, Windsurf, and other
+Context7-compatible tools with no local install.
 
 - Ships as **ESM** with TypeScript types included — works with any modern
   bundler.
@@ -85,6 +98,21 @@ intake/validation state. See the
 [quickstart](https://www.mediadrop.dev/docs/getting-started/quickstart)
 and [upload guide](https://www.mediadrop.dev/docs/guides/upload) for
 the full API.
+
+## Blocks (shadcn registry)
+
+Prebuilt, copy-into-your-project blocks — dropzone, avatar uploader,
+multi-file upload form, S3 direct-upload — installable via the shadcn
+CLI's [GitHub registry](https://ui.shadcn.com/docs/registry/github)
+support, no separate registry server required:
+
+```sh
+npx shadcn@latest add autorender/react-mediadrop/dropzone
+```
+
+Swap `dropzone` for `avatar-uploader`, `multi-file-upload-form`, or
+`s3-direct-upload`. (Shorter `@mediadrop/dropzone` form pending shadcn
+Registry Directory review.)
 
 ## What's implemented
 

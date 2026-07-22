@@ -92,6 +92,8 @@ model, store, and drag-state semantics in detail.
 - Validation/restrictions: [references/validation.md](references/validation.md)
 - Upload (queue/concurrency/retry/cancel, transport contract): [references/upload.md](references/upload.md)
 - Transport: [references/xhr-upload.md](references/xhr-upload.md)
+- Prebuilt blocks (dropzone/avatar-uploader/upload-form/S3, installable via
+  the shadcn CLI): [references/registry-blocks.md](references/registry-blocks.md)
 - Common mistakes: [references/troubleshooting.md](references/troubleshooting.md)
 - Full working demo (dropzone + upload UI + a real backend, wired
   end-to-end) — not shipped with this skill, lives in the source repo:
@@ -100,6 +102,11 @@ model, store, and drag-state semantics in detail.
 
 ## Hard rules for agents integrating mediadrop
 
+- **In a shadcn/ui project, check [references/registry-blocks.md](references/registry-blocks.md)
+  before hand-rolling dropzone/avatar-uploader/upload-form markup** — a
+  matching prebuilt block is one `npx shadcn@latest add
+  autorender/react-mediadrop/<item-name>` away. Skip it only when the
+  task's UI genuinely doesn't fit one of the four blocks.
 - **Do not write upload code that bypasses `transport`/the queue** — no
   hand-rolled `fetch` call stapled onto `onChange`, no ad hoc retry loop
   elsewhere. If the user wants upload behavior, wire a transport
