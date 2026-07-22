@@ -1,34 +1,43 @@
 "use client";
 
-import { useEffect } from "react";
 import { type UploadTransport, useMediaDrop } from "react-mediadrop";
 
-type MediaDropzoneProps = {
+type MultiFileUploadFormProps = {
 	transport: UploadTransport;
 	accept?: string;
 	maxFiles?: number;
 	className?: string;
 };
 
-export default function MediaDropzone({
+export default function MultiFileUploadForm({
 	transport,
 	accept,
 	maxFiles,
 	className,
-}: MediaDropzoneProps) {
-	const { files, getRootProps, getInputProps, uploadFile, cancelUpload } =
-		useMediaDrop({
-			transport,
-			restrictions: { accept, maxFiles },
-		});
+}: MultiFileUploadFormProps) {
+	const {
+		files,
+		acceptedFiles,
+		getRootProps,
+		getInputProps,
+		removeFile,
+		uploadFile,
+		cancelUpload,
+		retryUpload,
+	} = useMediaDrop({
+		transport,
+		restrictions: { accept, maxFiles },
+	});
 
-	useEffect(() => {
-		for (const file of files) {
-			if (file.status === "accepted" && file.uploadStatus === undefined) {
-				uploadFile?.(file.id);
-			}
+	const pending = acceptedFiles.filter(
+		(file) => file.uploadStatus === undefined || file.uploadStatus === "error",
+	);
+
+	const handleSubmit = () => {
+		for (const file of pending) {
+			uploadFile?.(file.id);
 		}
-	}, [files, uploadFile]);
+	};
 
 	return (
 		<div className={className ?? "w-full space-y-3"}>
@@ -52,15 +61,37 @@ export default function MediaDropzone({
 								<span className="truncate">{file.name}</span>
 								<div className="flex items-center gap-2">
 									<span className="text-xs text-muted-foreground">
-										{file.uploadStatus ?? file.status}
+										{file.status === "rejected"
+											? (file.errors[0]?.message ?? "Rejected")
+											: (file.uploadStatus ?? file.status)}
 									</span>
 									{file.uploadStatus === "uploading" && (
 										<button
 											type="button"
-											onClick={() => cancelUpload(file.id)}
+											onClick={() => cancelUpload?.(file.id)}
 											className="text-xs text-muted-foreground underline hover:text-foreground"
 										>
 											Cancel
+										</button>
+									)}
+									{file.uploadStatus === "error" && (
+										<button
+											type="button"
+											onClick={() => retryUpload?.(file.id)}
+											className="text-xs text-muted-foreground underline hover:text-foreground"
+										>
+											Retry
+										</button>
+									)}
+									{(file.uploadStatus === undefined ||
+										file.uploadStatus === "error" ||
+										file.status === "rejected") && (
+										<button
+											type="button"
+											onClick={() => removeFile(file.id)}
+											className="text-xs text-muted-foreground underline hover:text-foreground"
+										>
+											Remove
 										</button>
 									)}
 								</div>
@@ -80,6 +111,15 @@ export default function MediaDropzone({
 						</li>
 					))}
 				</ul>
+			)}
+			{pending.length > 0 && (
+				<button
+					type="button"
+					onClick={handleSubmit}
+					className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+				>
+					Upload {pending.length} file{pending.length === 1 ? "" : "s"}
+				</button>
 			)}
 		</div>
 	);
