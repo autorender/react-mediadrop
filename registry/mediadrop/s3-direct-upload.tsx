@@ -6,7 +6,7 @@ import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
 type S3DirectUploadProps = {
 	/** Called once per file to get a presigned PUT URL from your backend. */
-	getPresignedUrl: (file: MediaDropFile) => Promise<string>;
+	getPresignedUrl?: (file: MediaDropFile) => Promise<string>;
 	accept?: string;
 	maxFiles?: number;
 	className?: string;
@@ -49,6 +49,7 @@ export default function S3DirectUpload({
 				file.uploadStatus === undefined &&
 				!requestedRef.current.has(file.id)
 			) {
+				if (!getPresignedUrl) continue;
 				requestedRef.current.add(file.id);
 				getPresignedUrl(file)
 					.then((url) => {
