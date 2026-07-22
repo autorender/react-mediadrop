@@ -57,6 +57,10 @@ name:
 npx skills add autorender/react-mediadrop
 ```
 
+Also indexed on [Context7](https://context7.com/autorender/react-mediadrop)
+— reachable via MCP from Cursor, Claude Code, Windsurf, and other
+Context7-compatible tools with no local install.
+
 - Ships as **ESM** with TypeScript types included — works with any modern
   bundler.
 - Requires **React 18+**.
