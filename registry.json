@@ -1,0 +1,20 @@
+{
+	"$schema": "https://ui.shadcn.com/schema/registry.json",
+	"name": "mediadrop",
+	"homepage": "https://github.com/autorender/react-mediadrop",
+	"items": [
+		{
+			"name": "dropzone",
+			"type": "registry:block",
+			"title": "MediaDrop Dropzone",
+			"description": "Drag-and-drop file upload block built on react-mediadrop's useMediaDrop hook, with per-file progress and cancel.",
+			"dependencies": ["react-mediadrop"],
+			"files": [
+				{
+					"path": "registry/mediadrop/dropzone.tsx",
+					"type": "registry:block"
+				}
+			]
+		}
+	]
+}
