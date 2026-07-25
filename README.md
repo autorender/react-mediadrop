@@ -11,7 +11,8 @@
 
 ## Introduction
 
-**mediadrop** is a headless, hooks-first file uploader for React: intake,
+**mediadrop** is a headless, hooks-first file uploader for React with zero
+dependencies: intake,
 drag/drop, validation, and upload (queue, concurrency, retry, cancel) via
 a single `useMediaDrop` hook — the same `getRootProps`/`getInputProps`
 shape you already know from react-dropzone, with upload built in. No
@@ -41,6 +42,27 @@ If you've used `react-dropzone`, the API will feel familiar —
 `useMediaDrop` returns the same `getRootProps`/`getInputProps` shape, plus a
 built-in upload queue react-dropzone doesn't have.
 
+mediadrop is pre-1.0 (`0.1.1`), following semver — minor version bumps may
+include breaking changes until 1.0. Full history in the
+[changelog](packages/react/CHANGELOG.md).
+
+## Comparison
+
+| Library | Model | Scope |
+| --- | --- | --- |
+| [react-dropzone](https://github.com/react-dropzone/react-dropzone) | Headless, hooks-first | Drag/drop and file intake only — no upload |
+| [Uppy](https://uppy.io) | Dashboard UI + plugin ecosystem | Upload via `xhr-upload`/`tus`/`aws-s3` plugins, remote-provider import via Companion |
+| [FilePond](https://pqina.nl/filepond) | Prebuilt widget | Styled, drop-in upload UI |
+| **react-mediadrop** | Headless, hooks-first | File intake, validation, and upload (queue, concurrency, retry, cancel) via one hook — zero runtime dependencies |
+
+Closest to react-dropzone in API shape — `useMediaDrop` returns the same
+`getRootProps`/`getInputProps`, plus the upload queue react-dropzone
+doesn't have. Closest to Uppy in upload scope — a pluggable transport
+contract instead of a plugin ecosystem — but without a dashboard,
+Companion, or remote-provider import; see the
+[scope reference](skills/mediadrop/references/scope.md) for what's not
+included.
+
 ## Install
 
 ```sh
@@ -63,7 +85,7 @@ Context7-compatible tools with no local install.
 
 - Ships as **ESM** with TypeScript types included — works with any modern
   bundler.
-- Requires **React 18+**.
+- Peer dependency on React 18+, nothing else.
 - No `window`/`document` access at render time — safe to import in SSR
   frameworks (Next.js, Remix, etc.); browser APIs only run inside event
   handlers, on the client.
