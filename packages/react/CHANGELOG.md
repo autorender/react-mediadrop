@@ -1,5 +1,11 @@
 # react-mediadrop
 
+## 0.1.2
+
+### Patch Changes
+
+- 4850446: Sync package README with the root README (Why/Comparison sections, zero-runtime-dependency positioning, pre-1.0 trust line).
+
 ## 0.1.1
 
 ### Patch Changes
