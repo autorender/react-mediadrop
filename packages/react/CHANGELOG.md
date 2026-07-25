@@ -1,5 +1,11 @@
 # react-mediadrop
 
+## 0.1.4
+
+### Patch Changes
+
+- 9653139: No functional change — verifies npm provenance attestation is attached after the NPM_TOKEN env fix.
+
 ## 0.1.3
 
 ### Patch Changes
