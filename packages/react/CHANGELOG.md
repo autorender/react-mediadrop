@@ -1,5 +1,12 @@
 # react-mediadrop
 
+## 0.1.3
+
+### Patch Changes
+
+- fd253e9: Add Website/GitHub nav links to the package README.
+- fd253e9: No functional change — verifies npm provenance is attached to the published package.
+
 ## 0.1.2
 
 ### Patch Changes

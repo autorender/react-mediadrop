@@ -1,5 +1,13 @@
 # react-demo
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [fd253e9]
+- Updated dependencies [fd253e9]
+  - react-mediadrop@0.1.3
+
 ## 0.0.2
 
 ### Patch Changes
