@@ -12,11 +12,11 @@
 ## Introduction
 
 **mediadrop** is a headless, hooks-first file uploader for React with zero
-dependencies: intake,
-drag/drop, validation, and upload (queue, concurrency, retry, cancel) via
-a single `useMediaDrop` hook — the same `getRootProps`/`getInputProps`
-shape you already know from react-dropzone, with upload built in. No
-prebuilt widget — you own the markup.
+runtime dependencies. It handles intake, drag/drop, validation, and upload
+(queue, concurrency, retry, cancel) via a single `useMediaDrop` hook — the
+same `getRootProps`/`getInputProps` shape you already know from
+react-dropzone, with upload built in. No prebuilt widget — you own the
+markup.
 
 `react-mediadrop` ships at **4.4 KB minified + gzipped** (per
 [Bundlephobia](https://bundlephobia.com/package/react-mediadrop)); the
@@ -97,22 +97,37 @@ Context7-compatible tools with no local install.
 ```tsx
 import { useMediaDrop } from "react-mediadrop";
 
-const { getRootProps, getInputProps, files } = useMediaDrop({
-	restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
-});
+function Dropzone() {
+	const { getRootProps, getInputProps, files } = useMediaDrop({
+		restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
+	});
+
+	return (
+		<div {...getRootProps()}>
+			<input {...getInputProps()} />
+			{files.length} file(s) selected
+		</div>
+	);
+}
 ```
 
 ### Upload (opt-in)
 
-```ts
+```tsx
 import { useMediaDrop } from "react-mediadrop";
 import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
-const { files, uploadAll } = useMediaDrop({
-	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
-	concurrency: 3,
-	retries: 2,
-});
+function Uploader() {
+	const { files, uploadAll } = useMediaDrop({
+		transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
+		concurrency: 3,
+		retries: 2,
+	});
+
+	return (
+		<button onClick={() => uploadAll()}>Upload {files.length} file(s)</button>
+	);
+}
 ```
 
 Without `transport`, nothing is uploaded — `useMediaDrop` only tracks
@@ -153,10 +168,11 @@ authoritative list.
 
 ## Packages
 
-Only `react-mediadrop` is published to npm — everything else is an internal,
-workspace-only source package bundled directly into it at build time. Only
-`react-mediadrop` matters if you're a consumer — the rest is internal build
-structure, listed here for contributors.
+Only `react-mediadrop` is published to npm — `packages/core` and
+`packages/xhr-upload` are internal, workspace-only source packages bundled
+directly into it at build time. `skills/mediadrop` is a separate
+integration guide, not bundled into the package. Only `react-mediadrop`
+matters if you're a consumer — the rest is listed here for contributors.
 
 | Package | Published? | What it is |
 | --- | --- | --- |
