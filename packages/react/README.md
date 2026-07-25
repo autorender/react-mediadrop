@@ -9,6 +9,12 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](../../CODE_OF_CONDUCT.md)
 [![skills.sh](https://skills.sh/b/autorender/react-mediadrop)](https://skills.sh/autorender/react-mediadrop)
 
+<div align="center">
+<a href="https://mediadrop.dev">Website</a>
+<span> · </span>
+<a href="https://github.com/autorender/react-mediadrop">GitHub</a>
+</div>
+
 ## Introduction
 
 **mediadrop** is a headless, hooks-first file uploader for React with zero
