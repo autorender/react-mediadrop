@@ -3,11 +3,12 @@ title: Introduction
 description: A hooks-first, headless file uploader for React
 ---
 
-**react-mediadrop** is a headless, hooks-first file uploader for React:
-intake, validation, and upload (queue, concurrency, retry, cancel) via a
-single `useMediaDrop` hook — the same `getRootProps`/`getInputProps` shape
-you already know from react-dropzone, with upload built in. Published to
-npm as [`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
+**react-mediadrop** is a headless, hooks-first file uploader for React with
+zero runtime dependencies. It handles intake, validation, and upload
+(queue, concurrency, retry, cancel) via a single `useMediaDrop` hook — the
+same `getRootProps`/`getInputProps` shape you already know from
+react-dropzone, with upload built in. Published to npm as
+[`react-mediadrop`](https://www.npmjs.com/package/react-mediadrop).
 
 You can use react-mediadrop for:
 
@@ -15,6 +16,27 @@ You can use react-mediadrop for:
 - Client-side file validation (type, size, count) before anything uploads
 - A queue that uploads multiple files with concurrency, retry, and cancel
 - Upload progress and per-file status rendered in your own UI
+
+## Comparison
+
+react-mediadrop sits between react-dropzone and Uppy: the same headless API
+shape as react-dropzone, with the upload queue only Uppy otherwise offers.
+
+| Library | Model | Scope |
+| --- | --- | --- |
+| [react-dropzone](https://github.com/react-dropzone/react-dropzone) | Headless, hooks-first | Drag/drop and file intake only — no upload |
+| [Uppy](https://uppy.io) | Dashboard UI + plugin ecosystem | Upload via `xhr-upload`/`tus`/`aws-s3` plugins, remote-provider import via Companion |
+| [FilePond](https://pqina.nl/filepond) | Prebuilt widget | Styled, drop-in upload UI |
+| **react-mediadrop** | Headless, hooks-first | File intake, validation, and upload (queue, concurrency, retry, cancel) via one hook — **zero** runtime dependencies |
+
+Closest to react-dropzone in API shape — `useMediaDrop` returns the same
+`getRootProps`/`getInputProps`, plus the upload queue react-dropzone
+doesn't have.
+
+Closest to Uppy in upload scope — a pluggable [transport
+contract](/guides/custom-transport) instead of a plugin ecosystem — but
+without a dashboard, Companion, or remote-provider import; see
+[Roadmap](/roadmap) for what's not included.
 
 ## Headless-first
 

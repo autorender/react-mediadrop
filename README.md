@@ -11,11 +11,12 @@
 
 ## Introduction
 
-**mediadrop** is a headless, hooks-first file uploader for React: intake,
-drag/drop, validation, and upload (queue, concurrency, retry, cancel) via
-a single `useMediaDrop` hook — the same `getRootProps`/`getInputProps`
-shape you already know from react-dropzone, with upload built in. No
-prebuilt widget — you own the markup.
+**mediadrop** is a headless, hooks-first file uploader for React with zero
+runtime dependencies. It handles intake, drag/drop, validation, and upload
+(queue, concurrency, retry, cancel) via a single `useMediaDrop` hook — the
+same `getRootProps`/`getInputProps` shape you already know from
+react-dropzone, with upload built in. No prebuilt widget — you own the
+markup.
 
 `react-mediadrop` ships at **4.4 KB minified + gzipped** (per
 [Bundlephobia](https://bundlephobia.com/package/react-mediadrop)); the
@@ -41,6 +42,27 @@ If you've used `react-dropzone`, the API will feel familiar —
 `useMediaDrop` returns the same `getRootProps`/`getInputProps` shape, plus a
 built-in upload queue react-dropzone doesn't have.
 
+mediadrop is pre-1.0 (`0.1.1`), following semver — minor version bumps may
+include breaking changes until 1.0. Full history in the
+[changelog](packages/react/CHANGELOG.md).
+
+## Comparison
+
+| Library | Model | Scope |
+| --- | --- | --- |
+| [react-dropzone](https://github.com/react-dropzone/react-dropzone) | Headless, hooks-first | Drag/drop and file intake only — no upload |
+| [Uppy](https://uppy.io) | Dashboard UI + plugin ecosystem | Upload via `xhr-upload`/`tus`/`aws-s3` plugins, remote-provider import via Companion |
+| [FilePond](https://pqina.nl/filepond) | Prebuilt widget | Styled, drop-in upload UI |
+| **react-mediadrop** | Headless, hooks-first | File intake, validation, and upload (queue, concurrency, retry, cancel) via one hook — zero runtime dependencies |
+
+Closest to react-dropzone in API shape — `useMediaDrop` returns the same
+`getRootProps`/`getInputProps`, plus the upload queue react-dropzone
+doesn't have. Closest to Uppy in upload scope — a pluggable transport
+contract instead of a plugin ecosystem — but without a dashboard,
+Companion, or remote-provider import; see the
+[scope reference](skills/mediadrop/references/scope.md) for what's not
+included.
+
 ## Install
 
 ```sh
@@ -63,7 +85,7 @@ Context7-compatible tools with no local install.
 
 - Ships as **ESM** with TypeScript types included — works with any modern
   bundler.
-- Requires **React 18+**.
+- Peer dependency on React 18+, nothing else.
 - No `window`/`document` access at render time — safe to import in SSR
   frameworks (Next.js, Remix, etc.); browser APIs only run inside event
   handlers, on the client.
@@ -75,22 +97,37 @@ Context7-compatible tools with no local install.
 ```tsx
 import { useMediaDrop } from "react-mediadrop";
 
-const { getRootProps, getInputProps, files } = useMediaDrop({
-	restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
-});
+function Dropzone() {
+	const { getRootProps, getInputProps, files } = useMediaDrop({
+		restrictions: { accept: ["image/png", "image/jpeg"], maxFiles: 5 },
+	});
+
+	return (
+		<div {...getRootProps()}>
+			<input {...getInputProps()} />
+			{files.length} file(s) selected
+		</div>
+	);
+}
 ```
 
 ### Upload (opt-in)
 
-```ts
+```tsx
 import { useMediaDrop } from "react-mediadrop";
 import { createXhrUploadTransport } from "react-mediadrop/xhr-upload";
 
-const { files, uploadAll } = useMediaDrop({
-	transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
-	concurrency: 3,
-	retries: 2,
-});
+function Uploader() {
+	const { files, uploadAll } = useMediaDrop({
+		transport: createXhrUploadTransport({ endpoint: "/api/upload" }),
+		concurrency: 3,
+		retries: 2,
+	});
+
+	return (
+		<button onClick={() => uploadAll()}>Upload {files.length} file(s)</button>
+	);
+}
 ```
 
 Without `transport`, nothing is uploaded — `useMediaDrop` only tracks
@@ -131,10 +168,11 @@ authoritative list.
 
 ## Packages
 
-Only `react-mediadrop` is published to npm — everything else is an internal,
-workspace-only source package bundled directly into it at build time. Only
-`react-mediadrop` matters if you're a consumer — the rest is internal build
-structure, listed here for contributors.
+Only `react-mediadrop` is published to npm — `packages/core` and
+`packages/xhr-upload` are internal, workspace-only source packages bundled
+directly into it at build time. `skills/mediadrop` is a separate
+integration guide, not bundled into the package. Only `react-mediadrop`
+matters if you're a consumer — the rest is listed here for contributors.
 
 | Package | Published? | What it is |
 | --- | --- | --- |
