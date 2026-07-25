@@ -1,5 +1,11 @@
 # react-mediadrop
 
+## 0.1.5
+
+### Patch Changes
+
+- e7a877c: No functional change — verifies npm provenance attestation via trusted publishing (OIDC, no NPM_TOKEN).
+
 ## 0.1.4
 
 ### Patch Changes
