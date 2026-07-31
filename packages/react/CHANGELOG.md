@@ -1,5 +1,11 @@
 # react-mediadrop
 
+## 0.1.6
+
+### Patch Changes
+
+- 5ac6742: Add Discord community link to the README.
+
 ## 0.1.5
 
 ### Patch Changes
