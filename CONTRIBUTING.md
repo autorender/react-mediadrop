@@ -45,3 +45,7 @@ Issue and PR templates (`.github/ISSUE_TEMPLATE/`,
 `.github/PULL_REQUEST_TEMPLATE.md`), a vulnerability-reporting process
 ([`SECURITY.md`](SECURITY.md)), and a [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 already exist. There's no CLA yet.
+
+## Getting help
+
+Questions before or during a PR? Ask in the [Discord](https://discord.gg/5snBtW2aJ) or open a [GitHub issue](https://github.com/autorender/react-mediadrop/issues).
