@@ -8,11 +8,14 @@
 [![bundle size](https://img.shields.io/badge/min%2Bgzip-4.4KB-success?style=flat-square)](https://bundlephobia.com/package/react-mediadrop)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](../../CODE_OF_CONDUCT.md)
 [![skills.sh](https://skills.sh/b/autorender/react-mediadrop)](https://skills.sh/autorender/react-mediadrop)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/5snBtW2aJ)
 
 <div align="center">
 <a href="https://mediadrop.dev">Website</a>
 <span> · </span>
 <a href="https://github.com/autorender/react-mediadrop">GitHub</a>
+<span> · </span>
+<a href="https://discord.gg/5snBtW2aJ">Discord</a>
 </div>
 
 ## Introduction
@@ -223,7 +226,8 @@ pnpm size    # checks each published/bundled package's gzipped dist against its 
 ## Support
 
 Questions or issues not covered by the [docs](https://www.mediadrop.dev/docs)?
-Open a [GitHub issue](https://github.com/autorender/react-mediadrop/issues) or
+Join the [Discord](https://discord.gg/5snBtW2aJ), open a
+[GitHub issue](https://github.com/autorender/react-mediadrop/issues), or
 email oss@autorender.io.
 
 ## Contributing
