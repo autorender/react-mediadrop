@@ -21,7 +21,7 @@ overrides:
   "undici@<6.27.0": ">=6.27.0"
 
 catalog:
-  typescript: ^5.9.3
+  typescript: ^6.0.3
   vitest: ^4.1.10
   "@vitest/coverage-v8": ^4.1.10
   tsdown: ^0.22.3
