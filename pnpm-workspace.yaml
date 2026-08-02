@@ -18,6 +18,7 @@ overrides:
   "next@>=16.0.0 <16.2.11": ">=16.2.11"
   "postcss@<8.5.18": ">=8.5.18"
   "brace-expansion@<=5.0.7": ">=5.0.8"
+  "undici@<6.27.0": ">=6.27.0"
 
 catalog:
   typescript: ^5.9.3
