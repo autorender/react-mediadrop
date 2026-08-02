@@ -23,7 +23,7 @@
 		"@biomejs/biome": "^2.5.2",
 		"@changesets/cli": "^2.31.0",
 		"tsdown": "catalog:",
-		"turbo": "^2.10.3",
+		"turbo": "^2.10.7",
 		"typescript": "catalog:",
 		"vitest": "catalog:"
 	}
