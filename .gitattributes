@@ -1,0 +1,4 @@
+# Biome formats with LF, so a checkout that converts to CRLF (the Git for
+# Windows default, core.autocrlf=true) makes `pnpm lint` fail on every file.
+# `text=auto` still leaves real binaries like assets/*.png alone.
+* text=auto eol=lf
