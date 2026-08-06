@@ -25,6 +25,10 @@ export default function S3DirectUpload({
 	// existed at that first render.
 	const urlsMap = useMemo(() => ({}) as Record<string, string>, []);
 	const requestedRef = useRef(new Set<string>());
+	// Tracks whether this component instance is still mounted. Presign is an
+	// async promise outside React's lifecycle — without this guard, a resolve
+	// or reject after unmount would call setState / uploadFile on a dead tree.
+	const mountedRef = useRef(true);
 	const [presignErrors, setPresignErrors] = useState<Record<string, string>>(
 		{},
 	);
@@ -43,6 +47,13 @@ export default function S3DirectUpload({
 		});
 
 	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
 		for (const file of files) {
 			if (
 				file.status === "accepted" &&
@@ -53,10 +64,12 @@ export default function S3DirectUpload({
 				requestedRef.current.add(file.id);
 				getPresignedUrl(file)
 					.then((url) => {
+						if (!mountedRef.current) return;
 						urlsMap[file.id] = url;
 						uploadFile(file.id);
 					})
 					.catch((error) => {
+						if (!mountedRef.current) return;
 						requestedRef.current.delete(file.id);
 						setPresignErrors((previous) => ({
 							...previous,
