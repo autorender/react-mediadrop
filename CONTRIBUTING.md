@@ -48,4 +48,4 @@ already exist. There's no CLA yet.
 
 ## Getting help
 
-Questions before or during a PR? Ask in the [Discord](https://discord.gg/5snBtW2aJ) or open a [GitHub issue](https://github.com/autorender/react-mediadrop/issues).
+Questions before or during a PR? Ask in the [Discord](https://discord.gg/cZuSUaAwAy) or open a [GitHub issue](https://github.com/autorender/react-mediadrop/issues).
