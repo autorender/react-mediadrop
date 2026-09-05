@@ -83,7 +83,20 @@ export default function AvatarUploader({
 					</div>
 				)}
 				{current?.uploadStatus === "uploading" && (
-					<div className="absolute inset-0 flex items-center justify-center bg-background/60 text-xs text-foreground">
+					<div
+						className="absolute inset-0 flex items-center justify-center bg-background/60 text-xs text-foreground"
+						role="progressbar"
+						aria-label="Uploading avatar"
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={
+							current.progress?.total
+								? Math.round(
+										(current.progress.loaded / current.progress.total) * 100,
+									)
+								: undefined
+						}
+					>
 						{current.progress?.total
 							? `${Math.round(
 									(current.progress.loaded / current.progress.total) * 100,
@@ -92,7 +105,10 @@ export default function AvatarUploader({
 					</div>
 				)}
 				{current?.uploadStatus === "error" && (
-					<div className="absolute inset-0 flex items-center justify-center bg-destructive/70 text-xs text-destructive-foreground">
+					<div
+						className="absolute inset-0 flex items-center justify-center bg-destructive/70 text-xs text-destructive-foreground"
+						role="alert"
+					>
 						Failed
 					</div>
 				)}

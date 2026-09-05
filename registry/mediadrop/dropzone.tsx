@@ -51,7 +51,10 @@ export default function MediaDropzone({
 							<div className="flex items-center justify-between gap-2">
 								<span className="truncate">{file.name}</span>
 								<div className="flex items-center gap-2">
-									<span className="text-xs text-muted-foreground">
+									<span
+										className="text-xs text-muted-foreground"
+										aria-live="polite"
+									>
 										{file.uploadStatus ?? file.status}
 									</span>
 									{file.uploadStatus === "uploading" && (
@@ -66,7 +69,16 @@ export default function MediaDropzone({
 								</div>
 							</div>
 							{file.progress?.total != null && (
-								<div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+								<div
+									className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted"
+									role="progressbar"
+									aria-label={`Uploading ${file.name}`}
+									aria-valuemin={0}
+									aria-valuemax={100}
+									aria-valuenow={Math.round(
+										(file.progress.loaded / file.progress.total) * 100,
+									)}
+								>
 									<div
 										className="h-full bg-primary transition-all"
 										style={{
