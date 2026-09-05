@@ -24,7 +24,7 @@
 		"@scalar/astro": "^0.4.5",
 		"@scalar/openapi-parser": "^0.28.8",
 		"@scalar/openapi-types": "^0.9.1",
-		"@shikijs/transformers": "^4.2.0",
+		"@shikijs/transformers": "^4.4.2",
 		"@shikijs/twoslash": "^4.2.0",
 		"@stackblitz/sdk": "^1.11.1",
 		"@tailwindcss/typography": "^0.5.20",
