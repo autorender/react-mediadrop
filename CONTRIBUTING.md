@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing to `react-mediadrop`. The short version:
 
+**Prerequisites:** Node matching [`.node-version`](.node-version). `tsdown` loads its `.ts` config via Node's native TypeScript support; on older Node it falls back to `unrun`, an optional peer dependency that isn't installed, and the build fails with `Failed to import module "unrun"`.
+
 1. **Install & verify**: `pnpm install`, then `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm size` before opening a PR — this is exactly what CI runs (`.github/workflows/ci.yml`).
 2. **Scope**: check
    [`skills/mediadrop/references/scope.md`](skills/mediadrop/references/scope.md)
